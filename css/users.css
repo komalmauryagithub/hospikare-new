@@ -1,0 +1,1630 @@
+html {
+    scroll-behavior: smooth;
+}
+
+:root {
+    --user-shell: #f4f7fb;
+    --user-panel: #ffffff;
+    --user-border: #e2e8f0;
+    --user-muted: #64748b;
+    --user-ink: #0f172a;
+    --user-blue: #1f3a9a;
+    --user-blue-mid: #2b4fc2;
+    --user-blue-soft: #eef4ff;
+    --user-teal: #0d9488;
+    --user-pink: #e8174a;
+    --user-pink-soft: #fff1f4;
+    --user-green: #10b981;
+    --user-amber: #f59e0b;
+    --user-cyan: #06b6d4;
+    --user-shadow: 0 16px 48px rgba(31, 58, 154, 0.10);
+    --user-card-shadow: 0 8px 30px rgba(31, 58, 154, 0.08);
+}
+
+body {
+    background:
+        linear-gradient(180deg, #ffffff 0%, var(--user-shell) 46%, #eef4ff 100%);
+    color: var(--user-ink);
+    overflow-x: hidden;
+}
+
+body.authLocked {
+    overflow: hidden;
+}
+
+.navbar {
+    height: 84px;
+    background: rgba(255, 255, 255, 0.94);
+    border-bottom: 1px solid rgba(221, 227, 239, 0.9);
+    box-shadow: 0 10px 28px rgba(31, 58, 154, 0.08);
+    backdrop-filter: blur(16px);
+}
+
+.logoSection {
+    display: flex;
+    align-items: center;
+    min-width: 250px;
+    overflow: visible;
+}
+
+.logoSection img,
+.navbar .logo-img {
+    width: 240px;
+    height: 80px;
+    object-fit: contain;
+    transform: scale(2.2);
+    /* transform-origin: center left; */
+}
+
+.nav-links {
+    gap: clamp(0.85rem, 1.6vw, 1.65rem);
+}
+
+.nav-links a {
+    color: #26324d !important;
+    font-size: 0.78rem;
+    letter-spacing: 0.03em;
+    white-space: nowrap;
+}
+
+.navRight {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.nav-emergency {
+    box-shadow: 0 8px 22px rgba(232, 23, 74, 0.22);
+}
+
+.userLogoutBtn[hidden] {
+    display: none;
+}
+
+.menuBtn {
+    width: 44px;
+    height: 44px;
+    display: none;
+    place-items: center;
+    border: 1px solid var(--user-border);
+    border-radius: 8px;
+    background: #ffffff;
+    color: var(--user-blue) !important;
+    box-shadow: 0 8px 18px rgba(31, 58, 154, 0.10);
+}
+
+.sidebar,
+#sidebar.sidebar {
+    position: fixed !important;
+    top: 0 !important;
+    left: auto !important;
+    right: -360px !important;
+    bottom: 0 !important;
+    z-index: 1200 !important;
+    width: min(320px, 86vw) !important;
+    height: 100vh !important;
+    padding: 1.5rem !important;
+    background: #ffffff !important;
+    border-left: 1px solid var(--user-border) !important;
+    box-shadow: -18px 0 45px rgba(17, 24, 39, 0.18) !important;
+    transition: right 0.26s ease !important;
+    overflow-y: auto !important;
+    display: block !important;
+}
+
+.sidebar.active,
+#sidebar.sidebar.active {
+    right: 0 !important;
+    left: auto !important;
+}
+
+.sidebarTop {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.5rem;
+}
+
+.sidebarTop h2 {
+    margin: 0;
+    font-family: var(--font-body);
+    font-size: 1.25rem;
+    font-weight: 800;
+}
+
+.closeBtn,
+.close-modal {
+    width: 40px;
+    height: 40px;
+    display: inline-grid;
+    place-items: center;
+    border: 1px solid var(--user-border);
+    border-radius: 8px;
+    background: #ffffff;
+    color: #2d3753;
+    cursor: pointer;
+    transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.closeBtn:hover,
+.close-modal:hover {
+    background: #f1f5ff;
+    transform: translateY(-1px);
+}
+
+.sidebarLinks {
+    display: grid;
+    gap: 0.55rem;
+    padding-bottom: 2rem;
+}
+
+.sidebarLinks a {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    padding: 0.85rem 0.95rem;
+    border-radius: 8px;
+    color: #344054;
+    font-weight: 700;
+    transition: background 0.2s ease, color 0.2s ease;
+}
+
+.sidebarLinks a:hover {
+    background: var(--user-blue-soft);
+    color: var(--user-blue);
+    transform: none !important;
+}
+
+.overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1100;
+    background: rgba(17, 24, 39, 0.48);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.24s ease, visibility 0.24s ease;
+}
+
+.overlay.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+.hero {
+    min-height: 720px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(360px, 0.82fr);
+    align-items: center;
+    gap: clamp(2rem, 5vw, 5rem);
+    padding: 130px clamp(1.25rem, 6vw, 5rem) 160px;
+    background:
+        radial-gradient(circle at 10% 20%, rgba(34, 211, 238, 0.22), transparent 45%),
+        radial-gradient(circle at 90% 80%, rgba(15, 118, 110, 0.35), transparent 50%),
+        linear-gradient(135deg, #0B1633 0%, #0F766E 55%, #172554 100%);
+    overflow: hidden;
+    position: relative;
+}
+
+.hero-content {
+    max-width: 680px;
+    position: relative;
+    z-index: 2;
+}
+
+.trustBadge {
+    display: inline-flex !important;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 6px 18px !important;
+    border-radius: 999px !important;
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    background: rgba(255, 255, 255, 0.12) !important;
+    backdrop-filter: blur(14px);
+    border: 1px solid rgba(255, 255, 255, 0.25) !important;
+    color: #20C7E8 !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+}
+
+.hero h1 {
+    max-width: 650px;
+    font-family: var(--font-heading);
+    font-size: clamp(3.2rem, 7.5vw, 5.6rem);
+    font-weight: 800;
+    line-height: 1.02;
+    letter-spacing: -0.02em;
+    color: #FFFFFF !important;
+    text-shadow: 0 4px 20px rgba(11, 22, 51, 0.4);
+    margin-top: 14px;
+    margin-bottom: 20px;
+}
+
+.hero p {
+    color: rgba(255, 255, 255, 0.88) !important;
+    font-size: 1.15rem;
+    line-height: 1.6;
+    margin-bottom: 28px;
+}
+
+.hero .btn {
+    min-height: 52px;
+    padding: 0 28px;
+    font-size: 15px;
+    font-weight: 700;
+    border-radius: 14px;
+    box-shadow: 0 10px 25px rgba(36, 107, 253, 0.35);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.hero .btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 14px 35px rgba(36, 107, 253, 0.5);
+}
+
+.hero-image {
+    min-height: 520px;
+    border-radius: 24px;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    box-shadow: 0 30px 80px rgba(11, 22, 51, 0.45);
+    position: relative;
+    z-index: 2;
+}
+
+.hero-image-frame {
+    height: 100% !important;
+    min-height: 520px;
+    object-fit: cover;
+    transition: transform 0.4s ease;
+}
+
+.hero-image:hover .hero-image-frame {
+    transform: scale(1.03);
+}
+
+.quick-access {
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.8);
+    border-radius: 20px !important;
+    box-shadow: 0 20px 50px rgba(15, 23, 42, 0.12) !important;
+    background: rgba(255, 255, 255, 0.96) !important;
+    backdrop-filter: blur(20px);
+}
+
+.quick-tile {
+    min-height: 124px;
+    text-align: center;
+    padding: 22px 16px;
+    transition: all 0.22s ease;
+}
+
+.quick-tile:hover {
+    background: linear-gradient(180deg, #FFFFFF 0%, #F1F5F9 100%);
+    transform: translateY(-4px);
+    box-shadow: 0 12px 30px rgba(36, 107, 253, 0.12);
+}
+
+.tile-icon {
+    width: 52px;
+    height: 52px;
+    display: inline-grid;
+    place-items: center;
+    border-radius: 14px;
+    background: rgba(36, 107, 253, 0.1);
+    color: #246BFD;
+    font-size: 22px;
+    transition: transform 0.22s ease, background 0.22s ease;
+}
+
+.quick-tile:hover .tile-icon {
+    transform: scale(1.1);
+    background: #246BFD;
+    color: #FFFFFF !important;
+}
+
+.section {
+    padding-top: clamp(3.5rem, 7vw, 6rem);
+    padding-bottom: clamp(3.5rem, 7vw, 6rem);
+}
+
+section.container,
+.section.container {
+    position: relative;
+    padding-left: var(--container-padding);
+    padding-right: var(--container-padding);
+}
+
+section[id] {
+    scroll-margin-top: 92px;
+}
+
+.section h2 {
+    letter-spacing: 0;
+}
+
+.section > div:first-child p,
+.section p {
+    color: var(--user-muted);
+}
+
+.relative {
+    position: relative;
+}
+
+.service-card,
+.featuredHospitalCard,
+.ambulanceCard,
+.labCard,
+.insuranceCard,
+.medicineCard,
+.equipmentCard {
+    border-radius: 16px;
+    border: 1px solid var(--user-border);
+    background: var(--user-panel);
+    box-shadow: 0 4px 20px rgba(31, 58, 154, 0.06);
+    transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.28s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.28s ease;
+    overflow: hidden;
+}
+
+.service-card:hover,
+.featuredHospitalCard:hover,
+.ambulanceCard:hover,
+.labCard:hover,
+.insuranceCard:hover,
+.medicineCard:hover,
+.equipmentCard:hover {
+    transform: translateY(-6px);
+    border-color: rgba(31, 58, 154, 0.35);
+    box-shadow: 0 16px 36px rgba(31, 58, 154, 0.14);
+}
+
+.service-card {
+    padding: 2rem;
+    min-height: 260px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.service-icon-wrap {
+    width: 56px;
+    height: 56px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--user-blue-soft);
+    color: var(--user-blue);
+    font-size: 24px;
+    margin-bottom: 1.25rem;
+    transition: all 0.25s ease;
+}
+
+.service-card:hover .service-icon-wrap {
+    background: var(--user-blue);
+    color: #FFFFFF;
+    transform: scale(1.08) rotate(3deg);
+}
+
+.featuredHospitalCard {
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+}
+
+.featuredHospitalImage,
+.medicineImage,
+.equipmentImage {
+    background: #eef2f7;
+    overflow: hidden;
+    position: relative;
+}
+
+.featuredHospitalImage {
+    aspect-ratio: 16 / 10;
+}
+
+.featuredHospitalImage img,
+.medicineImage img,
+.equipmentImage img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.4s ease;
+}
+
+.featuredHospitalCard:hover .featuredHospitalImage img,
+.medicineCard:hover .medicineImage img,
+.equipmentCard:hover .equipmentImage img {
+    transform: scale(1.06);
+}
+
+.featuredHospitalContent,
+.equipmentContent {
+    padding: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+}
+
+.featuredHospitalContent h3,
+.ambulanceContent h3,
+.medicineCard h3,
+.equipmentContent h3,
+.labLeft h3,
+.insuranceCard h3 {
+    margin-bottom: 0.5rem;
+    font-family: var(--font-heading);
+    font-size: 1.1rem;
+    font-weight: 700;
+    line-height: 1.35;
+    color: var(--user-ink);
+}
+
+.hospitalLocation,
+.ambulanceLocation,
+.labCenter,
+.medicineCompany,
+.equipmentBrand,
+.driverName {
+    color: var(--user-muted);
+    font-size: 0.86rem;
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+}
+
+.hospitalLocation,
+.ambulanceLocation,
+.labCenter,
+.bedsCount {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+}
+
+.facilityTags,
+.ambulanceFeatures,
+.equipmentTags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+    margin: 0.85rem 0;
+}
+
+.facilityTags span,
+.ambulanceFeatures span,
+.equipmentTags span,
+.medicineCategory,
+.equipmentCategory {
+    display: inline-flex;
+    align-items: center;
+    min-height: 26px;
+    padding: 0.25rem 0.55rem;
+    border-radius: 999px;
+    background: var(--user-blue-soft);
+    color: var(--user-blue);
+    font-size: 0.72rem;
+    font-weight: 800;
+}
+
+.ambulanceFeatures span:nth-child(1) {
+    background: #ecfdf3;
+    color: var(--user-green);
+}
+
+.medicineCategory {
+    background: #fff1f2;
+    color: var(--user-pink);
+}
+
+.equipmentCategory {
+    background: #ecfdf3;
+    color: var(--user-green);
+}
+
+.hospitalBottom,
+.ambulanceBottom,
+.medicineBottom,
+.equipmentBottom {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-top: 1rem;
+}
+
+.rvbtn,
+.viewBtn,
+.bookAmbulanceBtn,
+.bookLabBtn,
+.buyPlanBtn,
+.addMedicineBtn,
+.addEquipmentBtn,
+.addequipmentBtn,
+.medicineBuyBtn,
+.equipmentBuyBtn {
+    min-height: 44px;
+    border: 0;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #1F3A9A 0%, #2B4FC2 100%);
+    color: #ffffff;
+    cursor: pointer;
+    font-weight: 700;
+    font-size: 0.9rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    box-shadow: 0 4px 14px rgba(31, 58, 154, 0.25);
+    transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s ease, filter 0.2s ease;
+}
+
+.rvbtn:hover,
+.viewBtn:hover,
+.bookAmbulanceBtn:hover,
+.bookLabBtn:hover,
+.buyPlanBtn:hover,
+.addMedicineBtn:hover,
+.addEquipmentBtn:hover,
+.addequipmentBtn:hover,
+.medicineBuyBtn:hover,
+.equipmentBuyBtn:hover {
+    transform: translateY(-2px);
+    filter: brightness(1.08);
+}
+
+.bookAmbulanceBtn {
+    background: linear-gradient(135deg, #EF4444 0%, #E8174A 100%) !important;
+    box-shadow: 0 4px 16px rgba(239, 68, 68, 0.35) !important;
+}
+
+.rvbtn,
+.addEquipmentBtn {
+    width: 44px;
+    flex: 0 0 44px;
+    background: #F1F5F9;
+    color: #1F3A9A;
+    box-shadow: none;
+    border: 1px solid #CBD5E1;
+}
+
+.rvbtn:hover,
+.addEquipmentBtn:hover {
+    background: #1F3A9A;
+    color: #FFFFFF;
+    border-color: #1F3A9A;
+}
+
+.viewBtn,
+.bookAmbulanceBtn,
+.bookLabBtn,
+.buyPlanBtn,
+.medicineBuyBtn,
+.equipmentBuyBtn {
+    flex: 1;
+    padding: 0 1rem;
+}
+.equipmentBuyBtn,
+.addequipmentBtn {
+    padding: 0 0.9rem;
+}
+
+.addMedicineBtn {
+    padding: 0 0.8rem;
+}
+
+.rvbtn,
+.addMedicineBtn,
+.addequipmentBtn,
+.medicineBuyBtn,
+.equipmentBuyBtn {
+    background: var(--user-pink);
+}
+
+.rvbtn:hover,
+.viewBtn:hover,
+.bookAmbulanceBtn:hover,
+.bookLabBtn:hover,
+.buyPlanBtn:hover,
+.addMedicineBtn:hover,
+.addEquipmentBtn:hover,
+.addequipmentBtn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 20px rgba(31, 58, 154, 0.18);
+}
+
+.ambulanceCard {
+    padding: 1.1rem;
+}
+
+.ambulanceDescription,
+.insuranceDescription {
+    color: var(--user-muted);
+    font-size: 0.9rem;
+}
+
+.labsContainer {
+    align-items: stretch;
+}
+
+.labCard {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1.15rem;
+}
+
+.labLeft {
+    min-width: 0;
+}
+
+.labPrice,
+.medicinePrice,
+.equipmentPrice h4,
+.insurancePrice {
+    color: var(--user-blue);
+    font-family: var(--font-body);
+    font-weight: 900;
+}
+
+.labPrice,
+.medicinePrice {
+    font-size: 1.35rem;
+}
+
+.insuranceCard {
+    position: relative;
+    padding: 1.3rem;
+}
+
+.popularPlan {
+    border-color: rgba(232, 23, 74, 0.45);
+}
+
+.popularBadge {
+    position: absolute;
+    top: 0.85rem;
+    right: 0.85rem;
+    padding: 0.25rem 0.55rem;
+    border-radius: 999px;
+    background: #fff1f2;
+    color: var(--user-pink);
+    font-size: 0.68rem;
+    font-weight: 900;
+}
+
+.insurancePrice {
+    margin-bottom: 0.4rem;
+    font-size: clamp(2rem, 5vw, 3rem);
+    line-height: 1;
+}
+
+.insurancePlanType {
+    margin-bottom: 0.75rem;
+    color: var(--user-cyan);
+    font-weight: 800;
+}
+
+.insuranceFeatures {
+    display: grid;
+    gap: 0.65rem;
+    margin: 1rem 0 1.3rem;
+}
+
+.insuranceFeatures div {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.55rem;
+    color: #344054;
+    font-size: 0.86rem;
+    overflow-wrap: anywhere;
+}
+
+.insuranceFeatures i {
+    margin-top: 0.18rem;
+    color: var(--user-green);
+}
+
+.claimSectionHeader {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1.25rem;
+}
+
+.claimSectionHeader h2 {
+    margin-bottom: 0.35rem;
+}
+
+.insuranceClaimsGrid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 1rem;
+}
+
+.claimPanel {
+    min-width: 0;
+    padding: 1rem;
+    border: 1px solid var(--user-border);
+    border-radius: 8px;
+    background: #ffffff;
+    box-shadow: 0 8px 24px rgba(17, 24, 39, 0.06);
+}
+
+.claimPanel h3 {
+    margin: 0 0 0.9rem;
+    font-family: var(--font-body);
+    font-size: 1rem;
+    font-weight: 900;
+}
+
+.policyList,
+.claimList {
+    display: grid;
+    gap: 0.75rem;
+}
+
+.policyItem,
+.claimItem {
+    display: grid;
+    gap: 0.8rem;
+    padding: 0.9rem;
+    border: 1px solid #e4e8f2;
+    border-radius: 8px;
+    background: #fbfdff;
+}
+
+.policyItemHeader {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.75rem;
+}
+
+.policyItem h4,
+.claimItem h4 {
+    margin: 0;
+    font-family: var(--font-body);
+    font-size: 0.96rem;
+    font-weight: 900;
+}
+
+.policyMeta,
+.claimMeta {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.55rem;
+    color: var(--user-muted);
+    font-size: 0.82rem;
+}
+
+.policyMeta strong,
+.claimMeta strong {
+    display: block;
+    color: #1f2937;
+    font-size: 0.86rem;
+}
+
+.policyActions {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    flex-wrap: wrap;
+}
+
+.policyActions .btn {
+    min-height: 38px;
+}
+
+.policyActions .btn:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+}
+
+.claimReason {
+    margin: 0;
+    color: #475467;
+    font-size: 0.86rem;
+    line-height: 1.5;
+    overflow-wrap: anywhere;
+}
+
+.statusPill {
+    display: inline-flex;
+    align-items: center;
+    min-height: 24px;
+    width: fit-content;
+    padding: 0.2rem 0.55rem;
+    border-radius: 999px;
+    background: var(--user-blue-soft);
+    color: var(--user-blue);
+    font-size: 0.72rem;
+    font-weight: 900;
+    text-transform: capitalize;
+}
+
+.statusPill.pending {
+    background: #fff7ed;
+    color: #c2410c;
+}
+
+.statusPill.approved,
+.statusPill.active {
+    background: #ecfdf3;
+    color: var(--user-green);
+}
+
+.statusPill.rejected,
+.statusPill.expired,
+.statusPill.cancelled {
+    background: #fff1f2;
+    color: var(--user-pink);
+}
+
+#insuranceClaimModal input[type="file"] {
+    display: block;
+    min-height: 44px;
+    padding: 8px 10px;
+    line-height: 26px;
+}
+
+#insuranceClaimModal input[type="file"]::file-selector-button {
+    height: 26px;
+    margin-right: 10px;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    background: #ffffff;
+    color: #334155;
+    font-weight: 700;
+}
+
+#medicineSection {
+    padding-top: clamp(4rem, 7vw, 6.5rem);
+    padding-bottom: clamp(4rem, 7vw, 6.5rem);
+    background:
+        linear-gradient(180deg, #ffffff 0%, #f7f9ff 100%);
+    border-top: 1px solid rgba(216, 218, 232, 0.75);
+    border-bottom: 1px solid rgba(216, 218, 232, 0.75);
+}
+
+#medicineSection > .flex:first-child {
+    align-items: flex-end;
+    gap: 1rem;
+    margin-bottom: 1.35rem !important;
+}
+
+#medicineSection h2 {
+    margin-bottom: 0;
+    line-height: 1;
+}
+
+#medicineSection .input-group {
+    max-width: min(720px, 100%) !important;
+    margin-bottom: 2rem !important;
+}
+
+#medicineSection .input-group .relative {
+    width: 100%;
+}
+
+#medicineSection .input-group .fa-magnifying-glass {
+    position: absolute !important;
+    top: 50%;
+    left: 1rem !important;
+    z-index: 2;
+    transform: translateY(-50%);
+    color: #8f93ac !important;
+    pointer-events: none;
+}
+
+#medicineSearchInput {
+    min-height: 54px;
+    border: 1px solid #d8dae8 !important;
+    border-radius: 8px !important;
+    background: #ffffff;
+    box-shadow: 0 12px 28px rgba(31, 58, 154, 0.08);
+}
+
+#medicineSearchInput:focus {
+    border-color: rgba(31, 58, 154, 0.75) !important;
+    box-shadow: 0 0 0 4px rgba(31, 58, 154, 0.10), 0 14px 32px rgba(31, 58, 154, 0.10);
+}
+
+.medicineCard {
+    padding: 0.9rem;
+    overflow: hidden;
+}
+
+.medicineImage {
+    aspect-ratio: 4 / 3;
+    border-radius: 8px;
+    margin-bottom: 0.9rem;
+}
+
+.medicineCard h3,
+.equipmentContent h3 {
+    min-height: 2.6em;
+}
+
+.medicineCard h3 {
+    margin-bottom: 0.35rem;
+}
+
+.medicineBottom {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    align-items: stretch;
+    gap: 0.55rem;
+}
+
+.medicineBottom .medicinePrice {
+    grid-column: 1 / -1;
+    min-height: 34px;
+    display: flex;
+    align-items: center;
+}
+
+.medicineBottom button {
+    width: 100%;
+    min-width: 0;
+    padding: 0 0.65rem;
+}
+
+.equipmentCard {
+    overflow: hidden;
+}
+
+.equipmentImage {
+    aspect-ratio: 16 / 11;
+}
+
+.equipmentBottom {
+    align-items: flex-end;
+    flex-wrap: wrap;
+}
+
+.equipmentPrice {
+    flex: 1 1 100%;
+}
+
+.equipmentPrice h4 {
+    margin: 0;
+    font-size: 1.35rem;
+}
+
+.equipmentPrice span {
+    color: var(--user-muted);
+    text-decoration: line-through;
+}
+
+.emergency-section {
+    margin-top: 2rem;
+}
+
+.footer {
+    margin-top: 0 !important;
+}
+
+.modal {
+    position: fixed;
+    inset: 0;
+    z-index: 5000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    background: rgba(17, 24, 39, 0.62);
+    backdrop-filter: blur(8px);
+}
+
+.modal.active,
+.modal[style*="display: flex"] {
+    display: flex !important;
+}
+
+.modal-content {
+    width: min(100%, 560px);
+    max-height: min(88vh, 820px);
+    overflow-y: auto;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    background: #ffffff;
+    box-shadow: var(--user-shadow);
+}
+
+.modal-header {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1.1rem 1.25rem;
+    border-bottom: 1px solid var(--user-border);
+    background: #ffffff;
+}
+
+.modal-header h2 {
+    margin: 0;
+    font-family: var(--font-body);
+    font-size: 1.2rem;
+    font-weight: 900;
+}
+
+.modal-body {
+    padding: 1.25rem;
+}
+
+#authOverlay .modal-content {
+    max-width: 460px !important;
+    max-height: min(88vh, 720px);
+    display: flex;
+    flex-direction: column;
+    border: 0;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 24px 70px rgba(12, 18, 38, 0.28);
+}
+
+#authOverlay .modal-header {
+    padding: 1.35rem 1.4rem;
+    border-bottom: 1px solid #e4e8f2;
+}
+
+#authOverlay .modal-header h2 {
+    color: #071128;
+    font-size: 1.2rem;
+    letter-spacing: 0;
+}
+
+#authOverlay .modal-body {
+    padding: 1.2rem 1.4rem 1.35rem;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+}
+
+#authOverlay .modal-body::-webkit-scrollbar {
+    width: 8px;
+}
+
+#authOverlay .modal-body::-webkit-scrollbar-track {
+    background: #edf1f8;
+}
+
+#authOverlay .modal-body::-webkit-scrollbar-thumb {
+    background: #b9c3d6;
+    border-radius: 999px;
+}
+
+.authTabs {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.55rem !important;
+    border-bottom: 0 !important;
+    margin-bottom: 1.15rem !important;
+}
+
+.authTab {
+    min-height: 42px;
+    border: 1px solid var(--user-border) !important;
+    border-radius: 8px;
+    background: #ffffff;
+    color: #172036 !important;
+    cursor: pointer;
+    font-weight: 800 !important;
+    transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.authTab.activeTab {
+    background: var(--user-blue) !important;
+    color: #ffffff !important;
+    border-color: var(--user-blue) !important;
+    box-shadow: 0 10px 22px rgba(31, 58, 154, 0.20);
+}
+
+.authForm.hiddenForm,
+#loginForm.authForm.hiddenForm,
+#registerForm.authForm.hiddenForm {
+    display: none !important;
+}
+
+#loginForm.authForm:not(.hiddenForm) {
+    display: grid !important;
+    grid-template-columns: 1fr;
+    gap: 0.9rem;
+}
+
+#authOverlay .input-group {
+    margin-bottom: 0;
+}
+
+#authOverlay .input-group label {
+    display: block;
+    margin-bottom: 0.45rem;
+    color: #27324a;
+    font-size: 0.86rem;
+    font-weight: 800;
+}
+
+#authOverlay #loginForm .btn-primary {
+    width: 100% !important;
+    min-height: 50px;
+    margin-top: 0.25rem !important;
+    border-radius: 8px;
+    box-shadow: 0 14px 28px rgba(232, 23, 74, 0.22);
+}
+
+.authForm .grid {
+    gap: 1rem !important;
+}
+
+.hk-input,
+.authForm input,
+.authForm select,
+.authForm textarea {
+    min-height: 48px;
+    border-radius: 8px !important;
+    font-size: 0.94rem;
+}
+
+#authOverlay .hk-input,
+#authOverlay .authForm input,
+#authOverlay .authForm select,
+#authOverlay .authForm textarea {
+    border: 1px solid #d6dce8 !important;
+    background: #fbfcff;
+    color: #111827;
+}
+
+#authOverlay .hk-input:focus,
+#authOverlay .authForm input:focus,
+#authOverlay .authForm select:focus,
+#authOverlay .authForm textarea:focus {
+    border-color: rgba(31, 58, 154, 0.78) !important;
+    background: #ffffff;
+    box-shadow: 0 0 0 4px rgba(31, 58, 154, 0.10);
+}
+
+.authForm textarea {
+    min-height: 90px;
+    resize: vertical;
+}
+
+.cartCount {
+    min-width: 1.35rem;
+    height: 1.35rem;
+    display: inline-grid;
+    place-items: center;
+    border-radius: 999px;
+    background: #ffffff;
+    color: var(--user-blue);
+    font-size: 0.75rem;
+    font-weight: 900;
+}
+
+.btn-outline-blue .cartCount {
+    background: var(--user-blue-soft);
+}
+
+.cartItems {
+    display: grid;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+.cartItem {
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    gap: 0.75rem;
+    align-items: center;
+    padding: 0.85rem;
+    border: 1px solid var(--user-border);
+    border-radius: 8px;
+    background: #fbfdff;
+}
+
+.cartItem h3 {
+    margin: 0 0 0.2rem;
+    font-family: var(--font-body);
+    font-size: 0.96rem;
+}
+
+.cartItem p {
+    margin: 0;
+    color: var(--user-muted);
+    font-size: 0.82rem;
+}
+
+.cartItemControls {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.cartItemControls button,
+.cartRemoveBtn {
+    width: 32px;
+    height: 32px;
+    border: 1px solid var(--user-border);
+    border-radius: 8px;
+    background: #ffffff;
+    color: var(--user-blue);
+    cursor: pointer;
+    font-weight: 900;
+}
+
+.cartRemoveBtn {
+    color: var(--user-pink);
+}
+
+.cartSummary {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 1rem 0;
+    padding: 0.9rem;
+    border-radius: 8px;
+    background: var(--user-blue-soft);
+    color: var(--user-blue);
+}
+
+.emptyState {
+    padding: 1.2rem;
+    border: 1px dashed var(--user-border);
+    border-radius: 8px;
+    background: #ffffff;
+    color: var(--user-muted);
+    text-align: center;
+    font-weight: 700;
+}
+
+.toast {
+    position: fixed;
+    right: 1rem;
+    bottom: 1rem;
+    z-index: 7000;
+    max-width: min(360px, calc(100vw - 2rem));
+    padding: 0.9rem 1rem;
+    border-radius: 8px;
+    background: #111827;
+    color: #ffffff;
+    box-shadow: var(--user-shadow);
+    opacity: 0;
+    transform: translateY(12px);
+    pointer-events: none;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.toast.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+#insuranceClaimsSection{
+    border:1px solid var(--user-border);
+    border-radius:8px;
+    background:rgba(255,255,255,0.72);
+    box-shadow:0 12px 34px rgba(17,24,39,0.06);
+}
+
+#insuranceClaimsSection .claimSectionHeader{
+    padding:0.25rem 0 0;
+}
+
+.claimPanel{
+    min-height:320px;
+}
+
+.policyItem,
+.claimItem{
+    transition:border-color 0.18s ease, background 0.18s ease, transform 0.18s ease;
+}
+
+.policyItem:hover,
+.claimItem:hover{
+    border-color:rgba(31,58,154,0.22);
+    background:#ffffff;
+    transform:translateY(-1px);
+}
+
+.policyActions .btn{
+    flex:1 1 136px;
+    justify-content:center;
+    min-width:0;
+}
+
+.statusPill{
+    white-space:nowrap;
+}
+
+#insuranceClaimModal .input-group,
+#insuranceRenewalModal .input-group{
+    margin-bottom:0.95rem;
+}
+
+#insuranceClaimModal textarea{
+    min-height:112px;
+}
+
+@media (max-width: 1120px) {
+    .hero {
+        grid-template-columns: 1fr;
+        min-height: auto;
+        padding-bottom: 120px;
+    }
+
+    .hero-image {
+        min-height: 360px;
+    }
+
+    .hero-image-frame {
+        min-height: 360px;
+    }
+
+    .nav-links {
+        display: none;
+    }
+
+    .menuBtn {
+        display: grid;
+    }
+}
+
+@media (max-width: 900px) {
+    .quick-access {
+        grid-template-columns: repeat(2, 1fr) !important;
+        margin-top: -3rem !important;
+    }
+
+    .insuranceClaimsGrid {
+        grid-template-columns: 1fr;
+    }
+
+    .quick-access .quick-tile:last-child {
+        grid-column: 1 / -1;
+    }
+
+    .labCard {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .bookLabBtn {
+        width: 100%;
+    }
+
+    .footer .grid-cols-4,
+    footer .grid-cols-4 {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 640px) {
+    .navbar {
+        /* height: auto; */
+        min-height: 70px;
+        padding-top: 0.75rem;
+        padding-bottom: 0.75rem;
+    }
+
+    .nav-emergency,
+    #logoutBtn {
+        display: none;
+    }
+
+    .btn {
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+
+    .hero {
+        padding: 104px 1rem 96px;
+    }
+
+    .hero h1 {
+        font-size: clamp(2.7rem, 16vw, 4rem);
+    }
+
+    .hero .flex {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .hero-image {
+        min-height: 280px;
+    }
+
+    .quick-access {
+        grid-template-columns: repeat(2, 1fr) !important;
+    }
+
+    .quick-access .quick-tile:last-child {
+        grid-column: 1 / -1;
+    }
+
+    .quick-tile {
+        min-height: 96px;
+        padding: var(--space-4) var(--space-2) !important;
+    }
+
+    .tile-icon {
+        width: 36px;
+        height: 36px;
+        font-size: 18px !important;
+    }
+
+    .section {
+        padding-top: 2.5rem;
+        padding-bottom: 2.5rem;
+    }
+
+    /* 2-column layouts on mobile for e-commerce like items */
+    .medicineContainer,
+    .equipmentContainer {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 12px !important;
+    }
+
+    /* 1-column layouts on mobile for detail-rich cards */
+    .labsContainer,
+    .ambulanceContainer {
+        grid-template-columns: 1fr !important;
+        gap: 16px !important;
+    }
+
+    /* Styling adjustments for mobile cards */
+    .medicineCard,
+    .equipmentCard {
+        padding: 0.75rem !important;
+    }
+
+    .labCard,
+    .ambulanceCard {
+        padding: 1.1rem !important;
+    }
+
+    .medicineCard h3,
+    .equipmentContent h3 {
+        font-size: 0.88rem !important;
+        min-height: 2.4em !important;
+        margin-bottom: 4px !important;
+    }
+
+    .labLeft h3,
+    .ambulanceContent h3 {
+        font-size: 1.05rem !important;
+        margin-bottom: 6px !important;
+    }
+
+    .medicinePrice,
+    .equipmentPrice h4 {
+        font-size: 1.1rem !important;
+    }
+
+    .labPrice {
+        font-size: 1.25rem !important;
+        margin: 8px 0;
+    }
+
+    .medicineBottom,
+    .equipmentBottom {
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 8px !important;
+    }
+
+    .hospitalBottom,
+    .ambulanceBottom {
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        gap: 8px !important;
+    }
+
+    .medicineBottom button,
+    .equipmentBottom button {
+        width: 100% !important;
+        font-size: 0.78rem !important;
+        min-height: 36px !important;
+    }
+
+    .hospitalBottom button,
+    .ambulanceBottom button,
+    .bookLabBtn {
+        font-size: 0.88rem !important;
+        min-height: 40px !important;
+    }
+
+    .bookLabBtn {
+        width: 100% !important;
+        margin-top: 12px;
+    }
+
+    .equipmentTags {
+        display: none !important;
+    }
+
+    .facilityTags,
+    .ambulanceFeatures {
+        display: flex !important;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin: 8px 0;
+    }
+
+    .claimSectionHeader,
+    .policyItemHeader,
+    .policyActions {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .policyMeta,
+    .claimMeta {
+        grid-template-columns: 1fr;
+    }
+
+    #ambulanceSection,
+    #equipmentSection,
+    #insuranceSection {
+        padding: 1.5rem 0.75rem !important;
+        border-radius: 8px !important;
+    }
+
+    #medicineSection > .flex,
+    #equipmentSection > .flex,
+    .emergency-section .flex {
+        align-items: stretch;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .modal {
+        padding: 0.5rem 0.5rem 0;
+        align-items: flex-end;
+    }
+
+    .modal-content {
+        width: 100%;
+        max-height: 90vh;
+        border-bottom-left-radius: 0 !important;
+        border-bottom-right-radius: 0 !important;
+        border-top-left-radius: 16px !important;
+        border-top-right-radius: 16px !important;
+    }
+
+    #registerForm .grid {
+        grid-template-columns: 1fr !important;
+    }
+
+    #registerForm [style*="grid-column"] {
+        grid-column: auto !important;
+    }
+
+    .cartItem {
+        grid-template-columns: 1fr;
+    }
+
+    footer .grid-cols-4 {
+        grid-template-columns: 1fr;
+        gap: 24px !important;
+    }
+}
+
+
+/* Fix text colors in footer and emergency banner for light mode */
+.emergency-section p, .footer p {
+    color: rgba(255, 255, 255, 0.9) !important;
+}
+.footer .container:last-child {
+    color: rgba(255, 255, 255, 0.8) !important;
+}
+

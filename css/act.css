@@ -1,0 +1,167 @@
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:Arial, Helvetica, sans-serif;
+}
+
+body{
+    background:#fff5fb;
+}
+
+#navbar{
+    width:100%;
+    height:84px;
+    background:#ffc0cb;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:0 30px;
+    box-shadow:0 2px 10px rgba(0,0,0,0.08);
+}
+
+#leftNavbar{
+    display:flex;
+    align-items:center;
+}
+
+#logoBox{
+    width:245px;
+    height:84px;
+    background:white;
+    border-radius:12px;
+    overflow:hidden;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:8px 12px;
+}
+
+#logoImage{
+    width:100%;
+    height:100%;
+    max-height:72px;
+    object-fit:contain;
+}
+
+#centerNavbar{
+    display:flex;
+    align-items:center;
+    gap:20px;
+}
+
+.navItem{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:12px 20px;
+    border-radius:10px;
+    cursor:pointer;
+    transition:0.3s;
+    color:#fff;
+    font-size:16px;
+    font-weight:600;
+}
+
+.navItem i{
+    font-size:18px;
+}
+
+.navItem:hover{
+    background:#ff69b4;
+}
+
+.activeNav{
+    background:#ff1493;
+}
+
+#mainContainer{
+    width:100%;
+    padding:25px;
+}
+
+/* ================= ORDERS ================= */
+
+#ordersSection{
+    width:100%;
+}
+
+#ordersTopBar{
+    margin-bottom:20px;
+}
+
+#ordersTopBar h2{
+    color:#ff1493;
+    font-size:28px;
+    font-weight:700;
+}
+
+#ordersTableContainer{
+    width:100%;
+    overflow-x:auto;
+    background:white;
+    border-radius:12px;
+    box-shadow:0 2px 10px rgba(0,0,0,0.08);
+}
+
+#ordersTable{
+    width:100%;
+    border-collapse:collapse;
+}
+
+#ordersTable thead{
+    background:#ff1493;
+}
+
+#ordersTable thead th{
+    color:white;
+    padding:14px;
+    text-align:left;
+}
+
+#ordersTable tbody td{
+    padding:14px;
+    border-bottom:1px solid #eee;
+    color:#333;
+}
+
+#ordersTable tbody tr:hover{
+    background:#fff5fb;
+}
+
+.activityBox{
+    width:100%;
+    padding:20px;
+}
+
+.activityBox h2{
+    color:#ff1493;
+    margin-bottom:20px;
+}
+
+.activityTable{
+    width:100%;
+    border-collapse:collapse;
+    background:white;
+    border-radius:12px;
+    overflow:hidden;
+}
+
+.activityTable thead{
+    background:#ff1493;
+}
+
+.activityTable thead th{
+    color:white;
+    padding:14px;
+    text-align:left;
+}
+
+.activityTable tbody td{
+    padding:14px;
+    border-bottom:1px solid #eee;
+}
+
+.activityTable tbody tr:hover{
+    background:#fff5fb;
+}

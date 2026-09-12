@@ -1,0 +1,173 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Manrope:wght@600;700;800&display=swap');
+@import url('./theme-system.css');
+@import url('./mobile-ui.css');
+@import url('./hr-dashboard.css');
+
+:root {
+  /* ── Primary Palette (Healthcare Trust & Clinical Authority) ── */
+  --hk-blue:         #1F3A9A;
+  --hk-blue-mid:     #2B4FC2;
+  --hk-blue-dark:    #0F1E4E;
+  --hk-blue-tint:    #EEF4FF;
+  --hk-blue-light:   #DBEAFE;
+
+  --hk-teal:         #0D9488;
+  --hk-teal-mid:     #14B8A6;
+  --hk-teal-tint:    #F0FDFA;
+
+  /* ── Emergency & Urgent Action (High-Visibility Crimson Accent) ── */
+  --hk-pink:         #E8174A;
+  --hk-pink-mid:     #D0103E;
+  --hk-pink-dark:    #A30B2E;
+  --hk-pink-tint:    #FFF1F4;
+
+  /* ── Neutrals ── */
+  --hk-white:        #FFFFFF;
+  --hk-off-white:    #F8FAFC;
+  --hk-bg:           #F4F7FB;
+  --hk-grey-50:      #F8FAFC;
+  --hk-grey-100:     #F1F5F9;
+  --hk-grey-200:     #E2E8F0;
+  --hk-grey-300:     #CBD5E1;
+  --hk-grey-400:     #94A3B8;
+  --hk-grey-500:     #64748B;
+  --hk-grey-700:     #334155;
+  --hk-grey-900:     #0F172A;
+  --text-main:       #0F172A;
+  --text-muted:      #64748B;
+
+  /* ── Semantic Colors ── */
+  --hk-success:      #10B981;
+  --hk-success-tint: #ECFDF5;
+  --hk-warning:      #F59E0B;
+  --hk-warning-tint: #FFFBEB;
+  --hk-error:        #EF4444;
+  --hk-error-tint:   #FEF2F2;
+  --hk-info:         #1F3A9A;
+  --hk-info-tint:    #EEF4FF;
+
+  /* ── Gradients ── */
+  --hk-grad-blue:    linear-gradient(135deg, #1F3A9A 0%, #2B4FC2 100%);
+  --hk-grad-teal:    linear-gradient(135deg, #0D9488 0%, #14B8A6 100%);
+  --hk-grad-pink:    linear-gradient(135deg, #E8174A 0%, #D0103E 100%);
+  --hk-grad-hero:    linear-gradient(135deg, #0A1128 0%, #1F3A9A 50%, #0F172A 100%);
+  --hk-grad-card:    linear-gradient(180deg, #FFFFFF 0%, #F8FAFC 100%);
+  --hk-grad-subtle:  linear-gradient(180deg, #FFFFFF 0%, #F4F7FB 100%);
+
+  /* ── Elevation Shadows ── */
+  --hk-shadow-xs:    0 1px 2px rgba(15, 23, 42, 0.04);
+  --hk-shadow-sm:    0 2px 8px rgba(15, 23, 42, 0.06);
+  --hk-shadow-md:    0 8px 24px rgba(31, 58, 154, 0.08);
+  --hk-shadow-lg:    0 16px 36px rgba(31, 58, 154, 0.12);
+  --hk-shadow-xl:    0 24px 54px rgba(31, 58, 154, 0.18);
+  --hk-shadow-pink:  0 10px 25px rgba(232, 23, 74, 0.35);
+
+  /* ── Typography ── */
+  --font-display:  'Inter', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  --font-heading:  'Inter', 'Manrope', system-ui, sans-serif;
+  --font-body:     'Plus Jakarta Sans', 'Inter', system-ui, sans-serif;
+
+  --text-xs:    0.75rem;   /* 12px */
+  --text-sm:    0.875rem;  /* 14px */
+  --text-base:  1rem;      /* 16px */
+  --text-md:    1.125rem;  /* 18px */
+  --text-lg:    1.25rem;   /* 20px */
+  --text-xl:    1.5rem;    /* 24px */
+  --text-2xl:   1.875rem;  /* 30px */
+  --text-3xl:   2.25rem;   /* 36px */
+  --text-4xl:   3rem;      /* 48px */
+
+  --leading-tight:   1.25;
+  --leading-snug:    1.375;
+  --leading-normal:  1.5;
+  --leading-relaxed: 1.625;
+
+  /* ── Spacing ── */
+  --space-1:  0.25rem;   /*  4px */
+  --space-2:  0.5rem;    /*  8px */
+  --space-3:  0.75rem;   /* 12px */
+  --space-4:  1rem;      /* 16px */
+  --space-5:  1.25rem;   /* 20px */
+  --space-6:  1.5rem;    /* 24px */
+  --space-8:  2rem;      /* 32px */
+  --space-10: 2.5rem;    /* 40px */
+  --space-12: 3rem;      /* 48px */
+  --space-16: 4rem;      /* 64px */
+
+  /* ── Border Radius ── */
+  --radius-sm:   6px;
+  --radius-md:   10px;
+  --radius-lg:   14px;
+  --radius-xl:   20px;
+  --radius-full: 9999px;
+}
+
+/* Reset */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  overflow-x: hidden;
+  max-width: 100%;
+}
+
+body {
+  font-family: var(--font-body);
+  color: var(--text-main);
+  background-color: var(--hk-bg);
+  line-height: var(--leading-normal);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  color: var(--hk-grey-900);
+  font-family: var(--font-heading);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin-bottom: var(--space-3);
+}
+
+h1 { font-size: var(--text-3xl); line-height: var(--leading-tight); }
+h2 { font-size: var(--text-2xl); line-height: var(--leading-tight); }
+h3 { font-size: var(--text-xl); line-height: var(--leading-snug); }
+h4 { font-size: var(--text-lg); line-height: var(--leading-snug); }
+
+p {
+  margin-bottom: var(--space-4);
+  color: var(--text-muted);
+}
+
+a {
+  color: var(--hk-blue);
+  text-decoration: none;
+  transition: color 0.2s ease, opacity 0.2s ease;
+}
+
+a:hover {
+  color: var(--hk-blue-mid);
+}
+
+img {
+  max-width: 100%;
+  display: block;
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: var(--hk-grey-100);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--hk-grey-300);
+  border-radius: var(--radius-full);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--hk-grey-400);
+}

@@ -1,0 +1,497 @@
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:Arial;
+}
+
+body{
+    background:#f4f7fb;
+    padding:25px;
+}
+
+.hospitalDetailsContainer{
+    max-width:1400px;
+    margin:auto;
+}
+
+.hospitalBanner{
+    background:white;
+    border-radius:25px;
+    overflow:hidden;
+    margin-bottom:30px;
+    box-shadow:0 4px 15px rgba(0,0,0,0.08);
+}
+
+.bannerImages{
+    display:flex;
+    gap:15px;
+    padding:20px;
+    overflow-x:auto;
+    background:linear-gradient(
+        135deg,
+        #1e3c72,
+        #ff4b5c
+    );
+}
+
+.bannerImages img{
+    width:320px;
+    height:220px;
+    object-fit:cover;
+    border-radius:18px;
+    flex-shrink:0;
+}
+
+.bannerContent{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:25px;
+    flex-wrap:wrap;
+    gap:20px;
+}
+
+.bannerContent h1{
+    font-size:38px;
+    color:#1d3557;
+    margin-bottom:10px;
+}
+
+.hospitalAddress{
+    color:#666;
+    font-size:17px;
+}
+
+.bookBtn{
+    border:none;
+    padding:16px 28px;
+    border-radius:12px;
+    background:linear-gradient(
+        135deg,
+        #1e3c72,
+        #ff4b5c
+    );
+    color:white;
+    font-size:16px;
+    cursor:pointer;
+    font-weight:bold;
+}
+
+.mainGrid{
+    display:grid;
+    grid-template-columns:2fr 1fr;
+    gap:25px;
+}
+
+.sectionCard{
+    background:white;
+    border-radius:20px;
+    padding:25px;
+    margin-bottom:25px;
+    box-shadow:0 3px 10px rgba(0,0,0,0.05);
+}
+
+.sectionCard h2{
+    margin-bottom:25px;
+    color:#1d3557;
+}
+
+.facilityContainer{
+    display:flex;
+    flex-wrap:wrap;
+    gap:12px;
+}
+
+.facilityContainer span{
+    background:#edf4ff;
+    color:#1565c0;
+    padding:10px 18px;
+    border-radius:30px;
+    font-weight:600;
+}
+
+.roomsContainer{
+    display:flex;
+    flex-direction:column;
+    gap:20px;
+}
+
+.roomCard{
+    background:#f7f9fc;
+    border-radius:16px;
+    padding:18px 22px;
+
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+
+    gap:20px;
+}
+
+.roomLeft h3{
+    color:#1d3557;
+    font-size:18px;
+    margin-bottom:6px;
+}
+
+.roomLeft p{
+    color:#0a7f43;
+    font-weight:bold;
+    font-size:15px;
+}
+
+.availability{
+    padding:8px 16px;
+    border-radius:30px;
+    font-size:14px;
+    font-weight:bold;
+    white-space:nowrap;
+}
+
+.available{
+    background:#d4edda;
+    color:#155724;
+}
+
+.unavailable{
+    background:#ffd6d6;
+    color:#b42318;
+}
+
+.availability{
+    background:#d4edda;
+    color:#155724;
+    padding:8px 14px;
+    border-radius:20px;
+    font-size:14px;
+    font-weight:bold;
+}
+
+.doctorContainer{
+    display:flex;
+    flex-direction:column;
+    gap:18px;
+}
+
+.doctorCard{
+    display:flex;
+    gap:15px;
+    background:#f7f9fc;
+    padding:18px;
+    border-radius:16px;
+    align-items:center;
+}
+
+.doctorIcon{
+    width:60px;
+    height:60px;
+    border-radius:50%;
+    background:#edf4ff;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    color:#1565c0;
+    font-size:24px;
+}
+
+.doctorContent h3{
+    margin-bottom:5px;
+    color:#1d3557;
+}
+
+.doctorContent p{
+    color:#555;
+    margin-bottom:5px;
+}
+
+.doctorContent span{
+    color:#777;
+    font-size:14px;
+}
+
+.appointmentModal{
+    position:fixed;
+    top:0;
+    left:0;
+    width:100%;
+    height:100%;
+    background:rgba(0,0,0,0.65);
+
+    display:flex;
+    justify-content:center;
+    align-items:center;
+
+    padding:20px;
+
+    opacity:0;
+    visibility:hidden;
+
+    transition:0.3s ease;
+    z-index:999;
+}
+
+.appointmentModal.active{
+    opacity:1;
+    visibility:visible;
+}
+
+.appointmentBox{
+    width:100%;
+    max-width:600px;
+
+    background:white;
+    border-radius:28px;
+
+    padding:30px;
+
+    max-height:90vh;
+    overflow-y:auto;
+
+    box-shadow:0 10px 35px rgba(0,0,0,0.18);
+
+    transform:translateY(20px);
+    transition:0.3s ease;
+}
+
+.appointmentModal.active .appointmentBox{
+    transform:translateY(0);
+}
+
+.appointmentTop{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+
+    margin-bottom:28px;
+    padding-bottom:15px;
+
+    border-bottom:1px solid #eee;
+}
+
+.appointmentTop h2{
+    color:#1d3557;
+    font-size:28px;
+}
+
+.closeModalBtn{
+    border:none;
+    background:#f1f4f9;
+
+    width:42px;
+    height:42px;
+
+    border-radius:50%;
+
+    cursor:pointer;
+
+    font-size:18px;
+    color:#444;
+
+    transition:0.3s;
+}
+
+.closeModalBtn:hover{
+    background:#ff4b5c;
+    color:white;
+}
+
+.appointmentForm{
+    display:flex;
+    flex-direction:column;
+    gap:20px;
+}
+
+.inputGroup{
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+}
+
+.inputGroup label{
+    font-size:15px;
+    font-weight:600;
+    color:#1d3557;
+}
+
+.inputGroup input,
+.inputGroup select,
+.inputGroup textarea{
+    width:100%;
+
+    border:1px solid #dcdcdc;
+    border-radius:14px;
+
+    padding:15px 16px;
+
+    font-size:15px;
+    background:#fafcff;
+
+    outline:none;
+    transition:0.3s;
+}
+
+.inputGroup input:focus,
+.inputGroup select:focus,
+.inputGroup textarea:focus{
+    border-color:#1565c0;
+    background:white;
+    box-shadow:0 0 0 4px rgba(21,101,192,0.1);
+}
+
+.inputGroup textarea{
+    resize:none;
+    min-height:120px;
+}
+
+.submitAppointmentBtn{
+    border:none;
+
+    padding:16px;
+
+    border-radius:14px;
+
+    background:linear-gradient(
+        135deg,
+        #1e3c72,
+        #ff4b5c
+    );
+
+    color:white;
+    font-size:16px;
+    font-weight:bold;
+
+    cursor:pointer;
+
+    transition:0.3s;
+}
+
+.submitAppointmentBtn:hover{
+    transform:translateY(-2px);
+    opacity:0.95;
+}
+
+.appointmentBox::-webkit-scrollbar{
+    width:6px;
+}
+
+.appointmentBox::-webkit-scrollbar-thumb{
+    background:#c7c7c7;
+    border-radius:10px;
+}
+.priceBox{
+    background:#f4f7fb;
+    padding:18px;
+    border-radius:16px;
+    margin-top:10px;
+
+    display:flex;
+    flex-direction:column;
+    gap:12px;
+}
+
+.priceBox h3{
+    color:#1d3557;
+    font-size:18px;
+
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+}
+
+.priceBox span{
+    color:#0a7f43;
+    font-weight:bold;
+}
+
+/* ========= Room Image Gallery ========= */
+.roomImageGallery{
+    display:flex;
+    gap:10px;
+    margin-top:14px;
+    overflow-x:auto;
+    padding-bottom:6px;
+}
+
+.roomImageGallery::-webkit-scrollbar{
+    height:5px;
+}
+
+.roomImageGallery::-webkit-scrollbar-thumb{
+    background:#cbd5e1;
+    border-radius:10px;
+}
+
+.roomImg{
+    width:140px;
+    height:100px;
+    object-fit:cover;
+    border-radius:10px;
+    flex-shrink:0;
+    cursor:pointer;
+    border:2px solid #e2e8f0;
+    box-shadow:0 2px 8px rgba(0,0,0,0.08);
+    transition:transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+}
+
+.roomImg:hover{
+    transform:scale(1.06);
+    box-shadow:0 4px 16px rgba(30,60,114,0.18);
+    border-color:#1e3c72;
+}
+
+/* ========= Room Image Lightbox ========= */
+.roomImageOverlay{
+    position:fixed;
+    top:0;
+    left:0;
+    width:100%;
+    height:100%;
+    background:rgba(0,0,0,0.8);
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    z-index:9999;
+    opacity:0;
+    visibility:hidden;
+    transition:opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.roomImageOverlay.active{
+    opacity:1;
+    visibility:visible;
+}
+
+.roomImageOverlay img{
+    max-width:85%;
+    max-height:85vh;
+    object-fit:contain;
+    border-radius:14px;
+    box-shadow:0 8px 40px rgba(0,0,0,0.4);
+    animation:zoomIn 0.3s ease;
+}
+
+@keyframes zoomIn{
+    from{ transform:scale(0.85); opacity:0; }
+    to{ transform:scale(1); opacity:1; }
+}
+
+.roomOverlayClose{
+    position:absolute;
+    top:20px;
+    right:28px;
+    background:rgba(255,255,255,0.15);
+    border:none;
+    color:white;
+    font-size:32px;
+    width:48px;
+    height:48px;
+    border-radius:50%;
+    cursor:pointer;
+    transition:background 0.2s;
+    backdrop-filter:blur(4px);
+}
+
+.roomOverlayClose:hover{
+    background:rgba(255,75,92,0.8);
+}

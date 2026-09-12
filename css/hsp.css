@@ -1,0 +1,630 @@
+/* Modernized Modal Styles for Hospital Panel */
+
+#hospitalModal, #roomModal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    padding: 20px;
+    backdrop-filter: blur(5px);
+}
+
+#hospitalModalBox, #roomModalBox {
+    width: 100%;
+    max-width: 900px;
+    max-height: 90vh;
+    overflow-y: auto;
+    background: white;
+    border-radius: 20px;
+    padding: 30px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+    animation: modalSlideIn 0.3s ease-out;
+}
+
+#roomModalBox {
+    max-width: 600px;
+}
+
+@keyframes modalSlideIn {
+    from { opacity: 0; transform: translateY(-20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+#hospitalModalHeader, #roomModalHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+#hospitalModalHeader h2, #roomModalHeader h2 {
+    color: #0f172a;
+    font-size: 22px;
+    font-weight: 700;
+}
+
+#closeHospitalModal, #closeRoomModal {
+    width: 36px;
+    height: 36px;
+    border: none;
+    border-radius: 10px;
+    background: #f1f5f9;
+    color: #64748b;
+    cursor: pointer;
+    font-weight: 700;
+    transition: 0.3s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#closeHospitalModal:hover, #closeRoomModal:hover {
+    background: #ef4444;
+    color: white;
+}
+
+#hospitalFormGrid, .roomFormGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+}
+
+.hospitalInputGroup {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.hospitalInputGroup label {
+    font-size: 13px;
+    font-weight: 600;
+    color: #475569;
+}
+
+.hospitalInputGroup input, .hospitalInputGroup select {
+    height: 48px;
+    border: 1px solid #cbd5e1;
+    border-radius: 12px;
+    padding: 0px 15px;
+    outline: none;
+    font-size: 14px;
+    background: #f8fafc;
+    transition: 0.3s;
+    color: #334155;
+}
+
+.hospitalInputGroup input:focus, .hospitalInputGroup select:focus {
+    border-color: #3b82f6;
+    background: white;
+    box-shadow: 0 0 0 3px rgba(59,130,246,0.1);
+}
+
+.fullWidth {
+    grid-column: 1 / -1;
+}
+
+.sectionTop {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    margin-top: 15px;
+}
+
+.updateInput,
+.updateSelect {
+    width: 150px;
+    max-width: 100%;
+    min-height: 38px;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    background: #ffffff;
+    color: #0f172a;
+    padding: 0 11px;
+    font-size: 13px;
+    font-weight: 600;
+    outline: none;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+}
+
+.updateInput:focus,
+.updateSelect:focus {
+    border-color: #2b6cb0;
+    background: #ffffff;
+    box-shadow: 0 0 0 3px rgba(43, 108, 176, 0.14);
+}
+
+.saveUpdateBtn {
+    min-height: 38px;
+    border: none;
+    border-radius: 8px;
+    background: #2b6cb0;
+    color: #ffffff;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 16px;
+    font-size: 13px;
+    font-weight: 700;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+}
+
+.saveUpdateBtn:hover {
+    background: #245a96 !important;
+    transform: translateY(-1px);
+    box-shadow: 0 8px 18px rgba(43, 108, 176, 0.2);
+}
+
+#availableRoomsContainer td,
+#unavailableRoomsContainer td {
+    vertical-align: middle;
+}
+
+/* Navbar date filter */
+.hospital-date-filter {
+    position: relative;
+}
+
+.hospital-date-filter .date-picker-btn {
+    min-width: 150px;
+    height: 40px;
+    justify-content: space-between;
+    border-color: #dbe3ef;
+    box-shadow: var(--shadow-sm);
+    transition: border-color 0.2s, box-shadow 0.2s, background-color 0.2s;
+}
+
+.hospital-date-filter .date-picker-btn:hover,
+.hospital-date-filter .date-picker-btn[aria-expanded="true"] {
+    background-color: #f8fafc;
+    border-color: var(--sidebar-active-bg);
+    box-shadow: 0 0 0 3px rgba(43, 108, 176, 0.12);
+}
+
+.hospital-date-filter .date-picker-btn i:first-child {
+    color: var(--sidebar-active-bg);
+}
+
+.hospital-date-filter .date-filter-chevron {
+    color: var(--text-muted);
+    font-size: 11px;
+    transition: transform 0.2s;
+}
+
+.hospital-date-filter .date-picker-btn[aria-expanded="true"] .date-filter-chevron {
+    transform: rotate(180deg);
+}
+
+.hospital-date-filter .dashboard-date-panel {
+    position: absolute;
+    top: calc(100% + 10px);
+    right: 0;
+    width: min(360px, calc(100vw - 32px));
+    padding: 16px;
+    background: #ffffff;
+    border: 1px solid var(--border-color);
+    border-radius: var(--rounded-lg);
+    box-shadow: 0 18px 45px rgba(15, 23, 42, 0.14);
+    z-index: 1200;
+}
+
+.hospital-date-filter .date-filter-panel-title {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    margin-bottom: 14px;
+}
+
+.hospital-date-filter .date-filter-panel-title strong {
+    color: var(--text-main);
+    font-size: 15px;
+}
+
+.hospital-date-filter .date-filter-panel-title span {
+    color: var(--text-muted);
+    font-size: 12px;
+}
+
+.hospital-date-filter .date-filter-mode {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-bottom: 14px;
+}
+
+.hospital-date-filter .date-filter-mode label {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-height: 36px;
+    padding: 8px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--rounded);
+    background: #f8fafc;
+    color: var(--text-muted);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+}
+ #addAvailabilityBtn {
+    border: none;
+    outline: none;
+    background: #2b6cb0;
+    color: white;
+    padding: 12px 18px;
+    border-radius: 12px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transition: 0.3s;
+  }
+#addHospitalBtn {
+    border: none;
+    outline: none;
+    background: #2b6cb0;
+    color: white;
+    padding: 12px 18px;
+    border-radius: 12px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transition: 0.3s;
+  }
+
+.room-image-thumbs {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    max-width: 180px;
+}
+
+.room-image-thumbs img {
+    width: 48px;
+    height: 48px;
+    object-fit: cover;
+    border-radius: 10px;
+    border: 1px solid #e2e8f0;
+}
+
+.hospital-date-filter .date-filter-mode label:has(input:checked) {
+    background: #eff6ff;
+    border-color: var(--sidebar-active-bg);
+    color: var(--sidebar-active-bg);
+}
+
+.hospital-date-filter .date-filter-mode input {
+    accent-color: var(--sidebar-active-bg);
+}
+
+.hospital-date-filter .date-filter-fields {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.hospital-date-filter .date-filter-fields[hidden] {
+    display: none;
+}
+
+.hospital-date-filter .single-date-field {
+    grid-template-columns: 1fr;
+}
+
+.hospital-date-filter .date-filter-fields label {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    color: var(--text-muted);
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.hospital-date-filter .date-filter-fields input,
+.hospital-date-filter .date-filter-fields select {
+    width: 100%;
+    height: 38px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--rounded);
+    padding: 0 10px;
+    background: #ffffff;
+    color: var(--text-main);
+    font: inherit;
+    outline: none;
+}
+
+.hospital-date-filter .date-filter-fields input:focus,
+.hospital-date-filter .date-filter-fields select:focus {
+    border-color: var(--sidebar-active-bg);
+    box-shadow: 0 0 0 3px rgba(43, 108, 176, 0.12);
+}
+
+.hospital-date-filter .date-filter-error {
+    min-height: 18px;
+    margin-top: 8px;
+    color: var(--trend-down);
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.hospital-date-filter .date-filter-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.hospital-date-filter .date-filter-clear,
+.hospital-date-filter .date-filter-apply {
+    min-height: 38px;
+    border: none;
+    border-radius: var(--rounded);
+    padding: 0 14px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.hospital-date-filter .date-filter-clear {
+    background: #f1f5f9;
+    color: var(--text-muted);
+}
+
+.hospital-date-filter .date-filter-clear:hover {
+    background: #e2e8f0;
+    color: var(--text-main);
+}
+
+.hospital-date-filter .date-filter-apply {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    background: var(--sidebar-active-bg);
+    color: #ffffff;
+}
+
+.hospital-date-filter .date-filter-apply:hover {
+    background: #1e40af;
+}
+
+/* Hospital dashboard click states */
+.clickable-card,
+.dashboard-clickable-panel {
+    cursor: pointer;
+}
+
+.clickable-card:focus-visible,
+.dashboard-clickable-panel:focus-visible {
+    outline: 3px solid rgba(43, 108, 176, 0.28);
+    outline-offset: 3px;
+}
+
+.dashCardIcon {
+    width: 54px;
+    height: 54px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+    font-size: 22px;
+}
+
+.dashCardInfo h4 {
+    margin-bottom: 6px;
+    color: var(--text-muted);
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.dashCardInfo h2 {
+    color: var(--text-main);
+    font-size: 28px;
+    line-height: 1.1;
+}
+
+.dashCard {
+    grid-column: span 3;
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+@media (max-width: 640px) {
+    .hospital-date-filter .dashboard-date-panel {
+        right: auto;
+        left: 50%;
+        transform: translateX(-50%);
+    }
+
+    .hospital-date-filter .date-filter-fields {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Make dashboard cards full-width on mobile */
+@media (max-width: 768px) {
+    #mainContent > div[style] {
+        grid-template-columns: 1fr !important;
+    }
+
+    #mainContent > div[style] > div[style] {
+        grid-template-columns: 1fr !important;
+    }
+
+    .dashCard {
+        grid-column: span 1 !important;
+    }
+}
+
+/* Horizontal scrollbar for all dashboard/section tables */
+#mainContent .table-container {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+#mainContent .table-container .adminTable {
+    min-width: 700px;
+}
+
+#mainContent .table-container .adminTable th,
+#mainContent .table-container .adminTable td {
+    white-space: nowrap;
+}
+
+/* ====== HOSPITAL DASHBOARD CARDS - 4 IN A ROW ====== */
+#dashboardCards.grid-container {
+    display: grid !important;
+    grid-template-columns: 1.25fr 1fr 1fr 1fr !important;
+    gap: 20px !important;
+    width: 100% !important;
+}
+
+#dashboardCards .dashCard {
+    grid-column: auto !important;
+    width: 100% !important;
+}
+
+/* ====== RESPONSIVE - TABLET (max 1200px) ====== */
+@media (max-width: 1200px) {
+    #dashboardCards.grid-container {
+        grid-template-columns: repeat(2, 1fr) !important;
+    }
+}
+
+/* ====== RESPONSIVE - SMALL TABLET (max 991px) ====== */
+@media (max-width: 991px) {
+    #sidebar {
+        transform: translateX(-100%);
+        position: fixed !important;
+        z-index: 9999;
+    }
+    #sidebar.sidebar-open {
+        transform: translateX(0);
+    }
+    #mainContentWrapper {
+        margin-left: 0 !important;
+        width: 100% !important;
+    }
+    #mainContent {
+        padding: 16px !important;
+    }
+    #hospitalModal #hospitalModalBox,
+    #roomModal #roomModalBox {
+        width: 95% !important;
+        max-width: 95% !important;
+        margin: 10px auto !important;
+    }
+}
+
+/* ====== RESPONSIVE - MOBILE (max 768px) ====== */
+@media (max-width: 768px) {
+    #dashboardCards.grid-container {
+        grid-template-columns: 1fr !important;
+    }
+    #dashboardCards .dashCard {
+        grid-column: span 1 !important;
+    }
+
+    /* Hero welcome card */
+    .hero-welcome-card {
+        padding: 16px !important;
+        border-radius: 14px !important;
+    }
+    .hero-welcome-card h2 {
+        font-size: 18px !important;
+    }
+    .hero-welcome-card p {
+        font-size: 13px !important;
+    }
+    .hero-quick-actions {
+        flex-direction: column !important;
+        gap: 8px !important;
+        margin-top: 12px !important;
+    }
+    .hero-btn {
+        width: 100% !important;
+        text-align: center !important;
+        padding: 10px 14px !important;
+        font-size: 13px !important;
+    }
+
+    /* Tables scroll horizontally */
+    .table-container {
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+    }
+    .table-container .adminTable {
+        min-width: 600px !important;
+    }
+
+    /* Forms single column */
+    #hospitalForm > div[style*="grid-template-columns"],
+    .roomFormGrid,
+    #hospitalFormGrid {
+        grid-template-columns: 1fr !important;
+    }
+    #hospitalForm > div[style*="grid-template-columns"] > div[style*="grid-column: span 2"] {
+        grid-column: span 1 !important;
+    }
+
+    /* Section headings */
+    #mainContent h2 {
+        font-size: 20px !important;
+    }
+
+    /* Topbar */
+    #topNavbar {
+        padding: 0 12px !important;
+    }
+    .nav-center .top-search {
+        max-width: 160px !important;
+        font-size: 12px !important;
+    }
+
+    /* Charts stacked */
+    #chartsGrid,
+    .chartsGrid {
+        grid-template-columns: 1fr !important;
+    }
+}
+
+/* ====== RESPONSIVE - SMALL MOBILE (max 480px) ====== */
+@media (max-width: 480px) {
+    #mainContent {
+        padding: 10px !important;
+    }
+    .dashCard {
+        padding: 14px 12px !important;
+    }
+    .dashCard .card-content h1 {
+        font-size: 22px !important;
+    }
+    .dashCard .card-content h3 {
+        font-size: 12px !important;
+    }
+    .card-progress-info span {
+        font-size: 10px !important;
+    }
+    .hero-welcome-card h2 {
+        font-size: 16px !important;
+    }
+    .nav-center {
+        display: none !important;
+    }
+}

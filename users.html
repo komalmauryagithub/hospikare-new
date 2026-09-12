@@ -1,0 +1,737 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HospiKare - Where Health Meets Access</title>
+    <link rel="icon" type="image/png" href="/assets/logo.png">
+
+    <!-- Theme Flash Prevention -->
+
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+    <link rel="stylesheet" href="/css/theme-system.css?v=20260912-lightfix">
+    <link rel="stylesheet" href="/css/base.css?v=20260912-lightfix">
+    <link rel="stylesheet" href="/css/layout.css?v=20260912-lightfix">
+    <link rel="stylesheet" href="/css/components.css?v=20260912-lightfix">
+    <link rel="stylesheet" href="/css/users.css?v=20260912-layoutfix">
+    <link rel="stylesheet" href="/css/mobile-ui.css?v=20260912-lightfix">
+</head>
+<body>
+
+    <nav class="navbar" id="navbar">
+        <div class="logoSection">
+            <img src="/assets/logo.png" alt="HospiKare Logo" class="logo-img">
+        </div>
+        <div class="nav-links">
+            <a href="#heroSection">Home</a>
+            <a href="#featuredHospitalSection">Hospitals</a>
+            <a href="#ambulanceSection">Ambulance</a>
+            <a href="#medicineSection">Pharmacy</a>
+            <a href="#insuranceSection">Insurance</a>
+            <a href="#insuranceClaimsSection">Claims</a>
+            <a href="#insuranceClaimsSection">Renewal</a>
+            <a href="#labsSection">Lab Reports</a>
+            <a href="act.html" style="font-weight: 700; color: #1E40AF;"><i class="fa-solid fa-file-invoice"></i> My Orders</a>
+        </div>
+        <div class="navRight flex items-center gap-4">
+            <a href="tel:108" class="nav-emergency"><i class="fa-solid fa-phone"></i> 108</a>
+            <button class="btn btn-primary btn-sm" id="authOpenBtn" type="button">Login / Portal</button>
+            <button class="btn btn-outline-blue btn-sm userLogoutBtn" id="logoutBtn" type="button" hidden>Logout</button>
+            <button class="menuBtn" id="menuBtn">
+                <i class="fa-solid fa-bars"></i>
+            </button>
+        </div>
+    </nav>
+
+    <div class="sidebar" id="sidebar">
+        <div class="sidebarTop">
+            <h2>Menu</h2>
+            <button class="closeBtn" id="closeBtn">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+        <div class="sidebarLinks">
+            <a href="#heroSection"><i class="fa-solid fa-house"></i> Home</a>
+            <a href="#featuredHospitalSection"><i class="fa-solid fa-hospital"></i> Hospitals</a>
+            <a href="#ambulanceSection"><i class="fa-solid fa-truck-medical"></i> Ambulance</a>
+            <a href="#medicineSection"><i class="fa-solid fa-capsules"></i> Medicines</a>
+            <a href="#insuranceSection"><i class="fa-solid fa-file-shield"></i> Insurance</a>
+            <a href="#insuranceClaimsSection"><i class="fa-solid fa-file-medical"></i> Claims</a>
+            <a href="#insuranceClaimsSection"><i class="fa-solid fa-arrows-rotate"></i> Renewal</a>
+            <a href="#labsSection"><i class="fa-solid fa-stethoscope"></i> Lab Tests</a>
+            <a href="#equipmentSection"><i class="fa-solid fa-laptop-medical"></i> Medical Equipments</a>
+            <a href="act.html"><i class="fa-solid fa-chart-line"></i> Activities</a>
+            <a href="#" class="userLogoutBtn" id="sidebarLogoutBtn" hidden><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
+        </div>
+    </div>
+
+    <div class="overlay" id="overlay"></div>
+
+    <section class="hero" id="heroSection">
+        <div class="hero-content">
+            <span class="trustBadge" style="display: inline-block; background: rgba(255,255,255,0.1); padding: var(--space-2) var(--space-4); border-radius: var(--radius-full); color: var(--hk-white); margin-bottom: var(--space-4); border: 1px solid rgba(255,255,255,0.2);">Trusted Healthcare</span>
+            <h1 style="color: var(--hk-white);">Where Health Meets Access</h1>
+            <p style="color: rgba(255,255,255,0.8); font-size: var(--text-lg); margin-bottom: var(--space-8); max-width: 500px;">
+                Find hospitals, book ambulances, order medicines, and access healthcare services - all in one place.
+            </p>
+            <div class="flex gap-4">
+                <a href="#featuredHospitalSection" class="btn btn-primary">Book Appointment <i class="fa-solid fa-arrow-right"></i></a>
+                <a href="#medicineSection" class="btn btn-ghost-white">Explore Services <i class="fa-solid fa-compass"></i></a>
+            </div>
+            
+            <div class="hero-stats" style="margin-top: var(--space-12); max-width: 400px;">
+                <div class="flex justify-between" style="color: white; text-align: center;">
+                    <div><h3 style="color: white;">200+</h3><span style="font-size: var(--text-xs); opacity: 0.8;">Expert Doctors</span></div>
+                    <div><h3 style="color: white;">50k+</h3><span style="font-size: var(--text-xs); opacity: 0.8;">Patients Served</span></div>
+                    <div><h3 style="color: white;">30+</h3><span style="font-size: var(--text-xs); opacity: 0.8;">Specialities</span></div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="hero-image">
+            <img loading="lazy" src="https://images.unsplash.com/photo-1559839734-2b71ea197ec2?auto=format&fit=crop&q=80&w=1000" alt="Doctor" class="hero-image-frame" style="width: 100%; height: 600px; object-fit: cover;">
+        </div>
+    </section>
+
+    <!-- Quick Access Bar -->
+    <div class="container relative" style="z-index: 10;">
+        <div class="quick-access" style="background: var(--hk-white); box-shadow: var(--hk-shadow-md); border-radius: var(--radius-xl); display: grid; grid-template-columns: repeat(5, 1fr); margin: calc(var(--space-16) * -1) 0 0; position: relative;">
+            <a href="#featuredHospitalSection" class="quick-tile" style="display: flex; flex-direction: column; align-items: center; padding: var(--space-6) var(--space-4); gap: var(--space-3); border-right: 1px solid var(--hk-grey-100); color: inherit;">
+                <i class="fa-solid fa-calendar-check tile-icon" style="font-size: 24px; color: var(--hk-pink);"></i>
+                <span style="font-weight: 600; font-size: var(--text-sm);">Book Appointment</span>
+            </a>
+            <a href="tel:108" class="quick-tile" style="display: flex; flex-direction: column; align-items: center; padding: var(--space-6) var(--space-4); gap: var(--space-3); border-right: 1px solid var(--hk-grey-100); color: inherit;">
+                <i class="fa-solid fa-phone tile-icon" style="font-size: 24px; color: var(--hk-blue);"></i>
+                <span style="font-weight: 600; font-size: var(--text-sm);">Emergency: 108</span>
+            </a>
+            <a href="#featuredHospitalSection" class="quick-tile" style="display: flex; flex-direction: column; align-items: center; padding: var(--space-6) var(--space-4); gap: var(--space-3); border-right: 1px solid var(--hk-grey-100); color: inherit;">
+                <i class="fa-solid fa-user-doctor tile-icon" style="font-size: 24px; color: var(--hk-blue);"></i>
+                <span style="font-weight: 600; font-size: var(--text-sm);">Find a Doctor</span>
+            </a>
+            <a href="#medicineSection" class="quick-tile" style="display: flex; flex-direction: column; align-items: center; padding: var(--space-6) var(--space-4); gap: var(--space-3); border-right: 1px solid var(--hk-grey-100); color: inherit;">
+                <i class="fa-solid fa-capsules tile-icon" style="font-size: 24px; color: var(--hk-blue);"></i>
+                <span style="font-weight: 600; font-size: var(--text-sm);">Pharmacy</span>
+            </a>
+            <a href="#labsSection" class="quick-tile" style="display: flex; flex-direction: column; align-items: center; padding: var(--space-6) var(--space-4); gap: var(--space-3); color: inherit;">
+                <i class="fa-solid fa-file-waveform tile-icon" style="font-size: 24px; color: var(--hk-blue);"></i>
+                <span style="font-weight: 600; font-size: var(--text-sm);">Lab Reports</span>
+            </a>
+        </div>
+    </div>
+
+    <section class="section container animate-on-scroll">
+        <div style="max-width: 600px; margin-bottom: var(--space-12);">
+            <span style="color: var(--hk-pink); font-weight: 700; text-transform: uppercase; font-size: var(--text-sm); letter-spacing: 0.1em;">Our Services</span>
+            <h2 style="margin-top: var(--space-2);">Healthcare Services We Provide</h2>
+            <p style="font-size: var(--text-md);">Access hospitals, ambulance booking, medicines, insurance, lab tests and many more healthcare services from one platform.</p>
+        </div>
+        <div class="grid grid-cols-3">
+            <div class="service-card animate-on-scroll">
+                <div class="service-icon-wrap">
+                    <i class="fa-solid fa-hospital"></i>
+                </div>
+                <h3>Hospitals</h3>
+                <p>Find nearby hospitals, view facilities, doctors, beds and book appointments easily.</p>
+                <a href="#featuredHospitalSection" style="font-weight: 700; display: inline-flex; align-items: center; gap: 4px; margin-top: var(--space-4);">Explore <i class="fa-solid fa-arrow-right"></i></a>
+            </div>
+            <div class="service-card animate-on-scroll">
+                <div class="service-icon-wrap">
+                    <i class="fa-solid fa-truck-medical"></i>
+                </div>
+                <h3>Ambulance</h3>
+                <p>Book emergency ambulance services quickly with real-time availability and support.</p>
+                <a href="#ambulanceSection" style="font-weight: 700; display: inline-flex; align-items: center; gap: 4px; margin-top: var(--space-4);">Explore <i class="fa-solid fa-arrow-right"></i></a>
+            </div>
+            <div class="service-card animate-on-scroll">
+                <div class="service-icon-wrap">
+                    <i class="fa-solid fa-capsules"></i>
+                </div>
+                <h3>Medicines</h3>
+                <p>Order medicines online from trusted medical stores with fast delivery support.</p>
+                <a href="#medicineSection" style="font-weight: 700; display: inline-flex; align-items: center; gap: 4px; margin-top: var(--space-4);">Explore <i class="fa-solid fa-arrow-right"></i></a>
+            </div>
+            <div class="service-card animate-on-scroll">
+                <div class="service-icon-wrap">
+                    <i class="fa-solid fa-file-shield"></i>
+                </div>
+                <h3>Insurance</h3>
+                <p>Compare and purchase health insurance plans with claim and policy support.</p>
+                <a href="#insuranceSection" style="font-weight: 700; display: inline-flex; align-items: center; gap: 4px; margin-top: var(--space-4);">Explore <i class="fa-solid fa-arrow-right"></i></a>
+            </div>
+            <div class="service-card animate-on-scroll">
+                <div class="service-icon-wrap">
+                    <i class="fa-solid fa-flask"></i>
+                </div>
+                <h3>Lab Tests</h3>
+                <p>Book pathology and diagnostic lab tests online with home sample collection.</p>
+                <a href="#labsSection" style="font-weight: 700; display: inline-flex; align-items: center; gap: 4px; margin-top: var(--space-4);">Explore <i class="fa-solid fa-arrow-right"></i></a>
+            </div>
+            <div class="service-card animate-on-scroll">
+                <div class="service-icon-wrap">
+                    <i class="fa-solid fa-laptop-medical"></i>
+                </div>
+                <h3>Medical Equipments</h3>
+                <p>Purchase or rent healthcare and medical equipments from verified vendors.</p>
+                <a href="#equipmentSection" style="font-weight: 700; display: inline-flex; align-items: center; gap: 4px; margin-top: var(--space-4);">Explore <i class="fa-solid fa-arrow-right"></i></a>
+            </div>
+        </div>
+    </section>
+
+    <section class="section container animate-on-scroll" id="featuredHospitalSection">
+        <div style="margin-bottom: var(--space-8); text-align: center;">
+            <h2>Hospitals Near You</h2>
+        </div>
+        <div class="grid grid-cols-4 featuredHospitalContainer" id="featuredHospitalContainer">
+            <!-- Dynamic content from users.js -->
+        </div>
+    </section>
+
+    <section class="section container animate-on-scroll" id="ambulanceSection" style="background: var(--hk-blue-tint); border-radius: var(--radius-xl); padding: var(--space-12);">
+        <div style="margin-bottom: var(--space-8); text-align: center;">
+            <h2>Available Ambulances</h2>
+        </div>
+        <div class="grid grid-cols-3 ambulanceContainer" id="ambulanceContainer">
+            <!-- Dynamic content from users.js -->
+        </div>
+    </section>
+
+    <section class="section container animate-on-scroll" id="labsSection">
+        <div style="margin-bottom: var(--space-8); text-align: center;">
+            <h2>Lab Tests</h2>
+            <p>Book tests from top labs at best prices</p>
+        </div>
+        <div class="grid grid-cols-4 labsContainer" id="labsContainer">
+            <!-- Dynamic content from users.js -->
+        </div>
+    </section>
+
+    <section class="section container animate-on-scroll" id="insuranceSection" style="background: var(--hk-off-white); padding-top: var(--space-12); border-top: 1px solid var(--hk-grey-200);">
+        <div style="margin-bottom: var(--space-8); text-align: center;">
+            <h2>Health Insurance Plans</h2>
+            <p>Compare plans and find the right coverage for you</p>
+        </div>
+        <div class="grid grid-cols-3 insuranceContainer" id="insuranceContainer">
+            <!-- Dynamic content from users.js -->
+        </div>
+    </section>
+
+    <section class="section container animate-on-scroll" id="insuranceClaimsSection">
+        <div class="claimSectionHeader">
+            <div>
+                <h2>Insurance Claims & Renewals</h2>
+                <p>Manage your active policies, claims and renewals</p>
+            </div>
+            <button class="btn btn-outline-blue btn-sm" id="refreshInsuranceClaimsBtn" type="button">
+                <i class="fa-solid fa-rotate"></i> Refresh
+            </button>
+        </div>
+        <div class="insuranceClaimsGrid">
+            <div class="claimPanel">
+                <h3>Your Policies & Renewals</h3>
+                <div id="userPoliciesContainer" class="policyList">
+                    <div class="emptyState">Login to view your insurance policies.</div>
+                </div>
+            </div>
+            <div class="claimPanel">
+                <h3>Claim History</h3>
+                <div id="userClaimsContainer" class="claimList">
+                    <div class="emptyState">No claims loaded yet.</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="section container animate-on-scroll" id="medicineSection">
+        <div class="flex justify-between items-center" style="margin-bottom: var(--space-8);">
+            <div>
+                <h2>Medicines & Pharmacy</h2>
+            </div>
+            <button type="button" class="btn btn-outline-blue js-open-cart">
+                <i class="fa-solid fa-cart-shopping"></i> Cart <span class="cartCount">0</span>
+            </button>
+        </div>
+        <div class="input-group" style="max-width: 600px; margin: 0 auto var(--space-8);">
+            <div class="relative flex items-center">
+                <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 16px; color: var(--hk-grey-400);"></i>
+                <input type="text" id="medicineSearchInput" class="hk-input" placeholder="Search medicines..." style="padding-left: 48px;">
+            </div>
+        </div>
+        <div class="grid grid-cols-4 medicineContainer" id="medicineContainer">
+            <!-- Dynamic content from users.js -->
+        </div>
+    </section>
+
+    <section class="section container animate-on-scroll" id="equipmentSection" style="background: var(--hk-grey-100); border-radius: var(--radius-xl); padding: var(--space-12);">
+        <div class="flex justify-between items-center" style="margin-bottom: var(--space-8);">
+            <div>
+                <h2>Medical Equipments</h2>
+                <p>Buy & rent advanced healthcare equipments</p>
+            </div>
+            <button type="button" class="btn btn-blue js-open-cart">
+                <i class="fa-solid fa-cart-shopping"></i> Cart <span class="cartCount">0</span>
+            </button>
+        </div>
+        <div class="grid grid-cols-4 equipmentContainer" id="equipmentContainer">
+            <!-- Dynamic content from users.js -->
+        </div>
+    </section>
+
+    <section class="section emergency-section animate-on-scroll" style="background: var(--hk-pink); color: white; padding: var(--space-16) 0;">
+        <div class="container flex justify-between items-center" style="flex-wrap: wrap; gap: var(--space-8);">
+            <div class="emergency-left">
+                <h2 style="color: white; font-size: var(--text-4xl);">Emergency?</h2>
+                <p style="font-size: var(--text-lg); opacity: 0.9;">
+                    Get immediate help - call emergency services or book an ambulance now.
+                </p>
+            </div>
+            <div class="emergency-right flex gap-4">
+                <a href="tel:102" class="btn btn-ghost-white btn-lg" style="color: white; border-color: white;">
+                    <i class="fa-solid fa-phone"></i> Call 102
+                </a>
+                <a href="#ambulanceSection" class="btn btn-ghost-white btn-lg" style="background: white; color: var(--hk-pink);">
+                    <i class="fa-solid fa-truck-medical"></i> Book Ambulance
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <footer class="footer" style="background: var(--hk-blue); color: white; padding: var(--space-16) 0 var(--space-8); margin-top: var(--space-16);">
+        <div class="container grid grid-cols-4" style="gap: var(--space-8); margin-bottom: var(--space-12);">
+            <!-- Logo + About -->
+            <div>
+                <img loading="lazy" src="/assets/logo.png" alt="Logo" style="height: 60px; margin-bottom: var(--space-4); filter: brightness(0) invert(1); transform: scale(2.2); transform-origin: center left; margin-left: 20px;">
+                <p style="opacity: 0.8; line-height: 1.6;">
+                    Where Health Meets Access. Your one-step platform for all healthcare needs.
+                </p>
+            </div>
+            <!-- Services -->
+            <div>
+                <h3 style="color: white; margin-bottom: var(--space-4);">Services</h3>
+                <div style="display: flex; flex-direction: column; gap: var(--space-2);">
+                    <a href="#featuredHospitalSection" style="color: rgba(255,255,255,0.8); text-decoration: none;">Hospitals</a>
+                    <a href="#ambulanceSection" style="color: rgba(255,255,255,0.8); text-decoration: none;">Ambulance</a>
+                    <a href="#labsSection" style="color: rgba(255,255,255,0.8); text-decoration: none;">Lab Tests</a>
+                    <a href="#medicineSection" style="color: rgba(255,255,255,0.8); text-decoration: none;">Medicines</a>
+                </div>
+            </div>
+            <!-- Company -->
+            <div>
+                <h3 style="color: white; margin-bottom: var(--space-4);">Company</h3>
+                <div style="display: flex; flex-direction: column; gap: var(--space-2);">
+                    <a href="#" style="color: rgba(255,255,255,0.8); text-decoration: none;">About Us</a>
+                    <a href="#" style="color: rgba(255,255,255,0.8); text-decoration: none;">Contact</a>
+                    <a href="#" style="color: rgba(255,255,255,0.8); text-decoration: none;">Careers</a>
+                    <a href="#" style="color: rgba(255,255,255,0.8); text-decoration: none;">Privacy Policy</a>
+                </div>
+            </div>
+            <!-- Contact -->
+            <div>
+                <h3 style="color: white; margin-bottom: var(--space-4);">Contact</h3>
+                <div style="display: flex; flex-direction: column; gap: var(--space-3); color: rgba(255,255,255,0.8);">
+                    <p><i class="fa-solid fa-phone" style="width: 20px;"></i> +91 1800-XXX-XXXX</p>
+                    <p><i class="fa-solid fa-envelope" style="width: 20px;"></i> support@HospiKare.in</p>
+                    <p><i class="fa-solid fa-location-dot" style="width: 20px;"></i> Mumbai, India</p>
+                </div>
+            </div>
+        </div>
+        <div class="container" style="border-top: 1px solid rgba(255,255,255,0.1); padding-top: var(--space-8); text-align: center; opacity: 0.6; font-size: var(--text-sm);">
+            (c) 2026 HospiKare. All rights reserved.
+        </div>
+    </footer>
+
+    <div class="modal" id="authOverlay">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header">
+                <h2>Account Access</h2>
+                <button class="close-modal" id="closeAuthModal" type="button">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="authTabs flex gap-4" style="margin-bottom: var(--space-6); border-bottom: 1px solid var(--hk-grey-200);">
+                    <button class="authTab activeTab" id="loginTab" style="padding: var(--space-3) var(--space-4); font-weight: 600; border-bottom: 2px solid var(--hk-blue); color: var(--hk-blue);">Login</button>
+                    <button class="authTab" id="registerTab" style="padding: var(--space-3) var(--space-4); font-weight: 600; color: var(--hk-grey-500);">Register</button>
+                </div>
+
+                <!-- LOGIN FORM -->
+                <form id="loginForm" class="authForm">
+                    <div class="input-group">
+                        <label>Email Address</label>
+                        <input type="email" id="loginEmail" class="hk-input" placeholder="Enter your email" required>
+                    </div>
+                    <div class="input-group">
+                        <label>Password</label>
+                        <input type="password" id="loginPassword" class="hk-input" placeholder="Enter your password" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: var(--space-4);">Login</button>
+                </form>
+
+                <!-- REGISTER FORM -->
+                <form id="registerForm" class="authForm hiddenForm" style="display: none;">
+                    <div class="grid grid-cols-2" style="gap: var(--space-4);">
+                        <div class="input-group"><input type="text" id="regName" class="hk-input" placeholder="Full Name" required></div>
+                        <div class="input-group"><input type="email" id="regEmail" class="hk-input" placeholder="Email" required></div>
+                        <div class="input-group"><input type="text" id="regPhone" class="hk-input" placeholder="Phone Number" required></div>
+                        <div class="input-group"><input type="password" id="regPassword" class="hk-input" placeholder="Password" required></div>
+                        
+                        <div class="input-group">
+                            <select id="regGender" class="hk-input" required>
+                                <option value="">Select Gender</option>
+                                <option value="male">Male</option>
+                                <option value="female">Female</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                        <div class="input-group"><input type="date" id="regDob" class="hk-input" required></div>
+                        <div class="input-group">
+                            <select id="regBloodGroup" class="hk-input">
+                                <option value="">Blood Group</option>
+                                <option>A+</option><option>A-</option><option>B+</option><option>B-</option>
+                                <option>AB+</option><option>AB-</option><option>O+</option><option>O-</option>
+                            </select>
+                        </div>
+                        <div class="input-group"><input type="file" id="regProfilePhoto" class="hk-input" style="padding-top: 10px;"></div>
+                        
+                        <div class="input-group" style="grid-column: span 2;"><textarea id="regAddress" class="hk-input" placeholder="Address" rows="2" required></textarea></div>
+                        <div class="input-group"><input type="text" id="regCity" class="hk-input" placeholder="City" required></div>
+                        <div class="input-group"><input type="text" id="regState" class="hk-input" placeholder="State" required></div>
+                        <div class="input-group" style="grid-column: span 2;"><input type="text" id="regPincode" class="hk-input" placeholder="Pincode" required></div>
+                        <div class="input-group" style="grid-column: span 2;">
+                            <button type="submit" class="btn btn-primary" style="width: 100%;">Register</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="ambulanceBookingModal">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header">
+                <h2>Book Ambulance</h2>
+                <button id="closeAmbulanceModal" class="close-modal"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body">
+                <form id="ambulanceBookingForm">
+                    <div class="input-group">
+                        <label>Patient Name</label>
+                        <input type="text" id="patient_name" class="hk-input" required>
+                    </div>
+                    <div class="input-group">
+                        <label>Patient Condition</label>
+                        <textarea id="patient_condition" class="hk-input" rows="2" required></textarea>
+                    </div>
+                    <div class="input-group">
+                        <label>Pickup Address</label>
+                        <textarea id="pickup_address" class="hk-input" rows="2" required></textarea>
+                    </div>
+                    <div class="input-group">
+                        <label>Destination Address</label>
+                        <textarea id="destination_address" class="hk-input" rows="2" required></textarea>
+                    </div>
+                    <div class="input-group">
+                        <label>Booking Date & Time</label>
+                        <input type="datetime-local" id="booking_date" class="hk-input" required>
+                    </div>
+                    
+                    <div style="background: var(--hk-blue-tint); padding: var(--space-4); border-radius: var(--radius-md); margin-top: var(--space-6); margin-bottom: var(--space-6); text-align: center;">
+                        <span style="font-size: var(--text-sm); opacity: 0.8;">Estimated Fare</span>
+                        <h3 id="ambulanceFare" style="color: var(--hk-blue); margin-top: var(--space-2);">Rs. 0</h3>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary" style="width: 100%;">Confirm Booking</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+<!-- LAB TEST BOOKING MODAL -->
+
+    <div class="modal" id="labBookingModal">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header">
+                <h2>Book Lab Test</h2>
+                <button id="closeLabModal" class="close-modal"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body">
+                <form id="labBookingForm">
+                    <div class="input-group">
+                        <label>Test Name</label>
+                        <input type="text" id="lab_test_name" class="hk-input" readonly>
+                    </div>
+                    <div class="input-group">
+                        <label>Patient Name</label>
+                        <input type="text" id="lab_patient_name" class="hk-input" required>
+                    </div>
+                    <div class="input-group">
+                        <label>Sample Collection</label>
+                        <select id="sample_collection_type" class="hk-input">
+                            <option value="lab">Visit Lab</option>
+                            <option value="home">Home Collection</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label>Booking Date</label>
+                        <input type="date" id="lab_booking_date" class="hk-input" required>
+                    </div>
+                    
+                    <div style="background: var(--hk-blue-tint); padding: var(--space-4); border-radius: var(--radius-md); margin-top: var(--space-6); margin-bottom: var(--space-6); text-align: center;">
+                        <span style="font-size: var(--text-sm); opacity: 0.8;">Total Amount</span>
+                        <h3 id="labTestAmount" style="color: var(--hk-blue); margin-top: var(--space-2);">Rs. 0</h3>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary" style="width: 100%;">Proceed Booking</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="insuranceModal">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header">
+                <h2>Buy Insurance Plan</h2>
+                <button id="closeInsuranceModal" class="close-modal"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body">
+                <form id="insurancePurchaseForm">
+                    <div class="input-group">
+                        <label>Plan Name</label>
+                        <input type="text" id="insurance_plan_name" class="hk-input" readonly>
+                    </div>
+                    <div class="input-group">
+                        <label>Claim Amount (Coverage)</label>
+                        <input type="text" id="insurance_claim_price" class="hk-input" readonly>
+                    </div>
+                    <div class="input-group">
+                        <label>Monthly Premium</label>
+                        <input type="text" id="insurance_price" class="hk-input" readonly>
+                    </div>
+                    <div class="input-group">
+                        <label>Plan Duration</label>
+                        <select id="insurance_duration" class="hk-input">
+                            <option value="1">Monthly</option>
+                            <option value="3">3 Months</option>
+                            <option value="6">6 Months</option>
+                            <option value="12">Yearly</option>
+                        </select>
+                    </div>
+                    
+                    <div style="background: var(--hk-blue-tint); padding: var(--space-4); border-radius: var(--radius-md); margin-top: var(--space-6); margin-bottom: var(--space-6); text-align: center;">
+                        <span style="font-size: var(--text-sm); opacity: 0.8;">Total Premium Amount</span>
+                        <h3 id="insuranceTotalAmount" style="color: var(--hk-blue); margin-top: var(--space-2);">Rs. 0</h3>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary" style="width: 100%;">Proceed Payment</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="insuranceClaimModal">
+        <div class="modal-content" style="max-width: 520px;">
+            <div class="modal-header">
+                <h2>Submit Claim</h2>
+                <button id="closeInsuranceClaimModal" class="close-modal"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body">
+                <form id="insuranceClaimForm" enctype="multipart/form-data">
+                    <input type="hidden" id="claim_purchase_id">
+                    <div class="input-group">
+                        <label>Policy</label>
+                        <input type="text" id="claim_policy_name" class="hk-input" readonly>
+                    </div>
+                    <div class="input-group">
+                        <label>Claim Amount</label>
+                        <input type="number" id="claim_amount" class="hk-input" min="1" required>
+                    </div>
+                    <div class="input-group">
+                        <label>Reason</label>
+                        <textarea id="claim_reason" class="hk-input" rows="4" required></textarea>
+                    </div>
+                    <div class="input-group">
+                        <label>Medical Documents</label>
+                        <input type="file" id="claim_documents" class="hk-input" accept=".pdf,.jpg,.jpeg,.png,.webp">
+                    </div>
+                    <button type="submit" class="btn btn-primary" style="width: 100%;">Submit Claim</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="insuranceRenewalModal">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header">
+                <h2>Renew Policy</h2>
+                <button id="closeInsuranceRenewalModal" class="close-modal"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body">
+                <form id="insuranceRenewalForm">
+                    <input type="hidden" id="renew_purchase_id">
+                    <div class="input-group">
+                        <label>Policy</label>
+                        <input type="text" id="renew_policy_name" class="hk-input" readonly>
+                    </div>
+                    <div class="input-group">
+                        <label>Monthly Premium</label>
+                        <input type="text" id="renew_monthly_premium" class="hk-input" readonly>
+                    </div>
+                    <div class="input-group">
+                        <label>Renewal Duration</label>
+                        <select id="renew_duration" class="hk-input">
+                            <option value="1">Monthly</option>
+                            <option value="3">3 Months</option>
+                            <option value="6">6 Months</option>
+                            <option value="12">Yearly</option>
+                        </select>
+                    </div>
+                    <div style="background: var(--hk-blue-tint); padding: var(--space-4); border-radius: var(--radius-md); margin-top: var(--space-6); margin-bottom: var(--space-6); text-align: center;">
+                        <span style="font-size: var(--text-sm); opacity: 0.8;">Renewal Amount</span>
+                        <h3 id="renewTotalAmount" style="color: var(--hk-blue); margin-top: var(--space-2);">Rs. 0</h3>
+                    </div>
+                    <button type="submit" class="btn btn-primary" style="width: 100%;">Proceed Renewal Payment</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="productBuyModal">
+        <div class="modal-content" style="max-width: 400px;">
+            <div class="modal-header">
+                <h2 id="productModalTitle">Buy Product</h2>
+                <button id="closeProductModal" class="close-modal"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body">
+                <form id="productPurchaseForm">
+                    <div class="input-group">
+                        <label>Product Name</label>
+                        <input type="text" id="buy_product_name" class="hk-input" readonly>
+                    </div>
+                    <div class="input-group">
+                        <label>Brand Name</label>
+                        <input type="text" id="buy_product_brand" class="hk-input" readonly>
+                    </div>
+                    <div class="input-group">
+                        <label>Quantity</label>
+                        <input type="number" id="buy_quantity" class="hk-input" value="1" min="1">
+                    </div>
+                    
+                    <div style="background: var(--hk-blue-tint); padding: var(--space-4); border-radius: var(--radius-md); margin-top: var(--space-6); margin-bottom: var(--space-6); text-align: center;">
+                        <span style="font-size: var(--text-sm); opacity: 0.8;">Total Amount</span>
+                        <h3 id="productTotalAmount" style="color: var(--hk-blue); margin-top: var(--space-2);">Rs. 0</h3>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary" style="width: 100%;">Proceed Payment</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="cartModal">
+        <div class="modal-content" style="max-width: 720px;">
+            <div class="modal-header">
+                <h2>Your Cart</h2>
+                <button id="closeCartModal" class="close-modal" type="button"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body">
+                <div id="cartItems" class="cartItems"></div>
+                <div class="cartSummary">
+                    <span>Total</span>
+                    <strong id="cartTotal">Rs. 0</strong>
+                </div>
+                <button type="button" id="checkoutCartBtn" class="btn btn-primary" style="width: 100%; margin-bottom: 10px; font-weight: 600;"><i class="fa-solid fa-credit-card"></i> Proceed Payment</button>
+                <button type="button" id="clearCartBtn" class="btn btn-outline-blue" style="width: 100%;">Clear Cart</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── FLOATING EMERGENCY SOS BUTTON ── -->
+    <button class="floating-sos-btn" id="floatingSosBtn" type="button" aria-label="Emergency SOS One Tap Ambulance" onclick="document.getElementById('emergencySosModal') ? document.getElementById('emergencySosModal').style.display='flex' : null">
+        <i class="fa-solid fa-truck-medical"></i>
+        <span>SOS</span>
+    </button>
+
+    <!-- ── MOBILE BOTTOM NAVIGATION BAR ── -->
+    <nav class="mobile-bottom-nav">
+        <a href="#heroSection" class="mobile-nav-item active">
+            <i class="fa-solid fa-house"></i>
+            <span>Home</span>
+        </a>
+        <a href="#featuredHospitalSection" class="mobile-nav-item">
+            <i class="fa-solid fa-hospital"></i>
+            <span>Hospitals</span>
+        </a>
+        <a href="#ambulanceSection" class="mobile-nav-item sos-item" onclick="document.getElementById('emergencySosModal') ? document.getElementById('emergencySosModal').style.display='flex' : null">
+            <i class="fa-solid fa-truck-medical"></i>
+            <span>SOS</span>
+        </a>
+        <a href="#medicineSection" class="mobile-nav-item">
+            <i class="fa-solid fa-capsules"></i>
+            <span>Pharmacy</span>
+        </a>
+        <a href="act.html" class="mobile-nav-item">
+            <i class="fa-solid fa-chart-line"></i>
+            <span>Activity</span>
+        </a>
+    </nav>
+
+    <!-- 🚨 EMERGENCY AMBULANCE DISPATCH MODAL 🚨 -->
+    <div class="modal" id="emergencySosModal" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(8px); z-index: 10050; align-items: center; justify-content: center; padding: 20px;">
+        <div class="sos-modal-content">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color, #e2e8f0); padding-bottom: 16px;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <div style="width: 38px; height: 38px; border-radius: 50%; background: #FEF2F2; color: #EF4444; display: flex; align-items: center; justify-content: center; font-size: 18px;">
+                        <i class="fa-solid fa-truck-medical"></i>
+                    </div>
+                    <div>
+                        <h3 style="font-family: var(--font-heading); font-size: 18px; font-weight: 700; color: var(--text-main, #1e293b); margin: 0;">1-Tap Emergency Ambulance</h3>
+                        <p style="font-size: 12px; color: var(--text-secondary, #64748b); margin: 0;">Live Dispatch • Nearest Available Unit</p>
+                    </div>
+                </div>
+                <button type="button" onclick="document.getElementById('emergencySosModal').style.display='none'" style="background: transparent; border: none; font-size: 20px; color: var(--text-muted, #94a3b8); cursor: pointer;">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <div style="padding-top: 16px;">
+                <label style="font-size: 13px; font-weight: 600; color: var(--text-main, #1e293b);">Select Triage Urgency Level</label>
+                <div class="sos-urgency-selector">
+                    <div class="urgency-pill selected">
+                        <h5>CRITICAL</h5>
+                        <span>ICU / Cardiac</span>
+                    </div>
+                    <div class="urgency-pill">
+                        <h5>URGENT</h5>
+                        <span>Trauma / Injury</span>
+                    </div>
+                    <div class="urgency-pill">
+                        <h5>STANDARD</h5>
+                        <span>Transfer</span>
+                    </div>
+                </div>
+                <div style="background: var(--surface-soft, #f8fafc); border-radius: 12px; padding: 14px; margin-bottom: 18px; border: 1px solid var(--border-color, #e2e8f0);">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 13px;">
+                        <span style="color: var(--text-secondary, #64748b);">Estimated Dispatch ETA:</span>
+                        <strong style="color: #10B981;">~ 6 Mins</strong>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; font-size: 13px;">
+                        <span style="color: var(--text-secondary, #64748b);">Onboard Equipment:</span>
+                        <strong style="color: var(--text-main, #1e293b);">Ventilator, O2, ECG</strong>
+                    </div>
+                </div>
+                <a href="tel:108" class="btn-primary" style="width: 100%; padding: 14px; border-radius: 12px; background: #EF4444; color: #FFFFFF; font-size: 15px; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 8px 20px rgba(239, 68, 68, 0.3); text-decoration: none;">
+                    <i class="fa-solid fa-phone-volume"></i> DISPATCH NOW (CALL 108)
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script src="/js/users.js?v=20260912"></script>
+    <script src="/js/main.js"></script>
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+</body>
+</html>

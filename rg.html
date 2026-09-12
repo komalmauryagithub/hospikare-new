@@ -1,0 +1,1819 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HospiKare Partner Portal - Login & Registration</title>
+    <link rel="icon" type="image/png" href="/assets/logo.png">
+    
+    <!-- Preload fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+    
+    <!-- Theme Flash Prevention -->
+    <script>
+        (function() {
+            try {
+                const savedTheme = localStorage.getItem('hk_theme');
+                if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                    document.documentElement.setAttribute('data-theme', 'dark');
+                } else {
+                    document.documentElement.removeAttribute('data-theme');
+                }
+            } catch (e) {}
+        })();
+    </script>
+    
+    <!-- Stylesheets -->
+    <link rel="stylesheet" type="text/css" href="/css/base.css?v=20260821-pro-v1">
+    <link rel="stylesheet" type="text/css" href="/css/modern-ui.css?v=20260821-pro-v1">
+    <link rel="stylesheet" href="/css/theme-system.css?v=20260821-pro-v1">
+    <link rel="stylesheet" href="/css/mobile-ui.css?v=20260821-pro-v1">
+    <link rel="stylesheet" href="/css/rg-animations.css?v=20260821-pro-v1">
+
+    <style>
+        /* ═════════════════════════════════════════════════════════════════════
+           HOSPIKARE PREMIUM ENTERPRISE AUTHENTICATION SYSTEM
+           ═════════════════════════════════════════════════════════════════════ */
+        
+        :root {
+            --auth-brand-navy: #071A3D;
+            --auth-royal-blue: #2563EB;
+            --auth-electric-blue: #2F6BFF;
+            --auth-cyan: #21C7E8;
+            --auth-pink: #EC3D86;
+            --auth-bg-light: #F5F8FF;
+            --auth-card-bg: #FFFFFF;
+            --auth-card-border: rgba(226, 232, 240, 0.85);
+            --auth-card-shadow: 0 20px 50px rgba(7, 26, 61, 0.08), 0 2px 8px rgba(7, 26, 61, 0.04);
+            --auth-text-main: #0F172A;
+            --auth-text-muted: #64748B;
+            --auth-input-bg: #F8FAFC;
+            --auth-input-border: #CBD5E1;
+            --auth-input-focus-border: #2563EB;
+            --auth-input-focus-ring: rgba(37, 99, 235, 0.14);
+            --auth-btn-gradient: linear-gradient(135deg, #2563EB 0%, #1D4ED8 50%, #1E40AF 100%);
+            --auth-btn-shadow: 0 6px 20px rgba(37, 99, 235, 0.32);
+        }
+
+        [data-theme="dark"] {
+            --auth-bg-light: #071A3D;
+            --auth-card-bg: rgba(13, 33, 77, 0.88);
+            --auth-card-border: rgba(255, 255, 255, 0.12);
+            --auth-card-shadow: 0 25px 60px rgba(0, 0, 0, 0.5), 0 0 30px rgba(33, 199, 232, 0.08);
+            --auth-text-main: #F8FAFC;
+            --auth-text-muted: #94A3B8;
+            --auth-input-bg: rgba(11, 26, 60, 0.9);
+            --auth-input-border: rgba(255, 255, 255, 0.16);
+            --auth-input-focus-border: #21C7E8;
+            --auth-input-focus-ring: rgba(33, 199, 232, 0.2);
+            --auth-btn-gradient: linear-gradient(135deg, #2F6BFF 0%, #2563EB 50%, #1D4ED8 100%);
+            --auth-btn-shadow: 0 8px 24px rgba(47, 107, 255, 0.4);
+        }
+
+        *, *::before, *::after {
+            box-sizing: border-box;
+        }
+
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            min-height: 100%;
+            overflow-x: hidden !important;
+            font-family: var(--font-body, 'Plus Jakarta Sans', sans-serif);
+            background-color: var(--auth-bg-light);
+            color: var(--auth-text-main);
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        body.auth-page-body {
+            display: block !important;
+            min-height: 100vh;
+            overflow-x: hidden !important;
+        }
+
+        .auth-wrapper {
+            display: flex;
+            flex-direction: row;
+            width: 100vw;
+            height: 100vh;
+            min-height: 100vh;
+            overflow: hidden;
+            background: var(--auth-bg-light);
+        }
+
+        /* ═════════════════════════════════════════════════════════════════════
+           LEFT VISUAL SECTION: CINEMATIC HEALTHCARE HERO PANEL
+           ═════════════════════════════════════════════════════════════════════ */
+        
+        .auth-brand-panel {
+            flex: 0 0 63%;
+            max-width: 63%;
+            width: 63%;
+            height: 100vh;
+            position: sticky;
+            top: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            padding: 56px 60px;
+            color: #FFFFFF;
+            background: linear-gradient(145deg, rgba(7, 26, 61, 0.95) 0%, rgba(15, 39, 90, 0.88) 55%, rgba(7, 26, 61, 0.94) 100%),
+                        url("/uploads/hospital_building%20(1).jpg") center 40% / cover no-repeat;
+            overflow: hidden;
+            z-index: 1;
+            transition: flex 0.3s cubic-bezier(0.4, 0, 0.2, 1), max-width 0.3s cubic-bezier(0.4, 0, 0.2, 1), width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* Prevent right-side overflow by balancing hero panel flex width when registration form is active */
+        .auth-wrapper.register-active .auth-brand-panel,
+        .auth-wrapper:has(.register-active) .auth-brand-panel {
+            flex: 0 0 52%;
+            max-width: 52%;
+            width: 52%;
+        }
+
+        /* Layered ambient glows */
+        .auth-brand-panel::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(circle at 85% 15%, rgba(33, 199, 232, 0.22) 0%, transparent 60%),
+                        radial-gradient(circle at 10% 88%, rgba(236, 61, 134, 0.18) 0%, transparent 55%);
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        /* Background grid/cross texture */
+        .brand-grid-pattern {
+            position: absolute;
+            inset: 0;
+            background-image: radial-gradient(rgba(255, 255, 255, 0.08) 1px, transparent 1px);
+            background-size: 28px 28px;
+            opacity: 0.65;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .ambient-orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(50px);
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .ambient-orb.orb-1 {
+            width: 300px;
+            height: 300px;
+            top: -60px;
+            right: -60px;
+            background: rgba(33, 199, 232, 0.18);
+        }
+
+        .ambient-orb.orb-2 {
+            width: 260px;
+            height: 260px;
+            bottom: -50px;
+            left: -40px;
+            background: rgba(236, 61, 134, 0.14);
+        }
+
+        .brand-panel-content {
+            position: relative;
+            z-index: 2;
+            max-width: 620px;
+        }
+
+        /* Eyebrow Label */
+        .brand-eyebrow-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 14px;
+            background: rgba(255, 255, 255, 0.10);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 9999px;
+            font-size: 11.5px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            color: #FFFFFF;
+            margin-bottom: 16px;
+        }
+
+        .brand-eyebrow-pill i {
+            color: var(--auth-cyan);
+        }
+
+        /* Headline */
+        .brand-headline {
+            font-family: var(--font-display, 'DM Serif Display', serif);
+            font-size: 44px;
+            font-weight: 700;
+            line-height: 1.16;
+            margin: 0 0 16px 0;
+            color: #FFFFFF;
+            letter-spacing: -0.01em;
+        }
+
+        .gradient-text {
+            background: linear-gradient(135deg, #FFFFFF 0%, #21C7E8 60%, #93C5FD 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            display: inline-block;
+        }
+
+        .brand-copy {
+            font-size: 15px;
+            line-height: 1.6;
+            color: rgba(255, 255, 255, 0.88);
+            margin: 0 0 28px 0;
+            max-width: 540px;
+        }
+
+        /* Trust Chips */
+        .brand-trust-chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 32px;
+        }
+
+        .trust-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: rgba(255, 255, 255, 0.12);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.24);
+            border-radius: 9999px;
+            font-size: 12.5px;
+            font-weight: 600;
+            color: #FFFFFF;
+            transition: all 0.25s ease;
+        }
+
+        .trust-chip i {
+            color: var(--auth-cyan);
+            font-size: 13px;
+        }
+
+        .trust-chip:hover {
+            background: rgba(255, 255, 255, 0.22);
+            border-color: rgba(255, 255, 255, 0.5);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Compact Metric Row */
+        .brand-metric-row {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.15);
+        }
+
+        .metric-col {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .metric-col i {
+            font-size: 18px;
+            color: var(--auth-cyan);
+            background: rgba(33, 199, 232, 0.15);
+            padding: 10px;
+            border-radius: 10px;
+            border: 1px solid rgba(33, 199, 232, 0.25);
+        }
+
+        .metric-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .metric-info strong {
+            font-size: 13px;
+            font-weight: 700;
+            color: #FFFFFF;
+        }
+
+        .metric-info span {
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .metric-divider {
+            width: 1px;
+            height: 28px;
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        /* ═════════════════════════════════════════════════════════════════════
+           RIGHT AUTH SECTION: LUXURY AUTHENTICATION CARD
+           ═════════════════════════════════════════════════════════════════════ */
+        
+        .auth-form-container {
+            flex: 0 0 37%;
+            max-width: 37%;
+            width: 37%;
+            height: 100vh;
+            min-height: 100vh;
+            overflow-y: auto;
+            overflow-x: hidden;
+            -webkit-overflow-scrolling: touch;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 32px 28px;
+            background: var(--auth-bg-light);
+            position: relative;
+            box-shadow: -10px 0 35px rgba(7, 26, 61, 0.06);
+            transition: background-color 0.3s ease, flex 0.3s cubic-bezier(0.4, 0, 0.2, 1), max-width 0.3s cubic-bezier(0.4, 0, 0.2, 1), width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* Radial ambient light behind card */
+        .auth-form-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+            height: 380px;
+            background: radial-gradient(circle at 50% 0%, rgba(37, 99, 235, 0.08) 0%, transparent 70%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        [data-theme="dark"] .auth-form-container::before {
+            background: radial-gradient(circle at 50% 0%, rgba(33, 199, 232, 0.1) 0%, transparent 70%);
+        }
+
+        /* Custom Scrollbar */
+        .auth-form-container::-webkit-scrollbar {
+            width: 6px;
+        }
+        .auth-form-container::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .auth-form-container::-webkit-scrollbar-thumb {
+            background: var(--auth-input-border);
+            border-radius: 6px;
+        }
+
+        /* Theme Toggle Button */
+        .theme-toggle-circle {
+            position: absolute;
+            top: 20px;
+            right: 24px;
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            background: var(--auth-card-bg);
+            border: 1px solid var(--auth-card-border);
+            color: var(--auth-text-main);
+            box-shadow: 0 4px 12px rgba(7, 26, 61, 0.08);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 100;
+            font-size: 16px;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .theme-toggle-circle:hover {
+            transform: scale(1.08) rotate(15deg);
+            box-shadow: 0 6px 18px rgba(37, 99, 235, 0.2);
+            color: var(--auth-royal-blue);
+        }
+
+        [data-theme="dark"] .theme-toggle-circle:hover {
+            color: var(--auth-cyan);
+            box-shadow: 0 6px 18px rgba(33, 199, 232, 0.25);
+        }
+
+        /* Auth Card */
+        .auth-form-card,
+        .auth-form-box {
+            width: 100%;
+            max-width: 430px;
+            margin: auto 0;
+            background: var(--auth-card-bg);
+            backdrop-filter: blur(16px);
+            border-radius: 24px;
+            border: 1px solid var(--auth-card-border);
+            padding: 34px 34px;
+            box-shadow: var(--auth-card-shadow);
+            box-sizing: border-box;
+            position: relative;
+            z-index: 2;
+        }
+
+        #registerForm.auth-form-card,
+        #registerForm.auth-form-box {
+            max-width: min(580px, 100%);
+            width: 100%;
+            padding: 32px min(36px, 4vw);
+            box-sizing: border-box;
+        }
+
+        .auth-form-container.register-active {
+            flex: 0 0 48%;
+            max-width: 48%;
+            width: 48%;
+        }
+
+        /* Card Header & Logo */
+        .card-header-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 18px;
+        }
+
+        .form-logo {
+            width: 142px;
+            height: auto;
+            max-height: 56px;
+            object-fit: contain;
+            display: block;
+        }
+
+        .secure-partner-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 5px 12px;
+            border-radius: 9999px;
+            background: rgba(37, 99, 235, 0.08);
+            border: 1px solid rgba(37, 99, 235, 0.16);
+            color: var(--auth-royal-blue);
+            font-size: 11.5px;
+            font-weight: 700;
+            letter-spacing: 0.02em;
+        }
+
+        [data-theme="dark"] .secure-partner-badge {
+            background: rgba(33, 199, 232, 0.12);
+            border-color: rgba(33, 199, 232, 0.25);
+            color: var(--auth-cyan);
+        }
+
+        .auth-card-title {
+            font-family: var(--font-display, 'DM Serif Display', serif) !important;
+            font-size: 26px !important;
+            font-weight: 700 !important;
+            color: var(--auth-text-main) !important;
+            margin: 0 0 6px 0 !important;
+            letter-spacing: -0.01em;
+        }
+
+        [data-theme="dark"] .auth-card-title {
+            color: #FFFFFF !important;
+        }
+
+        .auth-card-subtitle {
+            font-size: 13px;
+            color: var(--auth-text-muted);
+            margin: 0 0 22px 0;
+            line-height: 1.5;
+        }
+
+        /* Success & Status Messages */
+        .success-message {
+            background: #ECFDF5;
+            border: 1px solid #10B981;
+            color: #065F46;
+            padding: 12px 16px;
+            border-radius: 12px;
+            margin-bottom: 16px;
+            font-size: 13px;
+            font-weight: 600;
+            display: none;
+            width: 100%;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.15);
+        }
+
+        [data-theme="dark"] .success-message {
+            background: rgba(16, 185, 129, 0.16);
+            border-color: rgba(16, 185, 129, 0.4);
+            color: #34D399;
+        }
+
+        .success-message.active {
+            display: flex;
+        }
+
+        /* Form Structure */
+        .auth-form {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            width: 100%;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            width: 100%;
+        }
+
+        .form-group label {
+            font-size: 12.5px;
+            font-weight: 700;
+            color: var(--auth-text-main);
+            letter-spacing: 0.01em;
+            transition: color 0.2s ease;
+        }
+
+        /* Input with icon wrapper */
+        .input-field-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+            width: 100%;
+        }
+
+        .input-icon {
+            position: absolute;
+            left: 16px;
+            color: var(--auth-text-muted);
+            font-size: 14px;
+            pointer-events: none;
+            z-index: 3;
+            transition: color 0.2s ease, transform 0.2s ease;
+        }
+
+        .input-field-wrapper input,
+        .input-field-wrapper select {
+            width: 100%;
+            height: 52px;
+            padding: 0 44px 0 46px !important;
+            border: 1px solid var(--auth-input-border);
+            border-radius: 12px;
+            font-size: 13.5px;
+            font-family: inherit;
+            background: var(--auth-input-bg);
+            color: var(--auth-text-main);
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            outline: none;
+            box-sizing: border-box;
+        }
+
+        .input-field-wrapper input::placeholder {
+            color: var(--auth-text-muted);
+            opacity: 0.75;
+        }
+
+        .input-field-wrapper input:focus,
+        .input-field-wrapper select:focus {
+            background: var(--auth-card-bg);
+            border-color: var(--auth-input-focus-border) !important;
+            box-shadow: 0 0 0 4px var(--auth-input-focus-ring) !important;
+        }
+
+        .form-group:focus-within label {
+            color: var(--auth-royal-blue);
+        }
+
+        [data-theme="dark"] .form-group:focus-within label {
+            color: var(--auth-cyan);
+        }
+
+        /* Password Toggle Eye Icon */
+        .password-toggle-btn {
+            position: absolute;
+            right: 12px;
+            background: transparent;
+            border: none;
+            color: var(--auth-text-muted);
+            cursor: pointer;
+            font-size: 15px;
+            padding: 8px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            z-index: 4;
+        }
+
+        .password-toggle-btn:hover {
+            color: var(--auth-royal-blue);
+            background: rgba(37, 99, 235, 0.08);
+        }
+
+        [data-theme="dark"] .password-toggle-btn:hover {
+            color: var(--auth-cyan);
+            background: rgba(33, 199, 232, 0.12);
+        }
+
+        /* Caps Lock Warning */
+        .caps-lock-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 11.5px;
+            font-weight: 600;
+            color: #D97706;
+            background: #FEF3C7;
+            border: 1px solid #FDE68A;
+            border-radius: 6px;
+            padding: 3px 8px;
+            margin-top: 4px;
+        }
+
+        [data-theme="dark"] .caps-lock-badge {
+            background: rgba(245, 158, 11, 0.15);
+            border-color: rgba(245, 158, 11, 0.3);
+            color: #FBBF24;
+        }
+
+        /* Form Error Text */
+        .form-error {
+            font-size: 11.5px;
+            color: #EF4444;
+            margin-top: 3px;
+            display: none;
+            font-weight: 600;
+        }
+
+        .form-group.error input,
+        .form-group.error select {
+            border-color: #EF4444 !important;
+            background: #FEF2F2 !important;
+            box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.12) !important;
+        }
+
+        [data-theme="dark"] .form-group.error input,
+        [data-theme="dark"] .form-group.error select {
+            background: rgba(239, 68, 68, 0.12) !important;
+            border-color: #F87171 !important;
+        }
+
+        .form-group.error .form-error {
+            display: block;
+        }
+
+        /* Utility Row (Remember Me) */
+        .form-utility-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: 2px;
+            margin-bottom: 4px;
+        }
+
+        .remember-checkbox-label {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12.5px;
+            font-weight: 600;
+            color: var(--auth-text-muted);
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .remember-checkbox-label input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            accent-color: var(--auth-royal-blue);
+            cursor: pointer;
+            border-radius: 4px;
+        }
+
+        /* Primary Submit Button */
+        .btn-auth-primary,
+        .submit-btn-modern,
+        .auth-form button[type="submit"] {
+            width: 100%;
+            height: 52px;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 12px;
+            font-size: 14.5px;
+            font-weight: 700;
+            font-family: inherit;
+            cursor: pointer;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            background: var(--auth-btn-gradient);
+            color: #FFFFFF !important;
+            box-shadow: var(--auth-btn-shadow);
+            margin-top: 6px;
+            line-height: 1;
+        }
+
+        .btn-auth-primary:hover,
+        .submit-btn-modern:hover,
+        .auth-form button[type="submit"]:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 28px rgba(37, 99, 235, 0.45);
+            filter: brightness(1.05);
+        }
+
+        .btn-auth-primary:active,
+        .submit-btn-modern:active,
+        .auth-form button[type="submit"]:active {
+            transform: translateY(0);
+        }
+
+        .btn-auth-primary:disabled,
+        .submit-btn-modern:disabled,
+        .auth-form button:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        /* Loading Spinner */
+        .loading-spinner {
+            display: none;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255, 255, 255, 0.35);
+            border-radius: 50%;
+            border-top-color: #FFFFFF;
+            animation: authSpin 0.7s linear infinite;
+        }
+
+        @keyframes authSpin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Form Toggle Divider & Link */
+        .form-toggle-divider,
+        .form-toggle {
+            text-align: center;
+            padding-top: 16px;
+            border-top: 1px solid var(--auth-card-border);
+            font-size: 13px;
+            color: var(--auth-text-muted);
+            margin-top: 16px;
+            width: 100%;
+        }
+
+        .toggle-link,
+        .form-toggle a {
+            color: var(--auth-royal-blue);
+            font-weight: 700;
+            text-decoration: none;
+            cursor: pointer;
+            margin-left: 4px;
+            transition: color 0.2s ease;
+        }
+
+        [data-theme="dark"] .toggle-link,
+        [data-theme="dark"] .form-toggle a {
+            color: var(--auth-cyan);
+        }
+
+        .toggle-link:hover,
+        .form-toggle a:hover {
+            text-decoration: underline;
+        }
+
+        /* Registration Form Grid */
+        .registration-grid-form {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 13px 15px;
+        }
+
+        .grid-col-half {
+            grid-column: span 1;
+        }
+
+        .grid-col-full {
+            grid-column: span 2;
+        }
+
+        .custom-file-upload-box {
+            border: 1.5px dashed var(--auth-input-border);
+            border-radius: 12px;
+            padding: 10px 14px;
+            background: var(--auth-input-bg);
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 52px;
+        }
+
+        .custom-file-upload-box:hover {
+            border-color: var(--auth-royal-blue);
+            background: rgba(37, 99, 235, 0.04);
+        }
+
+        [data-theme="dark"] .custom-file-upload-box:hover {
+            border-color: var(--auth-cyan);
+            background: rgba(33, 199, 232, 0.06);
+        }
+
+        .file-upload-content {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .upload-icon {
+            font-size: 18px;
+            color: var(--auth-royal-blue);
+        }
+
+        [data-theme="dark"] .upload-icon {
+            color: var(--auth-cyan);
+        }
+
+        .upload-text {
+            font-size: 12.5px;
+            font-weight: 700;
+            color: var(--auth-text-main);
+        }
+
+        .upload-subtext {
+            font-size: 11px;
+            color: var(--auth-text-muted);
+        }
+
+        .file-preview-thumb {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .file-preview-thumb img {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid var(--auth-royal-blue);
+        }
+
+        .change-photo-txt {
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--auth-royal-blue);
+        }
+
+        .password-strength-container {
+            margin-top: 4px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .strength-bar-bg {
+            flex: 1;
+            height: 4px;
+            background: var(--auth-input-border);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .strength-bar-fill {
+            height: 100%;
+            width: 0%;
+            border-radius: 4px;
+            transition: width 0.3s ease, background-color 0.3s ease;
+        }
+
+        .strength-label {
+            font-size: 11px;
+            font-weight: 700;
+            min-width: 42px;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* ═════════════════════════════════════════════════════════════════════
+           RESPONSIVE DESIGN SYSTEM
+           ═════════════════════════════════════════════════════════════════════ */
+        
+        /* Tablet & Intermediate Screens: Balanced layout */
+        @media (max-width: 1199px) and (min-width: 901px) {
+            .auth-brand-panel {
+                flex: 0 0 50%;
+                max-width: 50%;
+                width: 50%;
+                padding: 44px 32px;
+            }
+
+            .auth-wrapper.register-active .auth-brand-panel,
+            .auth-wrapper:has(.register-active) .auth-brand-panel {
+                flex: 0 0 45%;
+                max-width: 45%;
+                width: 45%;
+            }
+
+            .auth-form-container {
+                flex: 0 0 50%;
+                max-width: 50%;
+                width: 50%;
+                padding: 28px 20px;
+            }
+
+            .auth-form-container.register-active {
+                flex: 0 0 55%;
+                max-width: 55%;
+                width: 55%;
+            }
+
+            .brand-headline {
+                font-size: 34px;
+            }
+
+            .brand-copy {
+                font-size: 14px;
+                margin-bottom: 22px;
+            }
+
+            .brand-metric-row {
+                gap: 12px;
+            }
+
+            .metric-info strong {
+                font-size: 12px;
+            }
+
+            .metric-info span {
+                font-size: 10px;
+            }
+        }
+
+        /* Mobile / Small Screen: Single Column Layout */
+        @media (max-width: 900px) {
+            .auth-wrapper {
+                flex-direction: column !important;
+                height: auto !important;
+                min-height: 100vh !important;
+                overflow-y: auto !important;
+                overflow-x: hidden !important;
+            }
+
+            .auth-brand-panel {
+                flex: 0 0 auto !important;
+                max-width: 100% !important;
+                width: 100% !important;
+                height: auto !important;
+                position: relative !important;
+                top: auto !important;
+                padding: 36px 24px 32px !important;
+            }
+
+            .brand-panel-content {
+                max-width: 100% !important;
+            }
+
+            .brand-headline {
+                font-size: 28px !important;
+                line-height: 1.22 !important;
+            }
+
+            .brand-copy {
+                font-size: 13.5px !important;
+                margin-bottom: 18px !important;
+            }
+
+            .brand-trust-chips {
+                gap: 8px !important;
+                margin-bottom: 20px !important;
+            }
+
+            .trust-chip {
+                padding: 6px 12px !important;
+                font-size: 11.5px !important;
+            }
+
+            .brand-metric-row {
+                display: none !important;
+            }
+
+            .auth-form-container {
+                flex: 1 0 auto !important;
+                max-width: 100% !important;
+                width: 100% !important;
+                height: auto !important;
+                min-height: auto !important;
+                padding: 24px 18px 48px !important;
+                margin-top: -16px !important;
+                border-radius: 24px 24px 0 0 !important;
+                z-index: 10 !important;
+            }
+
+            .auth-form-container.register-active {
+                flex: 1 0 auto !important;
+                max-width: 100% !important;
+                width: 100% !important;
+            }
+
+            .auth-form-card,
+            .auth-form-box,
+            #registerForm.auth-form-card,
+            #registerForm.auth-form-box {
+                max-width: 100% !important;
+                width: 100% !important;
+                padding: 26px 20px !important;
+                border-radius: 20px !important;
+            }
+
+            .registration-grid-form {
+                grid-template-columns: 1fr !important;
+                gap: 12px !important;
+            }
+
+            .grid-col-half,
+            .grid-col-full {
+                grid-column: span 1 !important;
+            }
+
+            .theme-toggle-circle {
+                top: 14px;
+                right: 18px;
+            }
+        }
+    </style>
+</head>
+<body class="auth-page-body">
+    <div class="auth-wrapper">
+        <!-- ═════ LEFT VISUAL HERO PANEL ═════ -->
+        <aside class="auth-brand-panel" aria-label="HospiKare Hero">
+            <div class="brand-grid-pattern"></div>
+            <div class="brand-cross-bg"></div>
+            <div class="ambient-orb orb-1"></div>
+            <div class="ambient-orb orb-2"></div>
+            <div class="particles-container" id="particlesContainer"></div>
+            
+            <div class="brand-panel-content">
+                <!-- Heartbeat / ECG pulse line -->
+                <div class="ecg-container" aria-hidden="true">
+                    <svg viewBox="0 0 200 30" style="width: 140px; height: 26px;">
+                        <path class="ecg-path" d="M0,15 L30,15 L38,4 L46,26 L54,8 L62,20 L70,15 L200,15" fill="none" stroke="#21C7E8" stroke-width="2.2" stroke-linecap="round"/>
+                    </svg>
+                </div>
+
+                <!-- Eyebrow Badge -->
+                <div class="brand-eyebrow-pill">
+                    <i class="fa-solid fa-sparkles"></i>
+                    <span>HOSPIKARE PARTNER PORTAL</span>
+                </div>
+
+                <!-- Main Heading -->
+                <h1 class="brand-headline">
+                    Healthcare management,<br>
+                    <span class="gradient-text">beautifully connected.</span>
+                </h1>
+
+                <!-- Supporting Text -->
+                <p class="brand-copy">
+                    Manage partners, bookings, services, payments, and healthcare operations through one secure and connected platform.
+                </p>
+
+                <!-- Trust Chips -->
+                <div class="brand-trust-chips">
+                    <div class="trust-chip">
+                        <i class="fa-solid fa-shield-check"></i>
+                        <span>Secure &amp; Verified</span>
+                    </div>
+                    <div class="trust-chip">
+                        <i class="fa-solid fa-network-wired"></i>
+                        <span>Connected Healthcare Network</span>
+                    </div>
+                    <div class="trust-chip">
+                        <i class="fa-solid fa-bolt"></i>
+                        <span>Real-Time Management</span>
+                    </div>
+                </div>
+
+                <!-- Compact Trust Metric Row -->
+                <div class="brand-metric-row">
+                    <div class="metric-col">
+                        <i class="fa-solid fa-lock"></i>
+                        <div class="metric-info">
+                            <strong>Secure Access</strong>
+                            <span>End-to-End Encrypted</span>
+                        </div>
+                    </div>
+                    <div class="metric-divider"></div>
+                    <div class="metric-col">
+                        <i class="fa-solid fa-clock"></i>
+                        <div class="metric-info">
+                            <strong>24/7 Operations</strong>
+                            <span>Zero Downtime</span>
+                        </div>
+                    </div>
+                    <div class="metric-divider"></div>
+                    <div class="metric-col">
+                        <i class="fa-solid fa-cubes"></i>
+                        <div class="metric-info">
+                            <strong>Unified Platform</strong>
+                            <span>All-in-One Cloud</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- ═════ RIGHT AUTHENTICATION SECTION ═════ -->
+        <main class="auth-form-container">
+            <!-- Theme Toggle Button -->
+            <button 
+                class="theme-toggle-circle" 
+                id="themeToggleBtn" 
+                type="button" 
+                title="Toggle Dark / Light Theme" 
+                aria-label="Toggle Dark / Light Theme"
+                onclick="toggleAuthTheme()"
+            >
+                <i class="fa-solid fa-moon" id="themeIcon"></i>
+            </button>
+
+            <!-- ── 1. LOGIN FORM CARD ── -->
+            <div class="auth-form-card auth-form-box" id="loginForm">
+                <div class="card-header-top">
+                    <img src="/assets/logo2.png" alt="HospiKare Logo" class="form-logo">
+                    <div class="secure-partner-badge">
+                        <i class="fa-solid fa-shield-halved"></i>
+                        <span>Secure Partner Access</span>
+                    </div>
+                </div>
+
+                <h2 class="auth-card-title">Welcome back</h2>
+                <p class="auth-card-subtitle">Sign in to manage your Hospikare partner dashboard.</p>
+
+                <!-- Success Alert -->
+                <div class="success-message" id="loginSuccess" role="alert">
+                    <i class="fa-solid fa-circle-check"></i>
+                    <span>Login successful! Redirecting to dashboard...</span>
+                </div>
+
+                <!-- Login Form -->
+                <form class="auth-form" id="loginFormElement" novalidate>
+                    <!-- Email / Contact -->
+                    <div class="form-group">
+                        <label for="loginEmail">Email or Phone</label>
+                        <div class="input-field-wrapper">
+                            <i class="fa-regular fa-envelope input-icon" aria-hidden="true"></i>
+                            <input 
+                                type="text" 
+                                id="loginEmail" 
+                                name="email_or_contact" 
+                                placeholder="name@example.com or +91..." 
+                                autocomplete="username" 
+                                required
+                            >
+                        </div>
+                        <span class="form-error">Please enter a valid email or phone</span>
+                    </div>
+
+                    <!-- Password -->
+                    <div class="form-group">
+                        <label for="loginPassword">Password</label>
+                        <div class="input-field-wrapper">
+                            <i class="fa-solid fa-lock input-icon" aria-hidden="true"></i>
+                            <input 
+                                type="password" 
+                                id="loginPassword" 
+                                name="password" 
+                                placeholder="Enter your password" 
+                                autocomplete="current-password" 
+                                required
+                            >
+                            <button 
+                                type="button" 
+                                class="password-toggle-btn" 
+                                title="Toggle password visibility" 
+                                aria-label="Toggle password visibility" 
+                                onclick="togglePasswordVisibility('loginPassword', this)"
+                            >
+                                <i class="fa-regular fa-eye"></i>
+                            </button>
+                        </div>
+                        <!-- Caps Lock Warning -->
+                        <div id="capsLockWarning" class="caps-lock-badge hidden" aria-live="polite">
+                            <i class="fa-solid fa-arrow-up-from-bracket"></i>
+                            <span>Caps Lock is ON</span>
+                        </div>
+                        <span class="form-error">Password is required</span>
+                    </div>
+
+                    <!-- Remember Me Utility Row -->
+                    <div class="form-utility-row">
+                        <label class="remember-checkbox-label" for="rememberMe">
+                            <input type="checkbox" id="rememberMe" name="remember">
+                            <span>Remember me</span>
+                        </label>
+                    </div>
+
+                    <!-- Primary Submit Button -->
+                    <button type="submit" id="loginSubmitBtn" class="btn-auth-primary">
+                        <span>Sign in securely</span>
+                        <i class="fa-solid fa-arrow-right-to-bracket btn-icon"></i>
+                        <div class="loading-spinner"></div>
+                    </button>
+                </form>
+
+                <!-- Registration Switcher -->
+                <div class="form-toggle-divider form-toggle">
+                    <span>New partner?</span>
+                    <a onclick="toggleForms()" class="toggle-link" role="button" tabindex="0">Create an account</a>
+                </div>
+            </div>
+
+            <!-- ── 2. REGISTRATION FORM CARD ── -->
+            <div class="auth-form-card auth-form-box hidden" id="registerForm">
+                <div class="card-header-top">
+                    <img src="/assets/logo2.png" alt="HospiKare Logo" class="form-logo">
+                    <div class="secure-partner-badge">
+                        <i class="fa-solid fa-sparkles"></i>
+                        <span>Partner Onboarding</span>
+                    </div>
+                </div>
+
+                <h2 class="auth-card-title">Create account</h2>
+                <p class="auth-card-subtitle">Register your healthcare service to start reaching more customers.</p>
+
+                <!-- Success Alert -->
+                <div class="success-message" id="registerSuccess" role="alert">
+                    <i class="fa-solid fa-circle-check"></i>
+                    <span>Registration successful! Verify your email.</span>
+                </div>
+
+                <!-- Registration Form -->
+                <form class="auth-form registration-grid-form" id="registerFormElement" novalidate>
+                    <!-- Full Name -->
+                    <div class="form-group grid-col-half">
+                        <label for="regName">Full Name</label>
+                        <div class="input-field-wrapper">
+                            <i class="fa-regular fa-user input-icon" aria-hidden="true"></i>
+                            <input type="text" id="regName" placeholder="Dr. Rajesh Kumar" required>
+                        </div>
+                        <span class="form-error">Name is required</span>
+                    </div>
+
+                    <!-- Email or Phone -->
+                    <div class="form-group grid-col-half">
+                        <label for="regEmail">Email or Phone</label>
+                        <div class="input-field-wrapper">
+                            <i class="fa-regular fa-envelope input-icon" aria-hidden="true"></i>
+                            <input type="text" id="regEmail" placeholder="name@example.com or +91..." required>
+                        </div>
+                        <span class="form-error">Valid email or phone required</span>
+                    </div>
+
+                    <!-- Partner Type -->
+                    <div class="form-group grid-col-half">
+                        <label for="regType">Partner Type</label>
+                        <div class="input-field-wrapper">
+                            <i class="fa-solid fa-building-user input-icon" id="partnerTypeIcon" aria-hidden="true"></i>
+                            <select id="regType" required onchange="updatePartnerIcon(this.value); handlePartnerType(this.value);">
+                                <option value="">Select service type</option>
+                                <option value="hospital">Hospital</option>
+                                <option value="ambulance">Ambulance Service</option>
+                                <option value="medicines">Pharmacy / Medicines</option>
+                                <option value="lab test">Lab &amp; Testing</option>
+                                <option value="medical equipments">Medical Equipment</option>
+                                <option value="insurance">Insurance Provider</option>
+                            </select>
+                        </div>
+                        <span class="form-error">Please select a type</span>
+                    </div>
+
+                    <!-- Profile Photo -->
+                    <div class="form-group grid-col-half">
+                        <label for="regPhoto">Profile Photo</label>
+                        <div class="custom-file-upload-box" onclick="document.getElementById('regPhoto').click()">
+                            <input type="file" id="regPhoto" accept="image/*" onchange="handlePhotoPreview(this)" style="display: none;">
+                            <div class="file-upload-content" id="photoUploadContent">
+                                <i class="fa-solid fa-cloud-arrow-up upload-icon"></i>
+                                <div>
+                                    <span class="upload-text">Choose File</span>
+                                    <span class="upload-subtext">JPG/PNG</span>
+                                </div>
+                            </div>
+                            <div class="file-preview-thumb hidden" id="photoPreviewThumb">
+                                <img loading="lazy" id="photoPreviewImg" src="" alt="Preview">
+                                <span class="change-photo-txt"><i class="fa-solid fa-pen"></i></span>
+                            </div>
+                        </div>
+                        <span class="form-error">Please upload a profile photo</span>
+                    </div>
+
+                    <!-- Password -->
+                    <div class="form-group grid-col-half">
+                        <label for="regPassword">Password</label>
+                        <div class="input-field-wrapper">
+                            <i class="fa-solid fa-lock input-icon" aria-hidden="true"></i>
+                            <input type="password" id="regPassword" placeholder="Create password" required oninput="checkPasswordStrength(this.value)">
+                            <button type="button" class="password-toggle-btn" title="Toggle Password" aria-label="Toggle Password" onclick="togglePasswordVisibility('regPassword', this)">
+                                <i class="fa-regular fa-eye"></i>
+                            </button>
+                        </div>
+                        <div class="password-strength-container hidden" id="strengthMeter">
+                            <div class="strength-bar-bg"><div class="strength-bar-fill" id="strengthFill"></div></div>
+                            <span class="strength-label" id="strengthText">Weak</span>
+                        </div>
+                        <span class="form-error">Password must be at least 4 characters</span>
+                    </div>
+
+                    <!-- Confirm Password -->
+                    <div class="form-group grid-col-half">
+                        <label for="regConfirm">Confirm Password</label>
+                        <div class="input-field-wrapper">
+                            <i class="fa-solid fa-shield-halved input-icon" aria-hidden="true"></i>
+                            <input type="password" id="regConfirm" placeholder="Repeat password" required>
+                            <button type="button" class="password-toggle-btn" title="Toggle Password" aria-label="Toggle Password" onclick="togglePasswordVisibility('regConfirm', this)">
+                                <i class="fa-regular fa-eye"></i>
+                            </button>
+                        </div>
+                        <span class="form-error">Passwords do not match</span>
+                    </div>
+
+                    <!-- Submit Registration -->
+                    <div class="form-group grid-col-full" style="margin-top: 8px;">
+                        <button type="submit" class="btn-auth-primary submit-btn-modern">
+                            <span>Create account</span>
+                            <i class="fa-solid fa-arrow-right-to-bracket btn-icon"></i>
+                            <div class="loading-spinner"></div>
+                        </button>
+                    </div>
+                </form>
+
+                <!-- Login Switcher -->
+                <div class="form-toggle-divider form-toggle">
+                    <span>Already registered?</span>
+                    <a onclick="toggleForms()" class="toggle-link" role="button" tabindex="0"><i class="fa-solid fa-right-to-bracket"></i> Sign in to your account</a>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- ═════════════════════════════════════════════════════════════════════
+         AUTHENTICATION LOGIC & INTERACTION SCRIPTS
+         ═════════════════════════════════════════════════════════════════════ -->
+    <script>
+        // ── 1. Theme Engine & Synchronization ──
+        function updateThemeToggleButton(theme) {
+            const icon = document.getElementById('themeIcon');
+            const btn = document.getElementById('themeToggleBtn');
+            if (icon) {
+                if (theme === 'dark') {
+                    icon.className = 'fa-solid fa-sun';
+                    if (btn) btn.setAttribute('title', 'Switch to Light Theme');
+                } else {
+                    icon.className = 'fa-solid fa-moon';
+                    if (btn) btn.setAttribute('title', 'Switch to Dark Theme');
+                }
+            }
+        }
+
+        function toggleAuthTheme() {
+            const currentTheme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
+            const nextTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            
+            if (nextTheme === 'dark') {
+                document.documentElement.setAttribute('data-theme', 'dark');
+                document.body.classList.add('dark-theme');
+            } else {
+                document.documentElement.removeAttribute('data-theme');
+                document.body.classList.remove('dark-theme');
+            }
+            
+            try {
+                localStorage.setItem('hk_theme', nextTheme);
+            } catch (e) {}
+            
+            updateThemeToggleButton(nextTheme);
+        }
+
+        // Initialize Theme Button Icon on load
+        (function syncInitialTheme() {
+            const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+            updateThemeToggleButton(isDark ? 'dark' : 'light');
+        })();
+
+        // ── 2. Session Redirect & Role Router ──
+        function getUserRedirectPage(type) {
+            const normalized = String(type || '').toLowerCase();
+            if (normalized === 'ambulance') return '/amb.html';
+            if (normalized === 'hospital' || normalized === 'clinic') return '/hsp.html';
+            if (normalized === 'insurance') return '/ins.html';
+            if (normalized === 'lab test' || normalized === 'lab') return '/lt.html';
+            if (normalized === 'medicines' || normalized === 'pharmacy') return '/mdc.html';
+            if (normalized === 'medical equipments' || normalized === 'medical equipment' || normalized === 'equipment') return '/mdeq.html';
+            return '/users.html';
+        }
+
+        async function redirectIfAlreadyLoggedIn() {
+            try {
+                const adminRes = await fetch('/api/admin/profile', { credentials: 'include' });
+                if (adminRes.ok) {
+                    const adminJson = await adminRes.json();
+                    if (adminJson && adminJson.success) {
+                        window.location.href = '/admin.html';
+                        return true;
+                    }
+                }
+
+                const userRes = await fetch('/api/user/profile', { credentials: 'include' });
+                if (userRes.ok) {
+                    const userJson = await userRes.json();
+                    if (userJson && userJson.success) {
+                        const type = userJson.user && userJson.user.type ? userJson.user.type : '';
+                        window.location.href = getUserRedirectPage(type);
+                        return true;
+                    }
+                }
+            } catch (error) {
+                console.log('No active session found:', error.message || error);
+            }
+            return false;
+        }
+
+        // ── 3. Floating Medical Particles Generator ──
+        function initParticles() {
+            const container = document.getElementById('particlesContainer');
+            if (!container || window.innerWidth < 900) return;
+            const symbols = ['+', '•', '✚', '♥', '+', '•'];
+            container.innerHTML = '';
+            for (let i = 0; i < 10; i++) {
+                const p = document.createElement('div');
+                p.className = 'particle';
+                p.textContent = symbols[Math.floor(Math.random() * symbols.length)];
+                p.style.left = (Math.random() * 90 + 5) + '%';
+                p.style.fontSize = (Math.random() * 12 + 10) + 'px';
+                p.style.animationDuration = (Math.random() * 10 + 10) + 's';
+                p.style.animationDelay = (Math.random() * 6) + 's';
+                container.appendChild(p);
+            }
+        }
+
+        // ── 4. Dynamic Lead Icon Switcher for Partner Type ──
+        function updatePartnerIcon(val) {
+            const icon = document.getElementById('partnerTypeIcon');
+            if (!icon) return;
+            const iconMap = {
+                'hospital': 'fa-hospital',
+                'clinic': 'fa-user-doctor',
+                'ambulance': 'fa-truck-medical',
+                'medicines': 'fa-pills',
+                'pharmacy': 'fa-pills',
+                'lab test': 'fa-vials',
+                'lab': 'fa-vials',
+                'medical equipments': 'fa-microscope',
+                'equipment': 'fa-microscope',
+                'insurance': 'fa-shield-halved',
+                'other': 'fa-building-user'
+            };
+            const iconClass = iconMap[val] || 'fa-building-user';
+            icon.className = `fa-solid ${iconClass} input-icon`;
+        }
+
+        // ── 5. Photo Preview Handler ──
+        function handlePhotoPreview(input) {
+            const content = document.getElementById('photoUploadContent');
+            const preview = document.getElementById('photoPreviewThumb');
+            const previewImg = document.getElementById('photoPreviewImg');
+            
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    previewImg.src = e.target.result;
+                    content.classList.add('hidden');
+                    preview.classList.remove('hidden');
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        // ── 6. Password Strength Checker ──
+        function checkPasswordStrength(val) {
+            const meter = document.getElementById('strengthMeter');
+            const fill = document.getElementById('strengthFill');
+            const label = document.getElementById('strengthText');
+            if (!meter || !fill || !label) return;
+
+            if (!val) {
+                meter.classList.add('hidden');
+                return;
+            }
+            meter.classList.remove('hidden');
+
+            let score = 0;
+            if (val.length >= 4) score++;
+            if (val.length >= 8) score++;
+            if (/[0-9]/.test(val)) score++;
+            if (/[^A-Za-z0-9]/.test(val)) score++;
+
+            if (score <= 1) {
+                fill.style.width = '33%';
+                fill.style.backgroundColor = '#EF4444';
+                label.textContent = 'Weak';
+                label.style.color = '#EF4444';
+            } else if (score === 2 || score === 3) {
+                fill.style.width = '66%';
+                fill.style.backgroundColor = '#F59E0B';
+                label.textContent = 'Good';
+                label.style.color = '#F59E0B';
+            } else {
+                fill.style.width = '100%';
+                fill.style.backgroundColor = '#10B981';
+                label.textContent = 'Strong';
+                label.style.color = '#10B981';
+            }
+        }
+
+        // ── 7. Toggle Password Visibility ──
+        function togglePasswordVisibility(inputId, btn) {
+            const input = document.getElementById(inputId);
+            if (!input) return;
+            const icon = btn.querySelector('i') || btn;
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+                btn.setAttribute('title', 'Hide password');
+            } else {
+                input.type = 'password';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+                btn.setAttribute('title', 'Show password');
+            }
+        }
+
+        // ── 8. Form Switcher (Login <-> Register) ──
+        function toggleForms() {
+            const loginForm = document.getElementById('loginForm');
+            const registerForm = document.getElementById('registerForm');
+            const formContainer = document.querySelector('.auth-form-container');
+            const authWrapper = document.querySelector('.auth-wrapper');
+            loginForm.classList.toggle('hidden');
+            registerForm.classList.toggle('hidden');
+            const isRegister = !registerForm.classList.contains('hidden');
+            if (formContainer) {
+                formContainer.classList.toggle('register-active', isRegister);
+                formContainer.scrollTop = 0;
+            }
+            if (authWrapper) {
+                authWrapper.classList.toggle('register-active', isRegister);
+            }
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function handlePartnerType(value) {
+            console.log('Selected partner type:', value);
+        }
+
+        // ── 9. Caps Lock Detection ──
+        const passwordInputs = [document.getElementById('loginPassword'), document.getElementById('regPassword')];
+        const capsLockBadge = document.getElementById('capsLockWarning');
+
+        passwordInputs.forEach(input => {
+            if (!input) return;
+            input.addEventListener('keyup', (e) => {
+                if (e.getModifierState && capsLockBadge) {
+                    if (e.getModifierState('CapsLock')) {
+                        capsLockBadge.classList.remove('hidden');
+                    } else {
+                        capsLockBadge.classList.add('hidden');
+                    }
+                }
+            });
+            input.addEventListener('keydown', (e) => {
+                if (e.getModifierState && capsLockBadge) {
+                    if (e.getModifierState('CapsLock')) {
+                        capsLockBadge.classList.remove('hidden');
+                    } else {
+                        capsLockBadge.classList.add('hidden');
+                    }
+                }
+            });
+            input.addEventListener('blur', () => {
+                if (capsLockBadge) capsLockBadge.classList.add('hidden');
+            });
+        });
+
+        // ── 10. Remember Me Pre-fill on Load ──
+        window.addEventListener('DOMContentLoaded', async () => {
+            initParticles();
+            
+            // Check remembered email
+            try {
+                const rememberedEmail = localStorage.getItem('hk_remembered_email');
+                if (rememberedEmail) {
+                    const emailInput = document.getElementById('loginEmail');
+                    const rememberCheck = document.getElementById('rememberMe');
+                    if (emailInput) emailInput.value = rememberedEmail;
+                    if (rememberCheck) rememberCheck.checked = true;
+                }
+            } catch (e) {}
+
+            await redirectIfAlreadyLoggedIn();
+        });
+
+        // ── 11. Login Flow with Backend API Integration ──
+        document.getElementById('loginFormElement')?.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const emailInput = document.getElementById('loginEmail');
+            const passwordInput = document.getElementById('loginPassword');
+            const rememberCheck = document.getElementById('rememberMe');
+            const email = emailInput ? emailInput.value.trim() : '';
+            const password = passwordInput ? passwordInput.value : '';
+            const formBox = document.getElementById('loginForm');
+            const button = e.target.querySelector('button[type="submit"]');
+
+            // Reset errors
+            emailInput?.closest('.form-group')?.classList.remove('error');
+            passwordInput?.closest('.form-group')?.classList.remove('error');
+
+            if (!email || !password) {
+                if (formBox) {
+                    formBox.classList.remove('shake-error');
+                    void formBox.offsetWidth; // Force reflow
+                    formBox.classList.add('shake-error');
+                }
+                if (!email && emailInput) emailInput.closest('.form-group')?.classList.add('error');
+                if (!password && passwordInput) passwordInput.closest('.form-group')?.classList.add('error');
+                return;
+            }
+
+            // Save or clear remembered email
+            try {
+                if (rememberCheck && rememberCheck.checked) {
+                    localStorage.setItem('hk_remembered_email', email);
+                } else {
+                    localStorage.removeItem('hk_remembered_email');
+                }
+            } catch (e) {}
+
+            button.disabled = true;
+            const originalButtonHtml = button.innerHTML;
+            button.innerHTML = '<div class="loading-spinner" style="display:inline-block;"></div> <span>Signing in...</span>';
+
+            try {
+                const response = await fetch('/api/login', {
+                    method: 'POST',
+                    credentials: 'include',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email_or_contact: email, password: password })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    button.style.background = 'linear-gradient(135deg, #10B981 0%, #059669 100%)';
+                    button.innerHTML = '<i class="fa-solid fa-circle-check" style="font-size:16px;"></i> <span>Signed in!</span>';
+                    const successAlert = document.getElementById('loginSuccess');
+                    if (successAlert) successAlert.classList.add('active');
+                    setTimeout(() => {
+                        window.location.href = result.redirect || '/admin.html';
+                    }, 700);
+                    return;
+                }
+
+                if (formBox) {
+                    formBox.classList.remove('shake-error');
+                    void formBox.offsetWidth;
+                    formBox.classList.add('shake-error');
+                }
+                alert(result.message || 'Login failed. Please check your credentials.');
+                button.disabled = false;
+                button.innerHTML = originalButtonHtml;
+            } catch (error) {
+                console.error('Login error:', error);
+                if (formBox) {
+                    formBox.classList.remove('shake-error');
+                    void formBox.offsetWidth;
+                    formBox.classList.add('shake-error');
+                }
+                alert('Server connection error. Please try again.');
+                button.disabled = false;
+                button.innerHTML = originalButtonHtml;
+            }
+        });
+
+        // ── 12. Registration Flow with Backend API Integration ──
+        document.getElementById('registerFormElement')?.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const nameInput = document.getElementById('regName');
+            const emailInput = document.getElementById('regEmail');
+            const typeInput = document.getElementById('regType');
+            const photoInput = document.getElementById('regPhoto');
+            const passwordInput = document.getElementById('regPassword');
+            const confirmInput = document.getElementById('regConfirm');
+            const formBox = document.getElementById('registerForm');
+
+            const name = nameInput ? nameInput.value.trim() : '';
+            const email = emailInput ? emailInput.value.trim() : '';
+            const type = typeInput ? typeInput.value.trim() : '';
+            const password = passwordInput ? passwordInput.value : '';
+            const confirm = confirmInput ? confirmInput.value : '';
+
+            // Reset errors
+            [nameInput, emailInput, typeInput, passwordInput, confirmInput].forEach(inp => {
+                if (inp) inp.closest('.form-group')?.classList.remove('error');
+            });
+
+            let hasError = false;
+            if (!name) { nameInput?.closest('.form-group')?.classList.add('error'); hasError = true; }
+            if (!email) { emailInput?.closest('.form-group')?.classList.add('error'); hasError = true; }
+            if (!type) { typeInput?.closest('.form-group')?.classList.add('error'); hasError = true; }
+            if (!password || password.length < 4) { passwordInput?.closest('.form-group')?.classList.add('error'); hasError = true; }
+            if (password !== confirm) { confirmInput?.closest('.form-group')?.classList.add('error'); hasError = true; }
+
+            if (hasError) {
+                if (formBox) {
+                    formBox.classList.remove('shake-error');
+                    void formBox.offsetWidth;
+                    formBox.classList.add('shake-error');
+                }
+                return;
+            }
+
+            const button = e.target.querySelector('button[type="submit"]');
+            button.disabled = true;
+            const originalButtonHtml = button.innerHTML;
+            button.innerHTML = '<div class="loading-spinner" style="display:inline-block;"></div> <span>Creating account...</span>';
+
+            try {
+                const formData = new FormData();
+                formData.append('name', name);
+                formData.append('email_or_contact', email);
+                formData.append('user_type', type);
+                formData.append('password', password);
+                if (photoInput && photoInput.files && photoInput.files[0]) {
+                    formData.append('profile_photo', photoInput.files[0]);
+                }
+
+                const response = await fetch('/api/register', { method: 'POST', body: formData });
+                const result = await response.json();
+
+                if (result.success) {
+                    button.style.background = 'linear-gradient(135deg, #10B981 0%, #059669 100%)';
+                    button.innerHTML = '<i class="fa-solid fa-circle-check" style="font-size:16px;"></i> <span>Account created!</span>';
+                    const successBox = document.getElementById('registerSuccess');
+                    if (successBox) {
+                        successBox.innerHTML = `<i class="fa-solid fa-circle-check"></i> <span>${result.message || 'Registration successful! You can now log in.'}</span>`;
+                        successBox.classList.add('active');
+                    }
+
+                    // Pre-fill login inputs
+                    const loginEmail = document.getElementById('loginEmail');
+                    const loginPassword = document.getElementById('loginPassword');
+                    if (loginEmail) loginEmail.value = email;
+                    if (loginPassword) loginPassword.value = password;
+
+                    setTimeout(() => {
+                        toggleForms();
+                        button.disabled = false;
+                        button.style.background = '';
+                        button.innerHTML = originalButtonHtml;
+                    }, 1200);
+                    return;
+                }
+
+                if (formBox) {
+                    formBox.classList.remove('shake-error');
+                    void formBox.offsetWidth;
+                    formBox.classList.add('shake-error');
+                }
+                alert(result.message || 'Registration failed. Please try again.');
+                button.disabled = false;
+                button.innerHTML = originalButtonHtml;
+            } catch (error) {
+                console.error('Registration error:', error);
+                if (formBox) {
+                    formBox.classList.remove('shake-error');
+                    void formBox.offsetWidth;
+                    formBox.classList.add('shake-error');
+                }
+                alert('Connection error during registration. Please try again.');
+                button.disabled = false;
+                button.innerHTML = originalButtonHtml;
+            }
+        });
+    </script>
+</body>
+</html>

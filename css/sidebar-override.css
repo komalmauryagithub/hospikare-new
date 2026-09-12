@@ -1,0 +1,428 @@
+/* sidebar-override.css */
+body {
+    display: flex !important;
+    height: 100vh !important;
+    margin: 0 !important;
+    overflow-y: hidden !important;
+}
+
+#navbar {
+    width: 250px !important;
+    height: 100vh !important;
+    background: white !important;
+    border-right: 1px solid #e2e8f0 !important;
+    border-bottom: none !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    justify-content: flex-start !important;
+    padding: 24px 0 !important;
+    box-shadow: 4px 0 15px rgba(0,0,0,0.05) !important;
+    position: static !important;
+    z-index: 1000;
+}
+
+#leftNavbar {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    gap: 16px !important;
+    margin-bottom: 24px !important;
+}
+
+#logoBox {
+    width: 100% !important;
+    max-width: 250px !important;
+    height: auto !important;
+    min-height: 96px !important;
+    padding: 0 !important;
+    border: none !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    overflow: hidden !important;
+    flex-shrink: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    margin: 0 auto !important;
+}
+
+#logoImage,
+#sidebar .logo-area img,
+.logo-area img {
+    display: block !important;
+    height: 76px !important;
+    max-height: 84px !important;
+    width: auto !important;
+    max-width: 215px !important;
+    object-fit: contain !important;
+    object-position: center center !important;
+    margin: 0 auto !important;
+    filter: drop-shadow(0 4px 12px rgba(36, 107, 253, 0.25)) !important;
+}
+
+#welcomeText {
+    text-align: center !important;
+    color: #2563EB !important;
+    font-size: 22px !important;
+}
+
+.vendorListToolbar {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 16px !important;
+    flex-wrap: wrap !important;
+}
+
+.vendorListActions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 14px;
+    flex-wrap: wrap;
+}
+
+.vendorLiveSearch {
+    width: min(340px, 100%);
+    min-width: 240px;
+    height: 44px;
+    padding: 0 14px;
+    border: 1px solid #d8deeb;
+    border-radius: 12px;
+    background: white;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #64748b;
+    box-shadow: 0 2px 8px rgba(31, 58, 154, 0.06);
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.vendorLiveSearch:focus-within {
+    border-color: #1f3a9a;
+    box-shadow: 0 0 0 4px rgba(31, 58, 154, 0.10);
+}
+
+.vendorLiveSearch input {
+    width: 100%;
+    min-width: 0;
+    padding: 0 !important;
+    border: none !important;
+    outline: none !important;
+    background: transparent !important;
+    color: #1e293b;
+    font-size: 14px;
+    box-shadow: none !important;
+}
+
+.vendorLiveSearch input:focus {
+    border: none !important;
+    box-shadow: none !important;
+}
+
+.vendorLiveSearch input::placeholder {
+    color: #94a3b8;
+}
+
+@media (max-width: 720px) {
+    .vendorListToolbar,
+    .vendorListActions {
+        align-items: stretch !important;
+        flex-direction: column !important;
+    }
+
+    .vendorLiveSearch {
+        width: 100%;
+        min-width: 0;
+    }
+}
+
+#centerNavbar, #menu {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 8px !important;
+    padding: 0 16px !important;
+    width: 100% !important;
+}
+
+.navItem, .menuItem {
+    padding: 12px 16px !important;
+    border-radius: 12px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    gap: 12px !important;
+    cursor: pointer !important;
+    transition: all 0.3s ease !important;
+    color: #3A3D52 !important;
+    font-size: 14px !important;
+    font-weight: 600 !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    height: auto !important;
+    line-height: 1.6 !important;
+}
+
+.navItem:hover, .menuItem:hover {
+    background: #eef1fa !important;
+    color: #2563EB !important;
+    transform: none !important;
+}
+
+.navItem.activeNav, .menuItem.active, .activeNav {
+    background: #2563EB !important;
+    color: white !important;
+    transform: none !important;
+}
+
+.navItem.activeNav:hover, .menuItem.active:hover, .activeNav:hover {
+    background: #162a70 !important;
+    color: white !important;
+    transform: none !important;
+}
+
+#rightNavbar {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    justify-content: flex-end !important;
+    margin-top: auto !important;
+    padding: 16px !important;
+}
+
+#logoutBtn {
+    width: 100% !important;
+    background: #e91e63 !important;
+    color: white !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 8px !important;
+    padding: 12px 18px !important;
+    border-radius: 8px !important;
+    border: none !important;
+    cursor: pointer !important;
+    font-size: 14px !important;
+    font-weight: 600 !important;
+    transition: all 0.3s ease !important;
+}
+
+#logoutBtn:hover {
+    background: #d81b60 !important;
+}
+
+#mainContainer, #mainContent {
+    flex: 1 !important;
+    height: 100vh !important;
+    overflow-y: auto !important;
+    padding: 32px 24px !important;
+    max-width: none !important;
+    margin: 0 !important;
+    box-sizing: border-box !important;
+}
+
+/* TABLE OVERRIDES - Match Admin Dashboard */
+table thead, 
+.availabilityTable thead, 
+.bookingsTable thead, 
+#ambulanceTable thead,
+#hospitalTable thead {
+    background: #eef1fa !important;
+}
+
+table th, 
+.availabilityTable th, 
+.bookingsTable th, 
+#ambulanceTable th,
+#hospitalTable th {
+    color: #2563EB !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.05em !important;
+    font-weight: 700 !important;
+    padding: 16px !important;
+    border: none !important;
+}
+
+table td, 
+.availabilityTable td, 
+.bookingsTable td, 
+#ambulanceTable td,
+#hospitalTable td {
+    border-top: 1px solid #e2e8f0 !important;
+    padding: 16px !important;
+    color: #4a5568 !important;
+}
+
+table tbody tr:hover, 
+.availabilityTable tbody tr:hover, 
+.bookingsTable tbody tr:hover, 
+#ambulanceTable tbody tr:hover,
+#hospitalTable tbody tr:hover {
+    background: #f8fafc !important;
+}
+
+/* BUTTON OVERRIDES - Match Admin Dashboard */
+.saveUpdateBtn, 
+.bookingUpdateBtn, 
+.ambulanceSaveBtn,
+#addAmbulanceBtn,
+#saveAmbulanceBtn,
+.updateBtn,
+.addBtn,
+.submitBtn {
+    background: #2563EB !important;
+    color: white !important;
+    border: none !important;
+    box-shadow: none !important;
+    background-image: none !important; /* remove gradients */
+}
+
+.saveUpdateBtn:hover, 
+.bookingUpdateBtn:hover, 
+.ambulanceSaveBtn:hover,
+#addAmbulanceBtn:hover,
+#saveAmbulanceBtn:hover,
+.updateBtn:hover,
+.addBtn:hover,
+.submitBtn:hover {
+    background: #162a70 !important;
+    transform: translateY(-2px) !important;
+}
+
+/* Inputs and Selects focus state */
+input:focus, select:focus, textarea:focus {
+    border-color: #2563EB !important;
+    box-shadow: 0 0 0 4px rgba(31, 58, 154, 0.10) !important;
+}
+
+/* Headings Match Admin */
+h2, .availableHeading, .busyHeading {
+    color: #2563EB !important;
+}
+
+/* =========================================
+   ULTIMATE ADMIN DASHBOARD OVERRIDES
+   For ALL Panels (lt.html, ins.html, etc.)
+========================================= */
+
+/* 1. Global Backgrounds */
+body {
+    background: #f8fafc !important; 
+}
+
+#mainContainer, #mainContent {
+    background: transparent !important;
+}
+
+/* Container Backgrounds (Remove Pink Tints) */
+.availabilityWrapper, 
+.bookingsTableContainer, 
+div[id$="TableContainer"], 
+.vendorCard,
+.card,
+.box {
+    background-color: white !important;
+    border-color: #e2e8f0 !important;
+}
+
+/* 2. All Tables (Catch-All) */
+table, .table {
+    border-collapse: collapse !important;
+    width: 100% !important;
+}
+
+table thead, table thead tr, table thead th, th {
+    background-color: #eef1fa !important;
+    background: #eef1fa !important;
+    color: #2563EB !important;
+    border-bottom: 2px solid #e2e8f0 !important;
+}
+
+table tbody tr {
+    border-bottom: 1px solid #e2e8f0 !important;
+}
+
+/* 3. All Buttons */
+#mainContainer button:not(.viewBtn):not(.deactivateBtn):not(.paymentBtn):not(.invoiceBtn):not(.approveBtn), 
+#mainContent button:not(.viewBtn):not(.deactivateBtn):not(.paymentBtn):not(.invoiceBtn):not(.approveBtn),
+button[type="submit"]:not(.viewBtn):not(.deactivateBtn):not(.paymentBtn):not(.invoiceBtn):not(.approveBtn),
+.sectionTop button:not(.viewBtn):not(.deactivateBtn):not(.paymentBtn):not(.invoiceBtn):not(.approveBtn) {
+    background: #2563EB !important;
+    background-image: none !important;
+    color: white !important;
+    border: none !important;
+    box-shadow: none !important;
+}
+
+#mainContainer button:not(.viewBtn):not(.deactivateBtn):not(.paymentBtn):not(.invoiceBtn):not(.approveBtn):hover, 
+#mainContent button:not(.viewBtn):not(.deactivateBtn):not(.paymentBtn):not(.invoiceBtn):not(.approveBtn):hover,
+button[type="submit"]:not(.viewBtn):not(.deactivateBtn):not(.paymentBtn):not(.invoiceBtn):not(.approveBtn):hover,
+.sectionTop button:not(.viewBtn):not(.deactivateBtn):not(.paymentBtn):not(.invoiceBtn):not(.approveBtn):hover {
+    background: #162a70 !important;
+}
+
+/* Modal Close Buttons */
+button[id^="close"], .closeBtn {
+    background: #f1f5f9 !important;
+    color: #64748b !important;
+}
+
+button[id^="close"]:hover, .closeBtn:hover {
+    background: #e2e8f0 !important;
+    color: #334155 !important;
+}
+
+/* Specific Badges / Status */
+.statusBadge, .badge, span[class*="Badge"] {
+    /* Reset pink badges if any */
+}
+
+/* "No Data" rows */
+td[colspan] {
+    color: #64748b !important;
+    font-weight: 600 !important;
+}
+
+/* All Headings */
+h1, h2, h3, h4, h5, h6 {
+    color: #2563EB !important;
+}
+
+/* Modals must be above navbar */
+div[id$="Modal"], .modal, #ambulanceModal {
+    z-index: 9999 !important;
+}
+
+@media (max-width: 768px) {
+    body {
+        flex-direction: column !important;
+        height: auto !important;
+        min-height: 100vh !important;
+        overflow-y: auto !important;
+    }
+    #navbar {
+        width: 100% !important;
+        height: auto !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        padding: 12px 16px !important;
+        position: sticky !important;
+        top: 0 !important;
+    }
+    #logoBox {
+        width: auto !important;
+        height: 54px !important;
+    }
+    #logoImage {
+        height: 44px !important;
+    }
+    #mainContainer, #mainContent {
+        height: auto !important;
+        min-height: calc(100vh - 70px) !important;
+        padding: 16px 12px !important;
+        overflow-x: auto !important;
+    }
+}

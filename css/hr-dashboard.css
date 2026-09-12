@@ -1,0 +1,173 @@
+/* ==========================================================================
+   hr-dashboard.css - Soft Mint-Green & Sage Enterprise HR Dashboard System
+   Mint (#10B981) | Sage (#0D9488) | Mint Soft (#ECFDF5) | Pure White (#FFFFFF)
+   ========================================================================== */
+
+:root {
+  --hk-mint: #10B981;
+  --hk-mint-dark: #059669;
+  --hk-mint-soft: #ECFDF5;
+  --hk-sage: #0D9488;
+  --hk-sage-soft: #F0FDFA;
+  --hk-hr-bg: #F8FAFC;
+  --hk-hr-surface: #FFFFFF;
+  --hk-hr-border: #E2E8F0;
+  --hk-hr-text-main: #0F172A;
+  --hk-hr-text-muted: #64748B;
+  --hk-hr-shadow: 0 10px 30px rgba(15, 23, 42, 0.06), 0 1px 3px rgba(15, 23, 42, 0.04);
+  --hk-hr-shadow-lg: 0 20px 40px rgba(16, 185, 129, 0.1), 0 4px 12px rgba(15, 23, 42, 0.05);
+}
+
+/* ── MINT & SAGE SIDEBAR ACTIVE STATES ── */
+.hr-sidebar-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: 12px;
+  color: var(--hk-hr-text-muted);
+  font-weight: 600;
+  font-size: 14px;
+  transition: all 0.22s cubic-bezier(0.22, 1, 0.36, 1);
+  text-decoration: none !important;
+}
+
+.hr-sidebar-item:hover,
+.hr-sidebar-item.active {
+  color: var(--hk-mint-dark);
+  background: var(--hk-mint-soft);
+  transform: none !important;
+}
+
+.hr-sidebar-item.active {
+  font-weight: 700;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.15);
+}
+
+/* ── LAYERED FLOATING CARDS ── */
+.hr-card {
+  background: var(--hk-hr-surface);
+  border-radius: 20px;
+  border: 1px solid var(--hk-hr-border);
+  padding: 24px;
+  box-shadow: var(--hk-hr-shadow);
+  transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.hr-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--hk-hr-shadow-lg);
+  border-color: rgba(16, 185, 129, 0.3);
+}
+
+/* ── METRIC PROGRESS RING CARDS ── */
+.hr-metric-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.hr-metric-value {
+  font-family: var(--font-heading);
+  font-size: 32px;
+  font-weight: 800;
+  color: var(--hk-hr-text-main);
+  margin-top: 6px;
+}
+
+.hr-progress-ring {
+  width: 54px;
+  height: 54px;
+  position: relative;
+}
+
+.hr-progress-ring circle {
+  fill: none;
+  stroke-width: 5;
+  stroke-linecap: round;
+  transform: rotate(-90deg);
+  transform-origin: 50% 50%;
+  transition: stroke-dashoffset 1s ease-in-out;
+}
+
+.hr-progress-ring .bg-ring {
+  stroke: #E2E8F0;
+}
+
+.hr-progress-ring .active-ring {
+  stroke: var(--hk-mint);
+  stroke-dasharray: 140;
+  stroke-dashoffset: 20;
+  animation: ringPulse 3s infinite alternate;
+}
+
+@keyframes ringPulse {
+  0% { stroke: #10B981; }
+  100% { stroke: #0D9488; }
+}
+
+/* ── INTERACTIVE ATTENDANCE CALENDAR ── */
+.hr-calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 8px;
+  text-align: center;
+  margin-top: 14px;
+}
+
+.hr-calendar-day {
+  padding: 10px 4px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--hk-hr-text-main);
+  background: var(--hk-hr-bg);
+  position: relative;
+  transition: all 0.2s ease;
+}
+
+.hr-calendar-day.active-day {
+  background: var(--hk-mint-soft);
+  color: var(--hk-mint-dark);
+  font-weight: 800;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.hr-calendar-day .dot-present {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #10B981;
+  position: absolute;
+  bottom: 4px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+/* ── PROFILE CARDS & AVATARS ── */
+.hr-avatar-wrap {
+  position: relative;
+  display: inline-block;
+}
+
+.hr-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--hk-hr-surface);
+  box-shadow: 0 4px 10px rgba(15, 23, 42, 0.1);
+}
+
+.hr-status-indicator {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #10B981;
+  border: 2px solid #FFFFFF;
+  position: absolute;
+  bottom: 0;
+  right: 0;
+}

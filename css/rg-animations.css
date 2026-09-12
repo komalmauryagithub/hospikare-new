@@ -1,0 +1,452 @@
+/* ==========================================================================
+   rg-animations.css - HospiKare Premium Partner Portal Animation & Theme System
+   ========================================================================== */
+
+/* ── 1. PAGE LOAD FADE-IN ── */
+body.auth-page-body {
+  opacity: 0;
+  animation: authPageFadeIn 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+@keyframes authPageFadeIn {
+  to { opacity: 1; }
+}
+
+/* ── 2. LEFT BRAND PANEL CINEMATIC HERO ── */
+.auth-brand-panel {
+  position: relative;
+  overflow: hidden;
+  background-size: 110% 110% !important;
+  animation: heroBgPanZoom 26s ease-in-out infinite alternate !important;
+}
+
+@keyframes heroBgPanZoom {
+  0% { background-position: center 40%; background-size: 106% 106%; }
+  100% { background-position: 48% 46%; background-size: 114% 114%; }
+}
+
+/* Light sweep across brand panel */
+.auth-brand-panel::after {
+  content: '';
+  position: absolute;
+  top: -60%;
+  left: -60%;
+  width: 220%;
+  height: 220%;
+  background: linear-gradient(
+    45deg,
+    transparent 44%,
+    rgba(33, 199, 232, 0.07) 48%,
+    rgba(255, 255, 255, 0.10) 51%,
+    transparent 55%
+  );
+  transform: rotate(25deg) translateY(-100%);
+  animation: brandLightSweep 12s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  pointer-events: none;
+  z-index: 1;
+}
+
+@keyframes brandLightSweep {
+  0%, 65% { transform: rotate(25deg) translateY(-100%); }
+  100% { transform: rotate(25deg) translateY(100%); }
+}
+
+/* Background healthcare grid & cross overlay */
+.brand-cross-bg {
+  position: absolute;
+  top: 10%;
+  right: -60px;
+  width: 360px;
+  height: 360px;
+  opacity: 0.05;
+  pointer-events: none;
+  z-index: 1;
+  background: radial-gradient(circle, #21C7E8 0%, transparent 70%);
+  animation: floatAmbientShape 10s ease-in-out infinite alternate;
+}
+
+@keyframes floatAmbientShape {
+  0% { transform: translateY(0) rotate(0deg); }
+  100% { transform: translateY(-24px) rotate(12deg); }
+}
+
+/* Floating particles container */
+.particles-container {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  overflow: hidden;
+}
+
+.particle {
+  position: absolute;
+  color: rgba(33, 199, 232, 0.28);
+  font-weight: 700;
+  user-select: none;
+  animation: floatParticle 14s linear infinite;
+}
+
+@keyframes floatParticle {
+  0% {
+    transform: translateY(110vh) scale(0.8) rotate(0deg);
+    opacity: 0;
+  }
+  20% {
+    opacity: 0.4;
+  }
+  80% {
+    opacity: 0.4;
+  }
+  100% {
+    transform: translateY(-10vh) scale(1.2) rotate(180deg);
+    opacity: 0;
+  }
+}
+
+/* SVG ECG Pulse Line Animation */
+.ecg-container {
+  margin-top: 0;
+  margin-bottom: 14px;
+  height: 26px;
+}
+
+.ecg-path {
+  stroke-dasharray: 400;
+  stroke-dashoffset: 400;
+  animation: ecgDraw 3.5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+@keyframes ecgDraw {
+  0% { stroke-dashoffset: 400; opacity: 0.3; }
+  45% { stroke-dashoffset: 0; opacity: 1; filter: drop-shadow(0 0 6px rgba(33, 199, 232, 0.6)); }
+  70% { stroke-dashoffset: 0; opacity: 1; filter: drop-shadow(0 0 6px rgba(33, 199, 232, 0.6)); }
+  100% { stroke-dashoffset: -400; opacity: 0.3; }
+}
+
+/* ── 3. STAGGERED ENTRANCE ANIMATIONS ── */
+.brand-eyebrow-pill {
+  opacity: 0;
+  transform: translateY(16px);
+  animation: authFadeInUp 0.6s cubic-bezier(0.22, 1, 0.36, 1) 0.12s forwards;
+}
+
+.brand-headline {
+  opacity: 0;
+  transform: translateY(22px);
+  animation: authFadeInUp 0.7s cubic-bezier(0.22, 1, 0.36, 1) 0.24s forwards;
+}
+
+.brand-copy {
+  opacity: 0;
+  transform: translateY(18px);
+  animation: authFadeInUp 0.7s cubic-bezier(0.22, 1, 0.36, 1) 0.36s forwards;
+}
+
+.brand-trust-chips {
+  opacity: 0;
+  transform: translateY(18px);
+  animation: authFadeInUp 0.7s cubic-bezier(0.22, 1, 0.36, 1) 0.48s forwards;
+}
+
+.brand-metric-row {
+  opacity: 0;
+  transform: translateY(18px);
+  animation: authFadeInUp 0.7s cubic-bezier(0.22, 1, 0.36, 1) 0.60s forwards;
+}
+
+@keyframes authFadeInUp {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ── 4. RIGHT AUTH CARD ENTRANCE & HOVER ── */
+.auth-form-card, .auth-form-box {
+  opacity: 0;
+  transform: translateY(20px) scale(0.98);
+  animation: cardEntrance 0.7s cubic-bezier(0.22, 1, 0.36, 1) 0.15s forwards;
+  transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.3s cubic-bezier(0.22, 1, 0.36, 1), background-color 0.3s ease, border-color 0.3s ease;
+}
+
+@keyframes cardEntrance {
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* ── 5. FORM CONTROLS & MICRO-INTERACTIONS ── */
+.input-field-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.input-icon {
+  position: absolute;
+  left: 16px;
+  color: #94A3B8;
+  font-size: 15px;
+  transition: color 0.2s ease, transform 0.2s ease;
+  pointer-events: none;
+  z-index: 4;
+}
+
+.form-group:focus-within .input-icon {
+  color: #2563EB !important;
+  transform: scale(1.08);
+}
+
+[data-theme="dark"] .form-group:focus-within .input-icon {
+  color: #21C7E8 !important;
+}
+
+.password-toggle-btn {
+  position: absolute;
+  right: 14px;
+  background: transparent;
+  border: none;
+  color: #94A3B8;
+  cursor: pointer;
+  font-size: 15px;
+  padding: 8px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s ease, background-color 0.2s ease;
+  z-index: 5;
+}
+
+.password-toggle-btn:hover {
+  color: #2563EB;
+  background: rgba(37, 99, 235, 0.08);
+}
+
+[data-theme="dark"] .password-toggle-btn:hover {
+  color: #21C7E8;
+  background: rgba(33, 199, 232, 0.12);
+}
+
+/* Submit Button Hover and Ripple Sweep */
+.btn-auth-primary {
+  position: relative;
+  overflow: hidden;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.btn-auth-primary::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(60deg, transparent 40%, rgba(255, 255, 255, 0.22) 50%, transparent 60%);
+  transform: translateX(-100%);
+  transition: transform 0.6s ease;
+}
+
+.btn-auth-primary:hover::after {
+  transform: translateX(100%);
+}
+
+.btn-auth-primary:hover {
+  transform: translateY(-2px);
+}
+
+.btn-auth-primary:active {
+  transform: translateY(0);
+}
+
+/* Shake Animation for Validation Error */
+.auth-form-card.shake-error, .auth-form-box.shake-error {
+  animation: formShake 0.45s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+}
+
+@keyframes formShake {
+  10%, 90% { transform: translate3d(-3px, 0, 0); }
+  20%, 80% { transform: translate3d(4px, 0, 0); }
+  30%, 50%, 70% { transform: translate3d(-5px, 0, 0); }
+  40%, 60% { transform: translate3d(5px, 0, 0); }
+}
+
+.auth-form .form-group label {
+
+.input-with-icon-wrapper input,
+.input-with-icon-wrapper select {
+  height: 48px;
+  border-radius: 12px !important;
+  border: 1px solid #CBD5E1 !important;
+  background: #F8FAFC !important;
+  font-size: 13px !important;
+  color: #0F172A !important;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  appearance: none;
+}
+
+.input-with-icon-wrapper select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%252364748B'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E") !important;
+  background-repeat: no-repeat !important;
+  background-position: right 14px center !important;
+  background-size: 16px !important;
+  padding-right: 38px !important;
+  cursor: pointer;
+}
+
+/* Custom Profile Photo Upload Container */
+.custom-file-upload-box {
+  min-height: 48px;
+  border: 2px dashed #CBD5E1;
+  border-radius: 12px;
+  background: #F8FAFC;
+  padding: 8px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.custom-file-upload-box:hover {
+  border-color: #246BFD;
+  background: rgba(36, 107, 253, 0.04);
+}
+
+.file-upload-content {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #64748B;
+}
+
+.upload-icon {
+  font-size: 18px;
+  color: #246BFD;
+}
+
+.upload-text {
+  font-size: 13px;
+  font-weight: 600;
+  color: #334155;
+}
+
+.upload-subtext {
+  font-size: 11px;
+  color: #94A3B8;
+}
+
+.file-preview-thumb {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+}
+
+.file-preview-thumb img {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #246BFD;
+}
+
+.change-photo-txt {
+  font-size: 12px;
+  font-weight: 700;
+  color: #246BFD;
+}
+
+/* Password Strength Meter */
+.password-strength-container {
+  margin-top: 6px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.strength-bar-bg {
+  flex: 1;
+  height: 4px;
+  background: #E2E8F0;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.strength-bar-fill {
+  height: 100%;
+  width: 0%;
+  border-radius: 4px;
+  transition: width 0.3s ease, background-color 0.3s ease;
+}
+
+.strength-label {
+  font-size: 11px;
+  font-weight: 700;
+  min-width: 45px;
+}
+
+/* Modern Submit Button */
+.submit-btn-modern {
+  width: 100%;
+  height: 52px;
+  border-radius: 12px !important;
+  font-size: 15px !important;
+  font-weight: 700 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 10px !important;
+  cursor: pointer;
+  border: none !important;
+  color: #FFFFFF !important;
+  box-shadow: 0 8px 20px rgba(36, 107, 253, 0.28) !important;
+}
+
+.btn-icon {
+  font-size: 16px;
+  transition: transform 0.2s ease;
+}
+
+.submit-btn-modern:hover .btn-icon {
+  transform: translateX(4px);
+}
+
+.toggle-link {
+  color: #246BFD !important;
+  font-weight: 700 !important;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.toggle-link:hover {
+  text-decoration: underline !important;
+}
+
+/* ── RESPONSIVE & ACCESSIBILITY OVERRIDES ── */
+@media (max-width: 900px) {
+  .particles-container,
+  .brand-cross-bg,
+  .auth-form-container::before,
+  .auth-form-container::after {
+    display: none !important;
+  }
+  .auth-brand-panel {
+    animation: none !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  .particles-container, .auth-brand-panel::after, .brand-cross-bg {
+    display: none !important;
+  }
+}
+

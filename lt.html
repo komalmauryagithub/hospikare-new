@@ -1,0 +1,776 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="icon" type="image/png" href="/assets/logo.png">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lab Tests - HospiKare</title>
+  <script>
+    (function() {
+      try {
+        const savedTheme = localStorage.getItem('hk_theme');
+        if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+          document.documentElement.setAttribute('data-theme', 'dark');
+        } else {
+          document.documentElement.removeAttribute('data-theme');
+        }
+      } catch (e) {}
+    })();
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" type="text/css" href="/css/admin.css?v=20260821-v6">
+  <link rel="stylesheet" type="text/css" href="/css/modern-ui.css?v=20260821-v6">
+  <link rel="stylesheet" type="text/css" href="/css/theme-system.css?v=20260821-v6">
+  <link rel="stylesheet" type="text/css" href="/css/enhancements.css?v=20260821-v6">
+  <link rel="stylesheet" type="text/css" href="/css/mobile-ui.css?v=20260821-v6">
+  <link rel="stylesheet" type="text/css" href="/css/lt.css?v=20260821-v6">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="with-sidebar">
+
+  <!-- SIDEBAR -->
+  <aside id="sidebar">
+      <div class="logo-area">
+          <img id="logoImage" src="/assets/logo2.png" alt="Hospikare">
+          <div class="vendor-badge"><i class="fa-solid fa-flask-vial"></i> Diagnostic Lab</div>
+      </div>
+
+      <div id="menu">
+          <div class="menu-category">MAIN</div>
+          <div class="menuItem active" id="dashboardBtn">
+              <i class="fa-solid fa-border-all"></i>
+              <span>Dashboard</span>
+          </div>
+
+          <div class="menu-category">LAB MANAGEMENT</div>
+          <div class="menuItem" id="labsBtn">
+              <i class="fa-solid fa-flask"></i>
+              <span>Lab Tests</span>
+          </div>
+          <div class="menuItem" id="bookingsBtn">
+              <i class="fa-solid fa-calendar-check"></i>
+              <span>Bookings</span>
+          </div>
+          <div class="menuItem" id="patientsBtn">
+              <i class="fa-solid fa-bed-pulse"></i>
+              <span>Patients</span>
+          </div>
+          <div class="menuItem" id="reportsBtn">
+              <i class="fa-solid fa-file-medical"></i>
+              <span>Reports</span>
+          </div>
+
+          <div class="menu-category">FINANCE</div>
+          <div class="menuItem" id="paymentsBtn">
+              <i class="fa-solid fa-indian-rupee-sign"></i>
+              <span>Payments</span>
+          </div>
+          <div class="menuItem" style="color: #EF4B5F; margin-top: auto;" onclick="logout(event)">
+              <i class="fa-solid fa-right-from-bracket"></i>
+              <span>Logout</span>
+          </div>
+      </div>
+  </aside>
+
+  <!-- MAIN WRAPPER -->
+  <div id="mainContentWrapper">
+      <!-- TOP NAVBAR -->
+      <nav id="topNavbar">
+          <div class="nav-left">
+              <div>
+                  <div class="nav-title">Lab Tests</div>
+                  <div class="nav-subtitle" id="welcomeText">Welcome back!</div>
+              </div>
+          </div>
+          
+          <div class="nav-center">
+              <div class="search-wrapper">
+                  <i class="fa-solid fa-magnifying-glass"></i>
+                  <input type="text" class="top-search" placeholder="Search tests, patients, reports...">
+              </div>
+          </div>
+
+          <div class="nav-right">
+              <div class="dashboard-date-filter lab-date-filter">
+                  <button
+                      id="labDateFilterBtn"
+                      class="date-picker-btn"
+                      type="button"
+                      aria-expanded="false"
+                      aria-controls="labDateFilterPanel"
+                  >
+                      <i class="fa-regular fa-calendar"></i>
+                      <span id="labDateFilterText">All Time</span>
+                      <i class="fa-solid fa-chevron-down date-filter-chevron"></i>
+                  </button>
+                  <div id="labDateFilterPanel" class="dashboard-date-panel" hidden>
+                      <div class="date-filter-panel-title">
+                          <strong>Filter Lab Tests</strong>
+                          <span>Search by date, month or year</span>
+                      </div>
+                      <div class="date-filter-mode" role="radiogroup" aria-label="Lab date filter type">
+                          <label>
+                              <input type="radio" name="labDateFilterMode" value="date" checked>
+                              Date
+                          </label>
+                          <label>
+                              <input type="radio" name="labDateFilterMode" value="month">
+                              Month
+                          </label>
+                          <label>
+                              <input type="radio" name="labDateFilterMode" value="year">
+                              Year
+                          </label>
+                      </div>
+                      <div class="date-filter-fields" data-date-mode-field="date">
+                          <label>
+                              From Date
+                              <input id="labDateFrom" type="date">
+                          </label>
+                          <label>
+                              To Date
+                              <input id="labDateTo" type="date">
+                          </label>
+                      </div>
+                      <div class="date-filter-fields single-date-field" data-date-mode-field="month" hidden>
+                          <label>
+                              Month
+                              <input id="labDateMonth" type="month">
+                          </label>
+                      </div>
+                      <div class="date-filter-fields single-date-field" data-date-mode-field="year" hidden>
+                          <label>
+                              Year
+                              <select id="labDateYear"></select>
+                          </label>
+                      </div>
+                      <p id="labDateFilterError" class="date-filter-error"></p>
+                      <div class="date-filter-actions">
+                          <button id="clearLabDateFilter" class="date-filter-clear" type="button">
+                              Clear
+                          </button>
+                          <button id="applyLabDateFilter" class="date-filter-apply" type="button">
+                              <i class="fa-solid fa-magnifying-glass"></i>
+                              Search
+                          </button>
+                      </div>
+                  </div>
+              </div>
+              
+              <button class="header-icon-btn" id="themeToggleBtn" title="Toggle Theme" type="button" style="margin-right: 8px;"><i class="fa-solid fa-moon"></i></button>
+          <button class="header-icon-btn" id="fullScreenBtn" title="Full Screen" type="button" style="margin-right: 12px;"><i class="fa-solid fa-expand"></i></button>
+          <div class="profile-dropdown-wrapper" style="position: relative;">
+              <div class="profile-section" id="profileDropdownTrigger" style="cursor:pointer;" aria-label="Open profile menu" title="Profile Menu" onclick="document.getElementById('profileDropdownMenu').classList.toggle('hidden'); event.stopPropagation();">
+                  <div class="profile-info">
+                      <div class="profile-name">Lab Partner</div>
+                      <div class="profile-role">Vendor</div>
+                  </div>
+                  <div class="profile-avatar">
+                      <img loading="lazy" src="https://ui-avatars.com/api/?name=Lab+Partner&background=0284c7&color=fff" alt="Profile" style="width: 100%; height: 100%; border-radius: 50%;">
+                  </div>
+              </div>
+              <div class="profile-dropdown-menu hidden" id="profileDropdownMenu" style="position: absolute; top: calc(100% + 10px); right: 0; background: var(--surface, #ffffff); box-shadow: 0 10px 25px rgba(0,0,0,0.1); border-radius: 12px; z-index: 1000; min-width: 220px; padding: 8px 0; border: 1px solid var(--border, #e2e8f0); overflow: hidden;">
+                  <div class="dropdown-item" id="profileSectionTrigger" onclick="document.getElementById('profileDropdownMenu').classList.add('hidden')" style="padding: 12px 20px; cursor: pointer; display: flex; align-items: center; gap: 12px; color: var(--text, #1e293b); font-weight: 500; font-size: 14px; transition: background 0.2s;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='transparent'">
+                      <i class="fa-solid fa-user-pen" style="color: #3b82f6;"></i> <span id="profileTriggerText">Complete Profile</span>
+                  </div>
+              </div>
+          </div>
+          <script>
+              document.addEventListener('click', function(e) {
+                  const menu = document.getElementById('profileDropdownMenu');
+                  const trigger = document.getElementById('profileDropdownTrigger');
+                  if (menu && trigger && !menu.classList.contains('hidden') && !trigger.contains(e.target) && !menu.contains(e.target)) {
+                      menu.classList.add('hidden');
+                  }
+              });
+          </script>
+              <i class="fa-solid fa-right-from-bracket" id="logoutBtn" style="cursor:pointer; color: var(--trend-down); margin-left: 12px; font-size: 18px;" onclick="logout(event)" title="Logout"></i>
+          </div>
+      </nav>
+
+      <main id="mainContent">
+
+        <!-- ================= DASHBOARD ================= -->
+        <div id="dashboardSection">
+
+            <!-- HEALTHCARE COMMAND CENTRE HERO BANNER -->
+            <div class="hero-welcome-card">
+                <div class="hero-text-content">
+                    <h2>Welcome, <span class="vendor-display-name">Vendor</span> <i class="fa-solid fa-circle-check" style="color: #18B981; font-size: 18px;"></i></h2>
+                    <p>Here’s what’s happening with your diagnostic and laboratory operations today.</p>
+                </div>
+                <div class="hero-quick-actions">
+                    <button class="hero-btn" id="heroAddLabBtn" onclick="document.getElementById('labsBtn').click(); document.getElementById('addLabBtn')?.click();"><i class="fa-solid fa-plus"></i> Add Lab Test</button>
+                    <button class="hero-btn" id="heroBookingsBtn" onclick="document.getElementById('bookingsBtn').click();"><i class="fa-solid fa-calendar-check"></i> View Bookings</button>
+                </div>
+            </div>
+
+            <!-- BENTO KPI METRIC GRID -->
+            <div id="dashboardCards" class="grid-container">
+                <div class="dashCard featured-card">
+                    <div class="card-icon icon-purple"><i class="fa-solid fa-indian-rupee-sign"></i></div>
+                    <div class="card-content">
+                        <div class="card-meta-row">
+                            <h3>Total Earnings</h3>
+                            <span class="trend positive"><i class="fa-solid fa-arrow-trend-up"></i> +14.8%</span>
+                        </div>
+                        <h1 id="totalEarnings">₹0</h1>
+                        <div class="card-progress-wrap">
+                            <div class="card-progress-bar"><div class="card-progress-fill purple" style="width: 82%;"></div></div>
+                            <div class="card-progress-info"><span>Monthly Target: ₹1,00,000</span><span class="target-val">82% Achieved</span></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="dashCard">
+                    <div class="card-icon icon-green"><i class="fa-solid fa-calendar-check"></i></div>
+                    <div class="card-content">
+                        <div class="card-meta-row">
+                            <h3>Total Bookings</h3>
+                            <span class="trend positive"><i class="fa-solid fa-check"></i> Active</span>
+                        </div>
+                        <h1 id="totalBookings">0</h1>
+                        <div class="card-progress-wrap">
+                            <div class="card-progress-bar"><div class="card-progress-fill green" style="width: 68%;"></div></div>
+                            <div class="card-progress-info"><span>Target: 250 Bookings</span><span class="target-val">68% Target</span></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="dashCard">
+                    <div class="card-icon icon-blue"><i class="fa-solid fa-vial"></i></div>
+                    <div class="card-content">
+                        <div class="card-meta-row">
+                            <h3>Total Tests</h3>
+                            <span class="trend positive">Catalog</span>
+                        </div>
+                        <h1 id="totalTests">0</h1>
+                        <div class="card-progress-wrap">
+                            <div class="card-progress-bar"><div class="card-progress-fill" style="width: 90%;"></div></div>
+                            <div class="card-progress-info"><span>Capacity: 50 Tests</span><span class="target-val">Live Tests</span></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="dashCard">
+                    <div class="card-icon icon-orange"><i class="fa-solid fa-wallet"></i></div>
+                    <div class="card-content">
+                        <div class="card-meta-row">
+                            <h3>Total Payouts</h3>
+                            <span class="trend positive">Settled</span>
+                        </div>
+                        <h1 id="totalPayouts">₹0</h1>
+                        <div class="card-progress-wrap">
+                            <div class="card-progress-bar"><div class="card-progress-fill orange" style="width: 100%;"></div></div>
+                            <div class="card-progress-info"><span>Payout Cycle: Weekly</span><span class="target-val">100% Cleared</span></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CHARTS SECTION -->
+            <div id="chartsGrid">
+                <div class="chartWrapper">
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; flex-wrap: wrap; gap: 12px; border-bottom: 1px solid var(--hk-divider); padding-bottom: 14px;">
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <div style="width: 38px; height: 38px; border-radius: 10px; background: rgba(40, 100, 240, 0.1); color: var(--hk-primary-blue); display: flex; align-items: center; justify-content: center; font-size: 16px;">
+                                <i class="fa-solid fa-chart-column"></i>
+                            </div>
+                            <div>
+                                <h3 style="font-family: var(--font-heading); font-size: 16px; font-weight: 700; color: var(--hk-text-main); margin: 0 0 2px 0;">Total Earnings</h3>
+                                <p style="font-size: 12px; color: var(--hk-text-muted); margin: 0;">Month-wise revenue summary</p>
+                            </div>
+                        </div>
+                        <span class="status-badge" style="background: rgba(40, 100, 240, 0.1); color: var(--hk-primary-blue); font-size: 12px; font-weight: 700; padding: 4px 12px; border-radius: 20px;">
+                            ₹ Revenue Stream
+                        </span>
+                    </div>
+                    <div style="height: 310px; width: 100%; position: relative;">
+                        <canvas id="earningsBarChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="chartWrapper">
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; flex-wrap: wrap; gap: 12px; border-bottom: 1px solid var(--hk-divider); padding-bottom: 14px;">
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <div style="width: 38px; height: 38px; border-radius: 10px; background: rgba(25, 191, 211, 0.1); color: var(--hk-cyan); display: flex; align-items: center; justify-content: center; font-size: 16px;">
+                                <i class="fa-solid fa-chart-pie"></i>
+                            </div>
+                            <div>
+                                <h3 style="font-family: var(--font-heading); font-size: 16px; font-weight: 700; color: var(--hk-text-main); margin: 0 0 2px 0;">Booking Status</h3>
+                                <p style="font-size: 12px; color: var(--hk-text-muted); margin: 0;">Distribution breakdown</p>
+                            </div>
+                        </div>
+                        <select id="monthSelect" onchange="updatePieChart()" style="padding: 6px 12px; border-radius: 10px; border: 1px solid #E2E8F0; font-size: 13px; font-weight: 600; color: #172033; outline: none; cursor: pointer; background: #FFFFFF;">
+                            <option value="All">All Time</option>
+                            <option value="0">January</option>
+                            <option value="1">February</option>
+                            <option value="2">March</option>
+                            <option value="3">April</option>
+                            <option value="4">May</option>
+                            <option value="5">June</option>
+                            <option value="6">July</option>
+                            <option value="7">August</option>
+                            <option value="8">September</option>
+                            <option value="9">October</option>
+                            <option value="10">November</option>
+                            <option value="11">December</option>
+                        </select>
+                    </div>
+                    <div style="height: 310px; width: 100%; position: relative;">
+                        <canvas id="bookingsPieChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid-container" style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 30px;">
+                <div class="table-wrapper" style="grid-column: span 6;">
+                    <div class="table-header">
+                        <h2>Recent Bookings</h2>
+                    </div>
+                    <div class="table-container">
+                        <table class="adminTable">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Patient</th>
+                                    <th>Test</th>
+                                    <th>Amount</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="dashboardBookingsBody">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <div class="table-wrapper" style="grid-column: span 6;">
+                    <div class="table-header">
+                        <h2>Recent Payouts</h2>
+                    </div>
+                    <div class="table-container">
+                        <table class="adminTable">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Amount</th>
+                                    <th>Payment ID</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="dashboardPaymentsBody">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= LAB TESTS ================= -->
+        <div id="labSection" style="display:none;">
+            <div class="table-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; flex-wrap:wrap; gap:16px;">
+                <div>
+                    <h2 style="font-family:var(--font-heading); font-size:24px; font-weight:800; color:var(--hk-text-main); margin:0 0 4px;">Diagnostic Centers & Tests</h2>
+                    <p style="margin:0; font-size:13px; color:var(--hk-text-muted);">Manage your pathology tests catalog, operating hours, and sample collection rules</p>
+                </div>
+                <button class="add-btn" id="addLabBtn"><i class="fa-solid fa-plus"></i> Add Lab Test</button>
+            </div>
+            <div class="table-wrapper">
+                <table class="adminTable" id="labTable">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Lab Name</th>
+                            <th>Address</th>
+                            <th>Home Collection</th>
+                            <th>Emergency Test</th>
+                            <th>Lab Hours</th>
+                            <th>Created At</th>
+                        </tr>
+                    </thead>
+                    <tbody id="labTableBody">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- ================= BOOKINGS ================= -->
+        <div id="bookingSection" style="display:none;">
+            <div class="table-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; flex-wrap:wrap; gap:16px;">
+                <div>
+                    <h2 style="font-family:var(--font-heading); font-size:24px; font-weight:800; color:var(--hk-text-main); margin:0 0 4px;">Diagnostic Bookings</h2>
+                    <p style="margin:0; font-size:13px; color:var(--hk-text-muted);">Process sample collection requests, update appointment status, and track revenue</p>
+                </div>
+            </div>
+            <div class="table-wrapper">
+                <table class="adminTable" id="bookingTable">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Patient Name</th>
+                            <th>Test Name</th>
+                            <th>Collection Type</th>
+                            <th>Booking Date</th>
+                            <th>Total Amount</th>
+                            <th>Booking Status</th>
+                            <th>Payment Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="bookingTableBody">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- ================= PATIENTS ================= -->
+        <div id="patientsSection" style="display:none;">
+            <div class="table-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; flex-wrap:wrap; gap:16px;">
+                <div>
+                    <h2 style="font-family:var(--font-heading); font-size:24px; font-weight:800; color:var(--hk-text-main); margin:0 0 4px;">Lab Test Patients</h2>
+                    <p style="margin:0; font-size:13px; color:var(--hk-text-muted);">View registered patient profiles, test histories, and scheduled collections</p>
+                </div>
+            </div>
+            <div class="table-wrapper" style="overflow-x:auto;">
+                <table class="adminTable" id="patientsTable" style="width:100%; min-width:1100px;">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>User Name</th>
+                            <th>Email</th>
+                            <th>Phone</th>
+                            <th>Patient Name</th>
+                            <th>Test Name</th>
+                            <th>Collection Type</th>
+                            <th>Booking Date</th>
+                            <th>Total Amount</th>
+                            <th>Booking Status</th>
+                            <th>Payment Status</th>
+                            <th>Created At</th>
+                        </tr>
+                    </thead>
+                    <tbody id="patientsTableBody">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- ================= REPORTS ================= -->
+        <div id="reportsSection" style="display:none;">
+            <div class="table-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; flex-wrap:wrap; gap:16px;">
+                <div>
+                    <h2 style="font-family:var(--font-heading); font-size:24px; font-weight:800; color:var(--hk-text-main); margin:0 0 4px;">Diagnostic Reports Dispatch</h2>
+                    <p style="margin:0; font-size:13px; color:var(--hk-text-muted);">Upload pathology PDF reports and dispatch directly to patients via WhatsApp & Email</p>
+                </div>
+            </div>
+            <div class="table-wrapper" style="overflow-x:auto;">
+                <table class="adminTable" id="reportsTable" style="width:100%; min-width:900px;">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>User</th>
+                            <th>Email</th>
+                            <th>Phone</th>
+                            <th>Patient</th>
+                            <th>Test</th>
+                            <th>Report</th>
+                            <th>Upload</th>
+                            <th>WhatsApp</th>
+                            <th>Gmail</th>
+                        </tr>
+                    </thead>
+                    <tbody id="reportsTableBody">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- ================= PAYMENTS ================= -->
+        <div id="paymentsSection" style="display:none;">
+            <div class="table-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; flex-wrap:wrap; gap:16px;">
+                <div>
+                    <h2 style="font-family:var(--font-heading); font-size:24px; font-weight:800; color:var(--hk-text-main); margin:0 0 4px;">Diagnostic Payout Settlements</h2>
+                    <p style="margin:0; font-size:13px; color:var(--hk-text-muted);">Track lab test earnings disbursements and Razorpay transaction settlements</p>
+                </div>
+            </div>
+            <div class="table-wrapper">
+                <table class="adminTable">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Amount</th>
+                            <th>Payment ID</th>
+                            <th>Status</th>
+                            <th>Paid At</th>
+                        </tr>
+                    </thead>
+                    <tbody id="paymentsTableBody">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+      </main>
+  </div>
+
+  <!-- ================= MODALS ================= -->
+  <!-- Reusing vendorDetailsModal design from admin.css for the lab modal -->
+  <div id="labModal" style="display:none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.6); justify-content: center; align-items: center; z-index: 1000; padding: 24px; backdrop-filter: blur(4px);">
+      <div id="labModalBox" style="background: var(--card-bg); border-radius: var(--rounded-lg); width: 100%; max-width: 900px; max-height: 90vh; display: flex; flex-direction: column; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);">
+          <div id="labModalHeader" style="padding: 20px 24px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;">
+              <h2 style="font-family: var(--font-heading); color: var(--text-main);">Add Lab</h2>
+              <button id="closeLabModal" style="background: transparent; border: none; font-size: 20px; color: var(--text-muted); cursor: pointer;"><i class="fa-solid fa-xmark"></i></button>
+          </div>
+          <div style="padding: 24px; overflow-y: auto;">
+              <form id="labForm">
+                  <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; margin-bottom: 24px;">
+                      <div style="display: flex; flex-direction: column; gap: 8px;">
+                          <label style="font-size: 13px; font-weight: 600; color: var(--text-muted);">Lab Name</label>
+                          <input type="text" id="lab_name" class="top-search" style="border-radius: var(--rounded-sm);">
+                      </div>
+                      <div style="display: flex; flex-direction: column; gap: 8px;">
+                          <label style="font-size: 13px; font-weight: 600; color: var(--text-muted);">Address</label>
+                          <input type="text" id="lab_address" class="top-search" style="border-radius: var(--rounded-sm);">
+                      </div>
+                      <div style="display: flex; flex-direction: column; gap: 8px;">
+                          <label style="font-size: 13px; font-weight: 600; color: var(--text-muted);">Location</label>
+                          <input type="text" id="lab_location" class="top-search" style="border-radius: var(--rounded-sm);">
+                      </div>
+                      <div style="display: flex; flex-direction: column; gap: 8px;">
+                          <label style="font-size: 13px; font-weight: 600; color: var(--text-muted);">Extra Charges</label>
+                          <input type="text" id="extra_chrg" class="top-search" style="border-radius: var(--rounded-sm);">
+                      </div>
+                      <div style="display: flex; flex-direction: column; gap: 8px; grid-column: span 2;">
+                          <label style="font-size: 13px; font-weight: 600; color: var(--text-muted);">Description</label>
+                          <input type="text" id="lab_description" class="top-search" style="border-radius: var(--rounded-sm);">
+                      </div>
+                      <div style="display: flex; flex-direction: column; gap: 8px; grid-column: span 2;">
+                          <label style="font-size: 13px; font-weight: 600; color: var(--text-muted);">Lab Type</label>
+                          <div class="checkboxGrid" id="labTypeGrid">
+                              <label><input type="checkbox" value="Pathology"> Pathology</label>
+                              <label><input type="checkbox" value="Radiology"> Radiology</label>
+                              <label><input type="checkbox" value="Diagnostic"> Diagnostic</label>
+                          </div>
+                      </div>
+                      <div style="display: flex; flex-direction: column; gap: 10px; grid-column: span 2;">
+                          <div class="field-title-row">
+                              <label style="font-size: 13px; font-weight: 600; color: var(--text-muted);">Available Tests</label>
+                              <button type="button" id="addCustomLabTestBtn" class="inline-add-btn">
+                                  <i class="fa-solid fa-plus"></i> Add Lab Test
+                              </button>
+                          </div>
+                          <div id="customLabTestPanel" class="custom-test-panel">
+                              <input type="text" id="customLabTestInput" class="top-search" placeholder="Enter test name">
+                              <button type="button" id="saveCustomLabTestBtn" class="inline-save-btn">Add</button>
+                          </div>
+                          <div class="checkboxGrid" id="labTestGrid">
+                              <label><input type="checkbox" value="Blood Test"> Blood Test</label>
+                              <label><input type="checkbox" value="Urine Test"> Urine Test</label>
+                              <label><input type="checkbox" value="X-ray"> X-ray</label>
+                              <label><input type="checkbox" value="MRI"> MRI</label>
+                              <label><input type="checkbox" value="CT Scan"> CT Scan</label>
+                              <label><input type="checkbox" value="ECG"> ECG</label>
+                          </div>
+                      </div>
+                      <div style="display: flex; flex-direction: column; gap: 8px;">
+                          <label style="font-size: 13px; font-weight: 600; color: var(--text-muted);">Test Price</label>
+                          <input type="text" id="test_price" class="top-search" style="border-radius: var(--rounded-sm);">
+                      </div>
+                      <div style="display: flex; flex-direction: column; gap: 8px;">
+                          <label style="font-size: 13px; font-weight: 600; color: var(--text-muted);">Home Collection</label>
+                          <select id="home_coll" class="top-search" style="border-radius: var(--rounded-sm);">
+                              <option>Yes</option>
+                              <option>No</option>
+                          </select>
+                      </div>
+                      <div style="display: flex; flex-direction: column; gap: 8px;">
+                          <label style="font-size: 13px; font-weight: 600; color: var(--text-muted);">Available Areas</label>
+                          <input type="text" id="available_areas" class="top-search" style="border-radius: var(--rounded-sm);">
+                      </div>
+                      <div style="display: flex; flex-direction: column; gap: 8px;">
+                          <label style="font-size: 13px; font-weight: 600; color: var(--text-muted);">Advanced Equipment</label>
+                          <select id="adv_equipment" class="top-search" style="border-radius: var(--rounded-sm);">
+                              <option>Yes</option>
+                              <option>No</option>
+                          </select>
+                      </div>
+                      <div style="display: flex; flex-direction: column; gap: 8px;">
+                          <label style="font-size: 13px; font-weight: 600; color: var(--text-muted);">Lab Hours</label>
+                          <input type="text" id="lab_hrs" class="top-search" style="border-radius: var(--rounded-sm);">
+                      </div>
+                      <div style="display: flex; flex-direction: column; gap: 8px;">
+                          <label style="font-size: 13px; font-weight: 600; color: var(--text-muted);">Test Timing</label>
+                          <input type="text" id="test_time" class="top-search" style="border-radius: var(--rounded-sm);">
+                      </div>
+                      <div style="display: flex; flex-direction: column; gap: 8px;">
+                          <label style="font-size: 13px; font-weight: 600; color: var(--text-muted);">Emergency Tests</label>
+                          <select id="emergency_test" class="top-search" style="border-radius: var(--rounded-sm);">
+                              <option>Yes</option>
+                              <option>No</option>
+                          </select>
+                      </div>
+                      <div style="display: flex; flex-direction: column; gap: 8px;">
+                          <label style="font-size: 13px; font-weight: 600; color: var(--text-muted);">Lab Registration</label>
+                          <input type="file" id="lab_reg" style="font-size: 13px;">
+                      </div>
+                      <div style="display: flex; flex-direction: column; gap: 8px;">
+                          <label style="font-size: 13px; font-weight: 600; color: var(--text-muted);">NABL Certificate</label>
+                          <input type="file" id="nabl" style="font-size: 13px;">
+                      </div>
+
+                      <div style="grid-column: span 2;">
+                          <div class="sectionTop" style="margin-top: 15px; display: flex; align-items: center; justify-content: space-between;">
+                              <h3 style="font-size: 14px; font-weight: 600; color: var(--text-main); margin: 0;">Pathologists</h3>
+                              <div style="display: flex; gap: 8px;">
+                                  <button type="button" id="addPathologistBtn" class="btn-base" style="padding: 6px 12px; font-size: 13px; background-color: var(--sidebar-active-bg); color: white;">
+                                      <i class="fa-solid fa-plus"></i> Add
+                                  </button>
+                                  <button type="button" id="importPathologistCSVBtn" class="btn-base" style="padding: 6px 12px; font-size: 13px; background-color: #64748b; color: white;">
+                                      <i class="fa-solid fa-file-csv"></i> Import CSV
+                                  </button>
+                              </div>
+                          </div>
+                          <div id="pathologistContainer" style="margin-top: 10px;">
+                          </div>
+                      </div>
+                  </div>
+                  <button type="submit" id="saveLabBtn" class="btn-base" style="width: 100%; background-color: var(--sidebar-active-bg); color: white; justify-content: center; padding: 12px; font-size: 15px;">
+                      Save Lab
+                  </button>
+              </form>
+          </div>
+      </div>
+  </div>
+
+  <!-- Add Booking Modal -->
+  <div id="addBookingModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100vh; background:rgba(0,0,0,0.5); z-index:999; align-items:center; justify-content:center; padding:20px;">
+      <div style="background:#fff; width:100%; max-width:500px; border-radius:12px; padding:25px; box-shadow:0 10px 25px rgba(0,0,0,0.1);">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+              <h2 style="font-family: var(--font-heading); font-size:20px; color:var(--text-main);">Add Manual Booking</h2>
+              <button id="closeBookingModalBtn" style="background:#f1f5f9; color:#64748b; border:none; width:32px; height:32px; border-radius:8px; cursor:pointer; display:flex; align-items:center; justify-content:center;"><i class="fa-solid fa-xmark"></i></button>
+          </div>
+          <form id="addBookingForm" style="display:flex; flex-direction:column; gap:15px;">
+              <div>
+                  <label style="font-size:14px; font-weight:600; color:#374151; margin-bottom:6px; display:block;">Select Lab Center *</label>
+                  <select id="bookingLabId" style="width:100%; padding:10px; border-radius:8px; border:1px solid #e2e8f0; outline:none;" required></select>
+              </div>
+              <div>
+                  <label style="font-size:14px; font-weight:600; color:#374151; margin-bottom:6px; display:block;">Patient Name *</label>
+                  <input type="text" id="bookingPatientName" style="width:100%; padding:10px; border-radius:8px; border:1px solid #e2e8f0; outline:none;" required>
+              </div>
+              <div>
+                  <label style="font-size:14px; font-weight:600; color:#374151; margin-bottom:6px; display:block;">Test Name *</label>
+                  <input type="text" id="bookingTestName" style="width:100%; padding:10px; border-radius:8px; border:1px solid #e2e8f0; outline:none;" required>
+              </div>
+              <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px;">
+                  <div>
+                      <label style="font-size:14px; font-weight:600; color:#374151; margin-bottom:6px; display:block;">Collection Type</label>
+                      <select id="bookingCollectionType" style="width:100%; padding:10px; border-radius:8px; border:1px solid #e2e8f0; outline:none;">
+                          <option value="lab">Lab Visit</option>
+                          <option value="home">Home Collection</option>
+                      </select>
+                  </div>
+                  <div>
+                      <label style="font-size:14px; font-weight:600; color:#374151; margin-bottom:6px; display:block;">Booking Date *</label>
+                      <input type="date" id="bookingDate" style="width:100%; padding:10px; border-radius:8px; border:1px solid #e2e8f0; outline:none;" required>
+                  </div>
+              </div>
+              <div>
+                  <label style="font-size:14px; font-weight:600; color:#374151; margin-bottom:6px; display:block;">Total Amount (₹) *</label>
+                  <input type="number" id="bookingAmount" style="width:100%; padding:10px; border-radius:8px; border:1px solid #e2e8f0; outline:none;" required>
+              </div>
+              <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px;">
+                  <div>
+                      <label style="font-size:14px; font-weight:600; color:#374151; margin-bottom:6px; display:block;">Booking Status</label>
+                      <select id="bookingStatus" style="width:100%; padding:10px; border-radius:8px; border:1px solid #e2e8f0; outline:none;">
+                          <option value="pending">Pending</option>
+                          <option value="completed">Completed</option>
+                          <option value="cancelled">Cancelled</option>
+                      </select>
+                  </div>
+                  <div>
+                      <label style="font-size:14px; font-weight:600; color:#374151; margin-bottom:6px; display:block;">Payment Status</label>
+                      <select id="bookingPaymentStatus" style="width:100%; padding:10px; border-radius:8px; border:1px solid #e2e8f0; outline:none;">
+                          <option value="pending">Pending</option>
+                          <option value="paid">Paid</option>
+                      </select>
+                  </div>
+              </div>
+              <button type="submit" class="add-btn" style="width:100%; justify-content:center; padding:12px; font-size:15px; margin-top:10px; border-radius:8px;">Save Booking</button>
+          </form>
+      </div>
+  </div>
+
+  <!-- PATHOLOGIST CSV IMPORT MODAL FOR DASHBOARD -->
+  <div id="pathologistDashboardCsvModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100vh; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; padding: 20px;">
+      <div style="background: white; padding: 24px; border-radius: 12px; width: 100%; max-width: 500px; box-shadow: 0 10px 40px rgba(0,0,0,0.2);">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+              <h3 style="font-size: 16px; font-weight: 700; color: var(--text-main);">Import Pathologists from CSV</h3>
+              <button type="button" id="closePathologistDashboardCsvBtn" style="background: transparent; border: none; font-size: 20px; color: #999; cursor: pointer;">✕</button>
+          </div>
+          <div style="margin-bottom: 16px;">
+              <p style="font-size: 13px; color: #666; margin-bottom: 12px;"><strong>CSV Format:</strong> name, qualification, experience</p>
+              <p style="font-size: 12px; color: #999;">Registration proof and Pathologist image should be added manually after import using each pathologist's file inputs.</p>
+              <input type="file" id="pathologistDashboardCsvFile" accept=".csv" style="font-size: 13px; width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 8px;">
+          </div>
+          <div style="display: flex; gap: 8px;">
+              <button type="button" id="uploadPathologistDashboardCsvBtn" style="flex: 1; padding: 10px; background-color: var(--sidebar-active-bg); color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">Upload & Import</button>
+              <button type="button" id="cancelPathologistDashboardCsvBtn" style="flex: 1; padding: 10px; background-color: #e2e8f0; color: #333; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">Cancel</button>
+          </div>
+      </div>
+  </div>
+
+  <!-- VENDOR PROFILE MODAL -->
+  <div id="profileModal" style="display:none; position:fixed; inset:0; background:rgba(7,26,61,0.75); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); z-index:999999; align-items:center; justify-content:center; padding:20px; overflow-y:auto;">
+    <div style="width:min(720px, 100%); max-height:90vh; background:var(--hk-card-bg, #fff); border-radius:20px; box-shadow:0 24px 60px rgba(7,26,61,0.3); overflow:hidden; display:flex; flex-direction:column; border:1px solid var(--hk-border, #e2e8f0);">
+      <div style="display:flex; justify-content:space-between; align-items:center; padding:20px 26px; border-bottom:1px solid var(--hk-divider, #e2e8f0); flex-shrink:0; background:var(--hk-surface-soft, #f8faff);">
+        <div>
+          <h3 style="margin:0; font-size:20px; font-weight:800; font-family:var(--font-heading); color:var(--hk-text-main, #0f172a);">Profile Details</h3>
+          <p style="margin:2px 0 0; font-size:12.5px; color:var(--hk-text-muted, #64748b);">Manage your diagnostic laboratory registration and profile</p>
+        </div>
+        <button type="button" id="closeProfileModal" style="border:none; background:transparent; font-size:24px; cursor:pointer; color:var(--hk-text-muted, #475569); line-height:1;">×</button>
+      </div>
+      <form id="vendorProfileForm" enctype="multipart/form-data" style="padding:24px 26px; display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:18px; overflow-y:auto; max-height:calc(90vh - 92px);">
+        <div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Name</label><input type="text" id="profileName" name="name" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px; background:var(--hk-surface, #fff); color:var(--hk-text-main, #101828);" required></div>
+        <div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Email / Contact</label><input type="text" id="profileEmail" name="email_or_contact" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px; background:var(--hk-surface, #fff); color:var(--hk-text-main, #101828);" required></div>
+        <div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">User Type</label><select id="profileUserType" name="user_type" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px; background:var(--hk-surface, #fff); color:var(--hk-text-main, #101828);"><option>Hospital</option><option>Ambulance</option><option>Lab Test</option><option>Insurance</option><option>Medicines</option><option>Medical Equipments</option></select></div>
+        <div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Profile Photo</label><input type="file" id="profilePhoto" name="profile_photo" accept="image/*" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px;"></div>
+        <div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Identity Proof</label><input type="file" id="profileIdentity" name="identity_proof" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px;"></div>
+        <div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Bank Account</label><input type="text" id="profileBank" name="bank_account" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px; background:var(--hk-surface, #fff); color:var(--hk-text-main, #101828);"></div>
+        <div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">IFSC Code</label><input type="text" id="profileIfsc" name="ifsc" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px; background:var(--hk-surface, #fff); color:var(--hk-text-main, #101828);"></div>
+        <div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Cancelled Cheque</label><input type="file" id="profileCheque" name="cheque" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px;"></div>
+        <div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Lab Name</label><input type="text" id="profileLabName" name="lab_name" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px; background:var(--hk-surface, #fff); color:var(--hk-text-main, #101828);"></div>
+        <div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Address</label><input type="text" id="profileLabAddress" name="address" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px; background:var(--hk-surface, #fff); color:var(--hk-text-main, #101828);"></div>
+        <div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Location</label><input type="text" id="profileLabLocation" name="location" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px; background:var(--hk-surface, #fff); color:var(--hk-text-main, #101828);"></div>
+        <div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Description</label><input type="text" id="profileLabDescription" name="description" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px; background:var(--hk-surface, #fff); color:var(--hk-text-main, #101828);"></div>
+        <div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Home Collection</label><input type="text" id="profileHomeCollection" name="home_coll" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px; background:var(--hk-surface, #fff); color:var(--hk-text-main, #101828);"></div>
+        <div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Available Areas</label><input type="text" id="profileAvailableAreas" name="available_areas" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px; background:var(--hk-surface, #fff); color:var(--hk-text-main, #101828);"></div>
+        <div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Lab Hours</label><input type="text" id="profileLabHours" name="lab_hrs" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px; background:var(--hk-surface, #fff); color:var(--hk-text-main, #101828);"></div>
+        <div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Test Time</label><input type="text" id="profileTestTime" name="test_time" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px; background:var(--hk-surface, #fff); color:var(--hk-text-main, #101828);"></div>
+        <div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Test Price</label><input type="text" id="profileTestPrice" name="test_price" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px; background:var(--hk-surface, #fff); color:var(--hk-text-main, #101828);"></div>
+        <div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Emergency Test</label><input type="text" id="profileEmergencyTest" name="emergency_test" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px; background:var(--hk-surface, #fff); color:var(--hk-text-main, #101828);"></div>
+        <div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Advanced Equipment</label><input type="text" id="profileAdvancedEquipment" name="adv_equipment" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px; background:var(--hk-surface, #fff); color:var(--hk-text-main, #101828);"></div>
+        <div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Lab Registration</label><input type="file" id="profileLabReg" name="lab_reg" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px;"></div>
+        <div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">NABL</label><input type="file" id="profileNabl" name="nabl" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px;"></div>
+        <div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Set Password</label><input type="password" id="profilePassword" name="password" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px; background:var(--hk-surface, #fff); color:var(--hk-text-main, #101828);"></div>
+        <div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Confirm Password</label><input type="password" id="profileConfirmPassword" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px; background:var(--hk-surface, #fff); color:var(--hk-text-main, #101828);"></div>
+        <div style="grid-column:1 / -1; display:flex; justify-content:flex-end; gap:12px; margin-top:8px;" id="profileModalActionButtons">
+          <button type="button" id="closeProfileBtn" style="padding:10px 18px; border:1px solid var(--hk-border, #cbd5e1); background:var(--hk-surface, #fff); border-radius:10px; cursor:pointer; color:var(--hk-text-main, #101828); font-weight:600;">Close</button>
+          <button type="button" id="enableProfileEditBtn" style="padding:10px 18px; border:none; background:var(--hk-primary-blue, #3b82f6); color:#fff; border-radius:10px; cursor:pointer; font-weight:600;"><i class="fa-solid fa-pen"></i> Edit</button>
+          <button type="button" id="cancelProfileEdit" style="display:none; padding:10px 18px; border:1px solid var(--hk-border, #cbd5e1); background:var(--hk-surface, #fff); border-radius:10px; cursor:pointer; color:var(--hk-text-main, #101828); font-weight:600;">Cancel</button>
+          <button type="submit" id="saveProfileBtn" style="display:none; padding:10px 18px; border:none; background:var(--hk-primary-blue, #2563eb); color:#fff; border-radius:10px; cursor:pointer; font-weight:600;">Save Profile</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="/js/vendor-panel-controls.js?v=20260821-v6"></script>
+  <script src="/js/lt.js?v=20260822-pro-v7"></script>
+  <script src="/js/sidebar-toggle.js?v=20260821-v6"></script>
+  <script src="/js/ui-interactions.js?v=20260821-v6"></script>
+</body>
+</html>
+
+
+

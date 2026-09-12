@@ -1,0 +1,273 @@
+/* ==========================================================================
+   theme-system.css - HospiKare Enterprise Logo-Based Design System & Tokens
+   ========================================================================== */
+
+:root {
+  /* ── 1. LOGO-DERIVED BRAND PALETTE ── */
+  --brand-navy: #071A3D;
+  --brand-deep-blue: #0B1F47;
+  --brand-primary: #2563EB;
+  --brand-primary-hover: #1D4ED8;
+  --brand-electric-blue: #3B82F6;
+  --brand-secondary: #0891B2;
+  --brand-cyan: #06B6D4;
+  --brand-teal: #0D9488;
+  --brand-accent: #EC4899;
+  --brand-pink: #DB2777;
+  --brand-coral: #F43F5E;
+
+  /* Aliases for backwards compatibility */
+  --hk-navy: var(--brand-navy);
+  --hk-deep-blue: var(--brand-deep-blue);
+  --hk-primary-blue: var(--brand-primary);
+  --hk-electric-blue: var(--brand-electric-blue);
+  --hk-cyan: var(--brand-cyan);
+  --hk-pink: var(--brand-pink);
+  --hk-success: #10B981;
+  --hk-warning: #F59E0B;
+  --hk-error: #EF4444;
+  --hk-info: var(--brand-primary);
+
+  /* ── 2. SEMANTIC TOKENS - LIGHT MODE ── */
+  --background: #F4F7FC;
+  --surface: #FFFFFF;
+  --surface-soft: #F8FAFC;
+  --surface-elevated: #FFFFFF;
+  --card-bg: #FFFFFF;
+  --sidebar-bg: #071A3D;
+  --sidebar-text: #94A3B8;
+  --sidebar-active-bg: #2563EB;
+  --sidebar-active-text: #FFFFFF;
+  
+  --text-primary: #0F172A;
+  --text-secondary: #64748B;
+  --text-light: #94A3B8;
+  --text-inverse: #FFFFFF;
+  --text-muted: #64748B;
+  --text-main: #0F172A;
+
+  --border: #E2E8F0;
+  --border-strong: #CBD5E1;
+  --border-color: #E2E8F0;
+  --divider: #F1F5F9;
+
+  --success: #10B981;
+  --warning: #F59E0B;
+  --danger: #EF4444;
+  --info: #2563EB;
+
+  /* Soft Status Backgrounds */
+  --success-bg: rgba(16, 185, 129, 0.10);
+  --warning-bg: rgba(245, 158, 11, 0.10);
+  --danger-bg: rgba(239, 68, 68, 0.10);
+  --info-bg: rgba(37, 99, 235, 0.10);
+  --cyan-bg: rgba(6, 182, 212, 0.10);
+  --pink-bg: rgba(219, 39, 119, 0.10);
+
+  /* Form & Input States */
+  --input-bg: #FFFFFF;
+  --input-border: #CBD5E1;
+  --input-text: #0F172A;
+  --input-placeholder: #94A3B8;
+  --input-focus-border: #2563EB;
+  --input-focus-ring: rgba(37, 99, 235, 0.18);
+
+  /* Elevation & Shadows */
+  --shadow-xs: 0 1px 2px rgba(15, 23, 42, 0.04);
+  --shadow-sm: 0 2px 6px rgba(15, 23, 42, 0.05);
+  --shadow-md: 0 6px 18px rgba(15, 23, 42, 0.07);
+  --shadow-lg: 0 12px 32px rgba(15, 23, 42, 0.10);
+  --shadow-xl: 0 20px 48px rgba(15, 23, 42, 0.14);
+  --shadow: var(--shadow-md);
+
+  /* Typography */
+  --font-heading: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-body: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+
+  /* Sizing & Radius */
+  --radius-xs: 6px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --radius-full: 9999px;
+  --header-height: 72px;
+  --sidebar-width: 260px;
+  --sidebar-collapsed-width: 78px;
+
+  /* Transitions */
+  --transition-fast: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-normal: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-smooth: 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+
+  /* Backwards compatibility variables */
+  --hk-bg: var(--background);
+  --hk-surface: var(--surface);
+  --hk-surface-soft: var(--surface-soft);
+  --hk-card-bg: var(--card-bg);
+  --hk-sidebar-bg: var(--sidebar-bg);
+  --hk-sidebar-text: var(--sidebar-text);
+  --hk-sidebar-active: var(--sidebar-active-bg);
+  --hk-border: var(--border);
+  --hk-text-main: var(--text-primary);
+  --hk-text-muted: var(--text-secondary);
+}
+
+/* ═════════════════════════════════════════════════════════════════════
+   DARK THEME SYSTEM TOKENS
+   ═════════════════════════════════════════════════════════════════════ */
+[data-theme="dark"],
+body.dark-theme {
+  --background: #060D1B;
+  --surface: #0D1B30;
+  --surface-soft: #13233B;
+  --surface-elevated: #162945;
+  --card-bg: #0D1B30;
+  --sidebar-bg: #08152D;
+  --sidebar-text: #94A3B8;
+  --sidebar-active-bg: #2563EB;
+  --sidebar-active-text: #FFFFFF;
+
+  --text-primary: #F8FAFC;
+  --text-secondary: #94A3B8;
+  --text-light: #64748B;
+  --text-inverse: #060D1B;
+  --text-muted: #94A3B8;
+  --text-main: #F8FAFC;
+
+  --border: rgba(148, 163, 184, 0.16);
+  --border-strong: rgba(148, 163, 184, 0.28);
+  --border-color: rgba(148, 163, 184, 0.16);
+  --divider: rgba(148, 163, 184, 0.10);
+
+  --input-bg: #13233B;
+  --input-border: rgba(148, 163, 184, 0.24);
+  --input-text: #F8FAFC;
+  --input-placeholder: #64748B;
+  --input-focus-border: #3B82F6;
+  --input-focus-ring: rgba(59, 130, 246, 0.25);
+
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.35);
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.45);
+  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.55);
+  --shadow-lg: 0 16px 40px rgba(0, 0, 0, 0.65);
+  --shadow-xl: 0 24px 60px rgba(0, 0, 0, 0.75);
+  --shadow: var(--shadow-md);
+
+  /* Soft Status Backgrounds in Dark Mode */
+  --success-bg: rgba(16, 185, 129, 0.18);
+  --warning-bg: rgba(245, 158, 11, 0.18);
+  --danger-bg: rgba(239, 68, 68, 0.18);
+  --info-bg: rgba(59, 130, 246, 0.18);
+  --cyan-bg: rgba(6, 182, 212, 0.18);
+  --pink-bg: rgba(219, 39, 119, 0.18);
+
+  --hk-bg: var(--background);
+  --hk-surface: var(--surface);
+  --hk-surface-soft: var(--surface-soft);
+  --hk-card-bg: var(--card-bg);
+  --hk-sidebar-bg: var(--sidebar-bg);
+  --hk-sidebar-text: var(--sidebar-text);
+  --hk-sidebar-active: var(--sidebar-active-bg);
+  --hk-border: var(--border);
+  --hk-text-main: var(--text-primary);
+  --hk-text-muted: var(--text-secondary);
+}
+
+/* ── Base Page Styling ── */
+body {
+  background-color: var(--background);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  margin: 0;
+  padding: 0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  transition: background-color var(--transition-normal), color var(--transition-normal);
+}
+
+/* ── Universal Inputs & Forms Dark Theme Contrast ── */
+[data-theme="dark"] input,
+[data-theme="dark"] select,
+[data-theme="dark"] textarea {
+  background-color: var(--input-bg) !important;
+  color: var(--input-text) !important;
+  border-color: var(--input-border) !important;
+}
+
+[data-theme="dark"] input::placeholder,
+[data-theme="dark"] textarea::placeholder {
+  color: var(--input-placeholder) !important;
+}
+
+[data-theme="dark"] input:focus,
+[data-theme="dark"] select:focus,
+[data-theme="dark"] textarea:focus {
+  border-color: var(--input-focus-border) !important;
+  box-shadow: 0 0 0 3px var(--input-focus-ring) !important;
+}
+
+/* ── Universal Tables Dark Theme Contrast ── */
+[data-theme="dark"] table,
+[data-theme="dark"] .table-container,
+[data-theme="dark"] .adminTable {
+  background-color: var(--surface) !important;
+  border-color: var(--border) !important;
+  color: var(--text-primary) !important;
+}
+
+[data-theme="dark"] table thead tr,
+[data-theme="dark"] .adminTable thead tr {
+  background-color: var(--surface-soft) !important;
+  color: var(--text-secondary) !important;
+}
+
+[data-theme="dark"] table th,
+[data-theme="dark"] table td,
+[data-theme="dark"] .adminTable th,
+[data-theme="dark"] .adminTable td {
+  border-color: var(--border) !important;
+  color: var(--text-primary) !important;
+}
+
+[data-theme="dark"] table tbody tr:hover,
+[data-theme="dark"] .adminTable tbody tr:hover {
+  background-color: var(--surface-soft) !important;
+}
+
+/* ── Universal Modals & Dropdowns Dark Theme ── */
+[data-theme="dark"] .modal-box,
+[data-theme="dark"] #vendorDetailsBox,
+[data-theme="dark"] #vendorInvoiceBox,
+[data-theme="dark"] .notifications-panel,
+[data-theme="dark"] .profile-dropdown-menu,
+[data-theme="dark"] .dashboard-date-panel {
+  background-color: var(--surface) !important;
+  border-color: var(--border-strong) !important;
+  color: var(--text-primary) !important;
+  box-shadow: var(--shadow-xl) !important;
+}
+
+[data-theme="dark"] #vendorDetailsHeader,
+[data-theme="dark"] .notifications-header {
+  border-bottom-color: var(--border) !important;
+}
+
+/* ── Scrollbars ── */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--background);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-light);
+}

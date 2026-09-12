@@ -1,0 +1,1341 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HospiKare Executive Command Centre - Admin Dashboard</title>
+  <link rel="icon" type="image/png" href="/assets/logo.png">
+
+  <!-- Theme Flash Prevention -->
+  <script>
+    (function() {
+      try {
+        const savedTheme = localStorage.getItem('hk_theme');
+        if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+          document.documentElement.setAttribute('data-theme', 'dark');
+        } else {
+          document.documentElement.removeAttribute('data-theme');
+        }
+      } catch (e) {}
+    })();
+  </script>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
+  
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+  <link rel="stylesheet" type="text/css" href="/css/theme-system.css?v=20260822-pro">
+  <link rel="stylesheet" type="text/css" href="/css/admin.css?v=20260822-pro-v7">
+  <link rel="stylesheet" type="text/css" href="/css/modern-ui.css?v=20260822-pro">
+  <link rel="stylesheet" type="text/css" href="/css/enhancements.css?v=20260822-pro">
+  <link rel="stylesheet" type="text/css" href="/css/mobile-ui.css?v=20260822-pro">
+
+  <!-- External CDNs -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<script src="/js/invoice-template.js?v=6"></script>`n</head>
+<body class="with-sidebar">
+
+  <!-- SIDEBAR -->
+  <aside id="sidebar">
+      <div class="logo-area">
+          <img id="logoImage" src="/assets/logo2.png" alt="Hospikare">
+          <span>HospiKare Admin</span>
+      </div>
+
+      <div id="menu">
+          <div class="menu-category">MAIN</div>
+          <div class="menuItem active" id="dashboardBtn">
+              <i class="fa-solid fa-border-all"></i>
+              <span>Dashboard</span>
+          </div>
+
+          <div class="menu-category">CRM</div>
+          <div class="menuItem" id="usersBtn">
+              <i class="fa-solid fa-users"></i>
+              <span>Users</span>
+          </div>
+          <div class="menuItem" id="vendorsBtn">
+              <i class="fa-solid fa-store"></i>
+              <span>Vendors</span>
+          </div>
+          <div class="menuItem" id="bookingsBtn">
+              <i class="fa-solid fa-calendar-check"></i>
+              <span>Bookings</span>
+          </div>
+          <div class="menuItem" id="ordersBtn">
+              <i class="fa-solid fa-box"></i>
+              <span>Orders</span>
+          </div>
+
+          <div class="menu-category">FINANCE</div>
+          <div class="menuItem" id="revenueBtn">
+              <i class="fa-solid fa-indian-rupee-sign"></i>
+              <span>Revenue</span>
+          </div>
+          <div class="menuItem" id="paymentBtn">
+              <i class="fa-solid fa-credit-card"></i>
+              <span>Payment</span>
+          </div>
+          <div class="menuItem" id="commissionBtn">
+              <i class="fa-solid fa-percent"></i>
+              <span>Net Balance</span>
+          </div>
+
+          <div class="menu-category">PRODUCTS</div>
+          <div class="menuItem" id="productsBtn">
+              <i class="fa-solid fa-boxes-stacked"></i>
+              <span>Products</span>
+          </div>
+          <div class="menuItem" style="color: var(--trend-down); margin-top: auto;" onclick="logout()">
+              <i class="fa-solid fa-right-from-bracket"></i>
+              <span>Logout</span>
+          </div>
+      </div>
+  </aside>
+
+  <!-- MAIN WRAPPER -->
+  <div id="mainContentWrapper">
+      <!-- TOP NAVBAR -->
+      <nav id="topNavbar">
+          <div class="nav-left">
+              <div>
+                  <div class="header-breadcrumbs">
+                      <span class="breadcrumb-item"><i class="fa-solid fa-house"></i> Home</span>
+                      <span class="breadcrumb-sep">/</span>
+                      <span class="breadcrumb-item active" id="activeBreadcrumb">Dashboard</span>
+                  </div>
+                  <div class="nav-title">HospiKare Command Centre</div>
+                  <div class="nav-subtitle" id="welcomeText">Welcome back, Super Admin!</div>
+              </div>
+          </div>
+          
+          <div class="nav-center">
+              <div class="search-wrapper">
+                  <i class="fa-solid fa-magnifying-glass"></i>
+                  <input type="text" id="globalTopSearch" class="top-search" placeholder="Quick search users, vendors, bookings, orders...">
+              </div>
+          </div>
+
+          <div class="nav-right">
+              <div class="dashboard-date-filter">
+                  <button
+                      id="dashboardDateFilterBtn"
+                      class="date-picker-btn"
+                      type="button"
+                      aria-expanded="false"
+                      aria-controls="dashboardDateFilterPanel"
+                  >
+                      <i class="fa-regular fa-calendar"></i>
+                      <span id="dashboardDateFilterText">All Time</span>
+                      <i class="fa-solid fa-chevron-down date-filter-chevron"></i>
+                  </button>
+                  <div id="dashboardDateFilterPanel" class="dashboard-date-panel" hidden>
+                      <div class="date-filter-panel-title">
+                          <strong>Search Dashboard By Date</strong>
+                          <span>Select any date, month or year</span>
+                      </div>
+                      <div class="date-filter-mode" role="radiogroup" aria-label="Dashboard date filter type">
+                          <label>
+                              <input type="radio" name="dashboardDateFilterMode" value="date" checked>
+                              Date
+                          </label>
+                          <label>
+                              <input type="radio" name="dashboardDateFilterMode" value="month">
+                              Month
+                          </label>
+                          <label>
+                              <input type="radio" name="dashboardDateFilterMode" value="year">
+                              Year
+                          </label>
+                      </div>
+                      <div class="date-filter-fields" data-date-mode-field="date">
+                          <label>
+                              From Date
+                              <input id="dashboardDateFrom" type="date">
+                          </label>
+                          <label>
+                              To Date
+                              <input id="dashboardDateTo" type="date">
+                          </label>
+                      </div>
+                      <div class="date-filter-fields single-date-field" data-date-mode-field="month" hidden>
+                          <label>
+                              Month
+                              <input id="dashboardDateMonth" type="month">
+                          </label>
+                      </div>
+                      <div class="date-filter-fields single-date-field" data-date-mode-field="year" hidden>
+                          <label>
+                              Year
+                              <select id="dashboardDateYear"></select>
+                          </label>
+                      </div>
+                      <p id="dashboardDateFilterError" class="date-filter-error"></p>
+                      <div class="date-filter-actions">
+                          <button id="clearDashboardDateFilter" class="date-filter-clear" type="button">
+                              Clear
+                          </button>
+                          <button id="applyDashboardDateFilter" class="date-filter-apply" type="button">
+                              <i class="fa-solid fa-magnifying-glass"></i>
+                              Search
+                          </button>
+                      </div>
+                  </div>
+              </div>
+              
+              <!-- Notifications with Dropdown Panel -->
+              <div class="notification-wrapper">
+                  <button class="header-icon-btn" id="notificationBtn" title="Notifications & Alerts" type="button" style="margin-right: 8px; position: relative;">
+                      <i class="fa-regular fa-bell"></i>
+                      <span class="badge" id="notificationBadge" style="display:none;">0</span>
+                  </button>
+                  <div id="notificationsPanel" class="notifications-panel">
+                      <div class="notifications-header">
+                          <h4>Notifications & Actions</h4>
+                          <span class="saas-card-badge" id="notifCountBadge">0 New</span>
+                      </div>
+                      <div class="notifications-list" id="notificationsList">
+                          <div style="padding: 18px; text-align: center; color: var(--text-muted); font-size: 13px;">
+                              <i class="fa-regular fa-bell-slash" style="font-size: 24px; margin-bottom: 8px; display: block; opacity: 0.5;"></i>
+                              No pending notifications
+                          </div>
+                      </div>
+                  </div>
+              </div>
+
+              <button class="header-icon-btn" id="themeToggleBtn" title="Toggle Theme" type="button" style="margin-right: 8px;"><i class="fa-solid fa-moon"></i></button>
+              <button class="header-icon-btn" id="fullScreenBtn" title="Full Screen" type="button" style="margin-right: 12px;"><i class="fa-solid fa-expand"></i></button>
+              
+              <!-- Profile with Dropdown Menu -->
+              <div class="profile-wrapper" style="position: relative;">
+                  <div class="profile-section" id="adminProfileTrigger" style="cursor: pointer;" title="Super Admin Account">
+                      <div class="profile-info">
+                          <div class="profile-name">Admin User</div>
+                          <div class="profile-role">Super Admin</div>
+                      </div>
+                      <div class="profile-avatar">
+                          <img loading="lazy" id="adminAvatarImg" src="https://ui-avatars.com/api/?name=Admin+User&background=2563eb&color=fff" alt="Profile" style="width: 100%; height: 100%; border-radius: 50%;">
+                      </div>
+                      <i class="fa-solid fa-chevron-down" style="font-size: 10px; color: var(--text-muted); margin-left: 4px;"></i>
+                  </div>
+                  <div id="profileDropdownMenu" class="profile-dropdown-menu">
+                      <div style="padding: 8px 12px; border-bottom: 1px solid var(--border-color); margin-bottom: 6px;">
+                          <div style="font-weight: 700; font-size: 13px;" id="dropdownAdminName">Super Admin</div>
+                          <div style="font-size: 11px; color: var(--text-muted);">admin@hospikare.com</div>
+                      </div>
+                      <div class="profile-dropdown-item" onclick="document.getElementById('themeToggleBtn')?.click()">
+                          <i class="fa-solid fa-circle-half-stroke"></i>
+                          <span>Toggle Theme</span>
+                      </div>
+                      <div class="profile-dropdown-item" onclick="document.getElementById('revenueBtn')?.click()">
+                          <i class="fa-solid fa-chart-line"></i>
+                          <span>Revenue & Finance</span>
+                      </div>
+                      <div class="profile-dropdown-divider"></div>
+                      <div class="profile-dropdown-item" style="color: var(--trend-down);" onclick="logout(event)">
+                          <i class="fa-solid fa-right-from-bracket"></i>
+                          <span>Logout</span>
+                      </div>
+                  </div>
+              </div>
+          </div>
+      </nav>
+
+      <!-- CONTENT AREA -->
+      <main id="mainContent">
+          
+          <!-- ================= DASHBOARD ================= -->
+          <div id="dashboardSection">
+              <!-- HERO BANNER -->
+              <div class="hero-welcome-card">
+                  <div class="hero-text-content">
+                      <h2>HospiKare Executive Health Dashboard</h2>
+                      <p><i class="fa-regular fa-hospital" style="color: #20C7E8;"></i> Enterprise Healthcare Network • Real-time Operations Command</p>
+                  </div>
+                  <div class="hero-quick-actions">
+                      <button class="hero-btn" onclick="document.getElementById('vendorsBtn')?.click()" type="button"><i class="fa-solid fa-store"></i> Manage Vendors</button>
+                      <button class="hero-btn" onclick="document.getElementById('usersBtn')?.click()" type="button"><i class="fa-solid fa-users"></i> View Users</button>
+                      <button class="hero-btn" onclick="document.getElementById('bookingsBtn')?.click()" type="button"><i class="fa-solid fa-calendar-check"></i> Bookings</button>
+                      <button class="hero-btn" onclick="document.getElementById('revenueBtn')?.click()" type="button"><i class="fa-solid fa-wallet"></i> Finance</button>
+                  </div>
+              </div>
+
+              <!-- ================= 12 SUMMARY METRIC CARDS RESPONSIVE GRID ================= -->
+              <div id="dashboardCards" class="saas-summary-grid">
+                  <!-- 1. Total Users (Blue) -->
+                  <div class="saas-metric-card card-theme-blue" id="cardTotalUsers">
+                      <div class="saas-metric-top">
+                          <div class="saas-card-icon"><i class="fa-solid fa-users"></i></div>
+                          <span class="saas-card-badge"><i class="fa-solid fa-user-check"></i> Active</span>
+                      </div>
+                      <div class="saas-metric-body">
+                          <div class="saas-metric-label">Total Users</div>
+                          <div class="saas-metric-value" id="totalUsers">0</div>
+                          <div class="saas-metric-subtext">Registered patients & customers</div>
+                      </div>
+                      <div class="saas-metric-footer">
+                          <button class="saas-card-action-btn" type="button">
+                              View Details <i class="fa-solid fa-arrow-right"></i>
+                          </button>
+                          <div class="saas-card-sparkline">
+                              <span style="height: 40%;"></span>
+                              <span style="height: 65%;"></span>
+                              <span style="height: 50%;"></span>
+                              <span style="height: 85%;"></span>
+                              <span style="height: 100%;"></span>
+                          </div>
+                      </div>
+                  </div>
+
+                  <!-- 2. Total Vendors (Emerald) -->
+                  <div class="saas-metric-card card-theme-emerald" id="cardTotalVendors">
+                      <div class="saas-metric-top">
+                          <div class="saas-card-icon"><i class="fa-solid fa-store"></i></div>
+                          <span class="saas-card-badge"><i class="fa-solid fa-certificate"></i> Verified</span>
+                      </div>
+                      <div class="saas-metric-body">
+                          <div class="saas-metric-label">Total Vendors</div>
+                          <div class="saas-metric-value" id="totalVendors">0</div>
+                          <div class="saas-metric-subtext">Approved healthcare partners</div>
+                      </div>
+                      <div class="saas-metric-footer">
+                          <button class="saas-card-action-btn" type="button">
+                              View Details <i class="fa-solid fa-arrow-right"></i>
+                          </button>
+                          <div class="saas-card-sparkline">
+                              <span style="height: 50%;"></span>
+                              <span style="height: 60%;"></span>
+                              <span style="height: 75%;"></span>
+                              <span style="height: 70%;"></span>
+                              <span style="height: 95%;"></span>
+                          </div>
+                      </div>
+                  </div>
+
+                  <!-- 3. Total Hospitals (Violet) -->
+                  <div class="saas-metric-card card-theme-violet" id="cardTotalHospitals">
+                      <div class="saas-metric-top">
+                          <div class="saas-card-icon"><i class="fa-solid fa-hospital"></i></div>
+                          <span class="saas-card-badge"><i class="fa-solid fa-hospital-user"></i> Facilities</span>
+                      </div>
+                      <div class="saas-metric-body">
+                          <div class="saas-metric-label">Total Hospitals</div>
+                          <div class="saas-metric-value" id="totalHospitals">0</div>
+                          <div class="saas-metric-subtext">Registered hospital centers</div>
+                      </div>
+                      <div class="saas-metric-footer">
+                          <button class="saas-card-action-btn" type="button">
+                              View Details <i class="fa-solid fa-arrow-right"></i>
+                          </button>
+                          <div class="saas-card-sparkline">
+                              <span style="height: 35%;"></span>
+                              <span style="height: 55%;"></span>
+                              <span style="height: 80%;"></span>
+                              <span style="height: 65%;"></span>
+                              <span style="height: 90%;"></span>
+                          </div>
+                      </div>
+                  </div>
+
+                  <!-- 4. Total Labs (Amber) -->
+                  <div class="saas-metric-card card-theme-amber" id="cardTotalLabs">
+                      <div class="saas-metric-top">
+                          <div class="saas-card-icon"><i class="fa-solid fa-flask-vial"></i></div>
+                          <span class="saas-card-badge"><i class="fa-solid fa-microscope"></i> Diagnostics</span>
+                      </div>
+                      <div class="saas-metric-body">
+                          <div class="saas-metric-label">Total Labs</div>
+                          <div class="saas-metric-value" id="totalLabs">0</div>
+                          <div class="saas-metric-subtext">Certified diagnostic labs</div>
+                      </div>
+                      <div class="saas-metric-footer">
+                          <button class="saas-card-action-btn" type="button">
+                              View Details <i class="fa-solid fa-arrow-right"></i>
+                          </button>
+                          <div class="saas-card-sparkline">
+                              <span style="height: 45%;"></span>
+                              <span style="height: 70%;"></span>
+                              <span style="height: 60%;"></span>
+                              <span style="height: 85%;"></span>
+                              <span style="height: 100%;"></span>
+                          </div>
+                      </div>
+                  </div>
+
+                  <!-- 5. Total Ambulances (Red) -->
+                  <div class="saas-metric-card card-theme-red" id="cardTotalAmbulances">
+                      <div class="saas-metric-top">
+                          <div class="saas-card-icon"><i class="fa-solid fa-truck-medical"></i></div>
+                          <span class="saas-card-badge"><i class="fa-solid fa-bolt"></i> Emergency</span>
+                      </div>
+                      <div class="saas-metric-body">
+                          <div class="saas-metric-label">Total Ambulances</div>
+                          <div class="saas-metric-value" id="totalAmbulances">0</div>
+                          <div class="saas-metric-subtext">Active emergency fleet units</div>
+                      </div>
+                      <div class="saas-metric-footer">
+                          <button class="saas-card-action-btn" type="button">
+                              View Details <i class="fa-solid fa-arrow-right"></i>
+                          </button>
+                          <div class="saas-card-sparkline">
+                              <span style="height: 55%;"></span>
+                              <span style="height: 40%;"></span>
+                              <span style="height: 70%;"></span>
+                              <span style="height: 90%;"></span>
+                              <span style="height: 80%;"></span>
+                          </div>
+                      </div>
+                  </div>
+
+                  <!-- 6. Total Bookings (Cyan) -->
+                  <div class="saas-metric-card card-theme-cyan" id="cardTotalBookings">
+                      <div class="saas-metric-top">
+                          <div class="saas-card-icon"><i class="fa-solid fa-calendar-check"></i></div>
+                          <span class="saas-card-badge"><i class="fa-solid fa-clock-rotate-left"></i> Lifetime</span>
+                      </div>
+                      <div class="saas-metric-body">
+                          <div class="saas-metric-label">Total Bookings</div>
+                          <div class="saas-metric-value" id="totalBookings">0</div>
+                          <div class="saas-metric-subtext">Hospital, lab & ambulance bookings</div>
+                      </div>
+                      <div class="saas-metric-footer">
+                          <button class="saas-card-action-btn" type="button">
+                              View Details <i class="fa-solid fa-arrow-right"></i>
+                          </button>
+                          <div class="saas-card-sparkline">
+                              <span style="height: 30%;"></span>
+                              <span style="height: 60%;"></span>
+                              <span style="height: 75%;"></span>
+                              <span style="height: 65%;"></span>
+                              <span style="height: 95%;"></span>
+                          </div>
+                      </div>
+                  </div>
+
+                  <!-- 7. Total Orders (Indigo) -->
+                  <div class="saas-metric-card card-theme-indigo" id="cardTotalOrders">
+                      <div class="saas-metric-top">
+                          <div class="saas-card-icon"><i class="fa-solid fa-box"></i></div>
+                          <span class="saas-card-badge"><i class="fa-solid fa-truck-fast"></i> E-Commerce</span>
+                      </div>
+                      <div class="saas-metric-body">
+                          <div class="saas-metric-label">Total Orders</div>
+                          <div class="saas-metric-value" id="totalOrders">0</div>
+                          <div class="saas-metric-subtext">Medicine & equipment orders</div>
+                      </div>
+                      <div class="saas-metric-footer">
+                          <button class="saas-card-action-btn" type="button">
+                              View Details <i class="fa-solid fa-arrow-right"></i>
+                          </button>
+                          <div class="saas-card-sparkline">
+                              <span style="height: 40%;"></span>
+                              <span style="height: 55%;"></span>
+                              <span style="height: 80%;"></span>
+                              <span style="height: 70%;"></span>
+                              <span style="height: 90%;"></span>
+                          </div>
+                      </div>
+                  </div>
+
+                  <!-- 8. Total Products (Pink) -->
+                  <div class="saas-metric-card card-theme-pink" id="cardTotalProducts">
+                      <div class="saas-metric-top">
+                          <div class="saas-card-icon"><i class="fa-solid fa-boxes-stacked"></i></div>
+                          <span class="saas-card-badge"><i class="fa-solid fa-pills"></i> Inventory</span>
+                      </div>
+                      <div class="saas-metric-body">
+                          <div class="saas-metric-label">Total Products</div>
+                          <div class="saas-metric-value" id="totalProducts">0</div>
+                          <div class="saas-metric-subtext">Medicine & equipment catalog</div>
+                      </div>
+                      <div class="saas-metric-footer">
+                          <button class="saas-card-action-btn" type="button">
+                              View Details <i class="fa-solid fa-arrow-right"></i>
+                          </button>
+                          <div class="saas-card-sparkline">
+                              <span style="height: 60%;"></span>
+                              <span style="height: 75%;"></span>
+                              <span style="height: 65%;"></span>
+                              <span style="height: 85%;"></span>
+                              <span style="height: 100%;"></span>
+                          </div>
+                      </div>
+                  </div>
+
+                  <!-- 9. Total Revenue (Green) -->
+                  <div class="saas-metric-card card-theme-green" id="cardTotalRevenue">
+                      <div class="saas-metric-top">
+                          <div class="saas-card-icon"><i class="fa-solid fa-indian-rupee-sign"></i></div>
+                          <span class="saas-card-badge"><i class="fa-solid fa-arrow-trend-up"></i> Gross</span>
+                      </div>
+                      <div class="saas-metric-body">
+                          <div class="saas-metric-label">Total Revenue</div>
+                          <div class="saas-metric-value" id="dashboardRevenue">₹0</div>
+                          <div class="saas-metric-subtext">Gross platform transaction volume</div>
+                      </div>
+                      <div class="saas-metric-footer">
+                          <button class="saas-card-action-btn" type="button">
+                              View Details <i class="fa-solid fa-arrow-right"></i>
+                          </button>
+                          <div class="saas-card-sparkline">
+                              <span style="height: 45%;"></span>
+                              <span style="height: 65%;"></span>
+                              <span style="height: 80%;"></span>
+                              <span style="height: 75%;"></span>
+                              <span style="height: 100%;"></span>
+                          </div>
+                      </div>
+                  </div>
+
+                  <!-- 10. Total Payments (Teal) -->
+                  <div class="saas-metric-card card-theme-teal" id="cardTotalPayments">
+                      <div class="saas-metric-top">
+                          <div class="saas-card-icon"><i class="fa-solid fa-credit-card"></i></div>
+                          <span class="saas-card-badge"><i class="fa-solid fa-shield-halved"></i> Settled</span>
+                      </div>
+                      <div class="saas-metric-body">
+                          <div class="saas-metric-label">Total Payments</div>
+                          <div class="saas-metric-value" id="totalPayments">₹0</div>
+                          <div class="saas-metric-subtext">Processed gateway settlements</div>
+                      </div>
+                      <div class="saas-metric-footer">
+                          <button class="saas-card-action-btn" type="button">
+                              View Details <i class="fa-solid fa-arrow-right"></i>
+                          </button>
+                          <div class="saas-card-sparkline">
+                              <span style="height: 50%;"></span>
+                              <span style="height: 60%;"></span>
+                              <span style="height: 85%;"></span>
+                              <span style="height: 80%;"></span>
+                              <span style="height: 95%;"></span>
+                          </div>
+                      </div>
+                  </div>
+
+                  <!-- 11. Pending Payments (Orange) -->
+                  <div class="saas-metric-card card-theme-orange" id="cardPendingPayments">
+                      <div class="saas-metric-top">
+                          <div class="saas-card-icon"><i class="fa-solid fa-clock-rotate-left"></i></div>
+                          <span class="saas-card-badge"><i class="fa-solid fa-hourglass-half"></i> Pending</span>
+                      </div>
+                      <div class="saas-metric-body">
+                          <div class="saas-metric-label">Pending Payments</div>
+                          <div class="saas-metric-value" id="pendingPayments">₹0</div>
+                          <div class="saas-metric-subtext">Awaiting vendor payout clearance</div>
+                      </div>
+                      <div class="saas-metric-footer">
+                          <button class="saas-card-action-btn" type="button">
+                              View Details <i class="fa-solid fa-arrow-right"></i>
+                          </button>
+                          <div class="saas-card-sparkline">
+                              <span style="height: 70%;"></span>
+                              <span style="height: 50%;"></span>
+                              <span style="height: 60%;"></span>
+                              <span style="height: 40%;"></span>
+                              <span style="height: 30%;"></span>
+                          </div>
+                      </div>
+                  </div>
+
+                  <!-- 12. Net Balance (Purple) -->
+                  <div class="saas-metric-card card-theme-purple" id="cardNetBalance">
+                      <div class="saas-metric-top">
+                          <div class="saas-card-icon"><i class="fa-solid fa-wallet"></i></div>
+                          <span class="saas-card-badge"><i class="fa-solid fa-percent"></i> Retained</span>
+                      </div>
+                      <div class="saas-metric-body">
+                          <div class="saas-metric-label">Net Balance</div>
+                          <div class="saas-metric-value" id="dashboardCommission">₹0</div>
+                          <div class="saas-metric-subtext">Platform margin & commissions</div>
+                      </div>
+                      <div class="saas-metric-footer">
+                          <button class="saas-card-action-btn" type="button">
+                              View Details <i class="fa-solid fa-arrow-right"></i>
+                          </button>
+                          <div class="saas-card-sparkline">
+                              <span style="height: 35%;"></span>
+                              <span style="height: 55%;"></span>
+                              <span style="height: 75%;"></span>
+                              <span style="height: 85%;"></span>
+                              <span style="height: 100%;"></span>
+                          </div>
+                      </div>
+                  </div>
+
+                  <!-- Hidden backward-compatible DOM nodes -->
+                  <div style="display:none;">
+                      <span id="totalInsurance">0</span>
+                      <span id="totalMedicines">0</span>
+                      <span id="totalEquipments">0</span>
+                      <span id="totalBeds">0</span>
+                      <span id="availableBeds">0</span>
+                  </div>
+              </div>
+
+              <!-- ================= SERVICE PERFORMANCE CARDS ================= -->
+              <div class="saas-service-grid">
+                  <!-- Hospital Performance -->
+                  <div class="saas-service-card" id="perfHospitalCard">
+                      <div class="service-card-header">
+                          <div class="service-card-title">
+                              <div class="saas-card-icon" style="background: rgba(124, 58, 237, 0.1); color: #7C3AED; width: 36px; height: 36px; font-size: 15px;">
+                                  <i class="fa-solid fa-hospital"></i>
+                              </div>
+                              <h4>Hospitals</h4>
+                          </div>
+                          <span class="saas-card-badge" style="background: rgba(124, 58, 237, 0.1); color: #7C3AED;" id="perfHospitalBadge">0 Facilities</span>
+                      </div>
+                      <div class="service-card-stats">
+                          <div class="service-stat-item">
+                              <span>Total Bookings</span>
+                              <strong id="perfHospBookings">0</strong>
+                          </div>
+                          <div class="service-stat-item">
+                              <span>Revenue</span>
+                              <strong id="perfHospRevenue">₹0</strong>
+                          </div>
+                      </div>
+                      <div class="service-progress-container">
+                          <div class="service-progress-info">
+                              <span>Bed Availability</span>
+                              <strong id="perfHospBeds">0 / 0 Available</strong>
+                          </div>
+                          <div class="service-progress-bar">
+                              <div class="service-progress-fill" id="perfHospBedFill" style="width: 50%; background: #7C3AED;"></div>
+                          </div>
+                      </div>
+                      <button class="saas-card-action-btn" onclick="openVendors('hospital')" type="button">
+                          View Hospital Network <i class="fa-solid fa-arrow-right"></i>
+                      </button>
+                  </div>
+
+                  <!-- Lab Diagnostic Performance -->
+                  <div class="saas-service-card" id="perfLabCard">
+                      <div class="service-card-header">
+                          <div class="service-card-title">
+                              <div class="saas-card-icon" style="background: rgba(217, 119, 6, 0.1); color: #D97706; width: 36px; height: 36px; font-size: 15px;">
+                                  <i class="fa-solid fa-flask-vial"></i>
+                              </div>
+                              <h4>Labs & Tests</h4>
+                          </div>
+                          <span class="saas-card-badge" style="background: rgba(217, 119, 6, 0.1); color: #D97706;" id="perfLabBadge">0 Labs</span>
+                      </div>
+                      <div class="service-card-stats">
+                          <div class="service-stat-item">
+                              <span>Test Bookings</span>
+                              <strong id="perfLabBookings">0</strong>
+                          </div>
+                          <div class="service-stat-item">
+                              <span>Revenue</span>
+                              <strong id="perfLabRevenue">₹0</strong>
+                          </div>
+                      </div>
+                      <div class="service-progress-container">
+                          <div class="service-progress-info">
+                              <span>Diagnostic Volume</span>
+                              <strong id="perfLabVolume">Active Operations</strong>
+                          </div>
+                          <div class="service-progress-bar">
+                              <div class="service-progress-fill" id="perfLabFill" style="width: 75%; background: #D97706;"></div>
+                          </div>
+                      </div>
+                      <button class="saas-card-action-btn" onclick="openVendors('lab')" type="button">
+                          View Lab Network <i class="fa-solid fa-arrow-right"></i>
+                      </button>
+                  </div>
+
+                  <!-- Ambulance Fleet Performance -->
+                  <div class="saas-service-card" id="perfAmbulanceCard">
+                      <div class="service-card-header">
+                          <div class="service-card-title">
+                              <div class="saas-card-icon" style="background: rgba(220, 38, 38, 0.1); color: #DC2626; width: 36px; height: 36px; font-size: 15px;">
+                                  <i class="fa-solid fa-truck-medical"></i>
+                              </div>
+                              <h4>Ambulances</h4>
+                          </div>
+                          <span class="saas-card-badge" style="background: rgba(220, 38, 38, 0.1); color: #DC2626;" id="perfAmbBadge">0 Fleets</span>
+                      </div>
+                      <div class="service-card-stats">
+                          <div class="service-stat-item">
+                              <span>Dispatch Trips</span>
+                              <strong id="perfAmbBookings">0</strong>
+                          </div>
+                          <div class="service-stat-item">
+                              <span>Revenue</span>
+                              <strong id="perfAmbRevenue">₹0</strong>
+                          </div>
+                      </div>
+                      <div class="service-progress-container">
+                          <div class="service-progress-info">
+                              <span>Emergency Readiness</span>
+                              <strong id="perfAmbReadiness">100% Ready</strong>
+                          </div>
+                          <div class="service-progress-bar">
+                              <div class="service-progress-fill" id="perfAmbFill" style="width: 90%; background: #DC2626;"></div>
+                          </div>
+                      </div>
+                      <button class="saas-card-action-btn" onclick="openVendors('ambulance')" type="button">
+                          View Ambulance Fleet <i class="fa-solid fa-arrow-right"></i>
+                      </button>
+                  </div>
+
+                  <!-- Pharmacy & Products Performance -->
+                  <div class="saas-service-card" id="perfProductsCard">
+                      <div class="service-card-header">
+                          <div class="service-card-title">
+                              <div class="saas-card-icon" style="background: rgba(79, 70, 229, 0.1); color: #4F46E5; width: 36px; height: 36px; font-size: 15px;">
+                                  <i class="fa-solid fa-boxes-stacked"></i>
+                              </div>
+                              <h4>Products & Orders</h4>
+                          </div>
+                          <span class="saas-card-badge" style="background: rgba(79, 70, 229, 0.1); color: #4F46E5;" id="perfPrdBadge">0 Catalog</span>
+                      </div>
+                      <div class="service-card-stats">
+                          <div class="service-stat-item">
+                              <span>Total Orders</span>
+                              <strong id="perfPrdOrders">0</strong>
+                          </div>
+                          <div class="service-stat-item">
+                              <span>Product Revenue</span>
+                              <strong id="perfPrdRevenue">₹0</strong>
+                          </div>
+                      </div>
+                      <div class="service-progress-container">
+                          <div class="service-progress-info">
+                              <span>Fulfillment Health</span>
+                              <strong id="perfPrdHealth">Optimal Stock</strong>
+                          </div>
+                          <div class="service-progress-bar">
+                              <div class="service-progress-fill" id="perfPrdFill" style="width: 82%; background: #4F46E5;"></div>
+                          </div>
+                      </div>
+                      <button class="saas-card-action-btn" onclick="document.getElementById('productsBtn')?.click()" type="button">
+                          View Products Inventory <i class="fa-solid fa-arrow-right"></i>
+                      </button>
+                  </div>
+              </div>
+
+              <!-- ================= PENDING ACTIONS HUB ================= -->
+              <div class="saas-pending-hub">
+                  <div class="pending-hub-header">
+                      <div class="pending-hub-title">
+                          <div class="saas-card-icon" style="background: rgba(234, 88, 12, 0.1); color: #EA580C; width: 38px; height: 38px; font-size: 16px;">
+                              <i class="fa-solid fa-list-check"></i>
+                          </div>
+                          <div>
+                              <h3>Pending Admin Actions</h3>
+                              <span style="font-size: 12px; color: var(--text-muted);">Urgent tasks and approvals requiring super admin verification</span>
+                          </div>
+                      </div>
+                      <span class="saas-card-badge" id="totalPendingBadge" style="background: rgba(234, 88, 12, 0.1); color: #EA580C; font-size: 12px; padding: 5px 12px;">0 Pending</span>
+                  </div>
+                  <div class="pending-actions-grid">
+                      <!-- Action 1: Vendor Approvals -->
+                      <div class="pending-action-item" onclick="openVendors('all')">
+                          <div class="pending-action-left">
+                              <div class="pending-action-icon" style="background: rgba(217, 119, 6, 0.12); color: #D97706;">
+                                  <i class="fa-solid fa-user-plus"></i>
+                              </div>
+                              <div class="pending-action-text">
+                                  <span>Vendor Approvals</span>
+                                  <strong>New Registrations</strong>
+                              </div>
+                          </div>
+                          <span class="pending-action-badge badge-amber" id="pendingVendorCount">0</span>
+                      </div>
+
+                      <!-- Action 2: Pending Payments -->
+                      <div class="pending-action-item" onclick="document.getElementById('revenueBtn')?.click()">
+                          <div class="pending-action-left">
+                              <div class="pending-action-icon" style="background: rgba(234, 88, 12, 0.12); color: #EA580C;">
+                                  <i class="fa-solid fa-money-bill-transfer"></i>
+                              </div>
+                              <div class="pending-action-text">
+                                  <span>Pending Payouts</span>
+                                  <strong>Vendor Balances</strong>
+                              </div>
+                          </div>
+                          <span class="pending-action-badge" id="pendingPayoutCount">₹0</span>
+                      </div>
+
+                      <!-- Action 3: Booking Requests -->
+                      <div class="pending-action-item" onclick="document.getElementById('bookingsBtn')?.click()">
+                          <div class="pending-action-left">
+                              <div class="pending-action-icon" style="background: rgba(8, 145, 178, 0.12); color: #0891B2;">
+                                  <i class="fa-solid fa-calendar-plus"></i>
+                              </div>
+                              <div class="pending-action-text">
+                                  <span>Booking Requests</span>
+                                  <strong>In Queue</strong>
+                              </div>
+                          </div>
+                          <span class="pending-action-badge badge-blue" id="pendingBookingCount">0</span>
+                      </div>
+
+                      <!-- Action 4: Cancelled Bookings -->
+                      <div class="pending-action-item" onclick="document.getElementById('bookingsBtn')?.click()">
+                          <div class="pending-action-left">
+                              <div class="pending-action-icon" style="background: rgba(220, 38, 38, 0.12); color: #DC2626;">
+                                  <i class="fa-solid fa-ban"></i>
+                              </div>
+                              <div class="pending-action-text">
+                                  <span>Cancelled Bookings</span>
+                                  <strong>Refund / Follow-up</strong>
+                              </div>
+                          </div>
+                          <span class="pending-action-badge" id="cancelledBookingCount">0</span>
+                      </div>
+
+                      <!-- Action 5: Support & Compliance -->
+                      <div class="pending-action-item" onclick="openVendors('all')">
+                          <div class="pending-action-left">
+                              <div class="pending-action-icon" style="background: rgba(37, 99, 235, 0.12); color: #2563EB;">
+                                  <i class="fa-solid fa-file-shield"></i>
+                              </div>
+                              <div class="pending-action-text">
+                                  <span>Doc Verification</span>
+                                  <strong>KYC & Licenses</strong>
+                              </div>
+                          </div>
+                          <span class="pending-action-badge badge-blue"><i class="fa-solid fa-check"></i></span>
+                      </div>
+                  </div>
+              </div>
+
+              <!-- ================= 3-COLUMN RECENT ACTIVITY CARDS GRID ================= -->
+              <div class="saas-activity-grid">
+                  <!-- Recent Bookings Card -->
+                  <div class="saas-activity-card">
+                      <div class="activity-card-header">
+                          <div class="activity-card-title">
+                              <div class="saas-card-icon" style="background: rgba(8, 145, 178, 0.1); color: #0891B2; width: 34px; height: 34px; font-size: 14px;">
+                                  <i class="fa-solid fa-calendar-check"></i>
+                              </div>
+                              <h3>Recent Bookings</h3>
+                          </div>
+                          <button class="activity-card-viewall" onclick="document.getElementById('bookingsBtn')?.click()" type="button">
+                              View All <i class="fa-solid fa-arrow-right"></i>
+                          </button>
+                      </div>
+                      <div class="activity-items-list" id="recentBookingsList">
+                          <div class="skeleton-box" style="height: 60px; margin-bottom: 8px;"></div>
+                          <div class="skeleton-box" style="height: 60px; margin-bottom: 8px;"></div>
+                          <div class="skeleton-box" style="height: 60px;"></div>
+                      </div>
+                  </div>
+
+                  <!-- Recent Vendors Card -->
+                  <div class="saas-activity-card">
+                      <div class="activity-card-header">
+                          <div class="activity-card-title">
+                              <div class="saas-card-icon" style="background: rgba(5, 150, 105, 0.1); color: #059669; width: 34px; height: 34px; font-size: 14px;">
+                                  <i class="fa-solid fa-store"></i>
+                              </div>
+                              <h3>Recent Vendors</h3>
+                          </div>
+                          <button class="activity-card-viewall" onclick="openVendors('all')" type="button">
+                              View All <i class="fa-solid fa-arrow-right"></i>
+                          </button>
+                      </div>
+                      <div class="activity-items-list" id="recentVendorsList">
+                          <div class="skeleton-box" style="height: 60px; margin-bottom: 8px;"></div>
+                          <div class="skeleton-box" style="height: 60px; margin-bottom: 8px;"></div>
+                          <div class="skeleton-box" style="height: 60px;"></div>
+                      </div>
+                  </div>
+
+                  <!-- Recent Orders Card -->
+                  <div class="saas-activity-card">
+                      <div class="activity-card-header">
+                          <div class="activity-card-title">
+                              <div class="saas-card-icon" style="background: rgba(79, 70, 229, 0.1); color: #4F46E5; width: 34px; height: 34px; font-size: 14px;">
+                                  <i class="fa-solid fa-boxes-packing"></i>
+                              </div>
+                              <h3>Recent Orders</h3>
+                          </div>
+                          <button class="activity-card-viewall" onclick="document.getElementById('ordersBtn')?.click()" type="button">
+                              View All <i class="fa-solid fa-arrow-right"></i>
+                          </button>
+                      </div>
+                      <div class="activity-items-list" id="recentOrdersList">
+                          <div class="skeleton-box" style="height: 60px; margin-bottom: 8px;"></div>
+                          <div class="skeleton-box" style="height: 60px; margin-bottom: 8px;"></div>
+                          <div class="skeleton-box" style="height: 60px;"></div>
+                      </div>
+                  </div>
+              </div>
+
+              <!-- ================= ANALYTICS CHARTS CARDS ================= -->
+              <!-- ================= PREMIUM TWO-CARD ANIMATED CHARTS SECTION ================= -->
+              <div id="chartsGrid" class="premium-charts-grid">
+                  
+                  <!-- GRAPH 1: ANIMATED SERVICE NETWORK DONUT CARD -->
+                  <div class="premium-chart-card" id="serviceDonutCard">
+                      <div class="chart-card-header">
+                          <div class="chart-card-title-group">
+                              <div class="chart-card-icon" style="background: rgba(37, 99, 235, 0.1); color: var(--brand-primary);">
+                                  <i class="fa-solid fa-circle-nodes"></i>
+                              </div>
+                              <div>
+                                  <h3 class="chart-card-title">Service Network Distribution</h3>
+                                  <p class="chart-card-subtitle">Live breakdown of accredited healthcare providers</p>
+                              </div>
+                          </div>
+                          <div class="chart-card-actions">
+                              <div class="chart-action-dropdown">
+                                  <button class="chart-action-btn" type="button" onclick="toggleChartMenu('donutMenu')" title="Options">
+                                      <i class="fa-solid fa-ellipsis-vertical"></i>
+                                  </button>
+                                  <div class="chart-dropdown-menu" id="donutMenu">
+                                      <button type="button" onclick="exportChartAsPNG('serviceDonutChart', 'Service_Network_Distribution.png')">
+                                          <i class="fa-solid fa-download"></i> Export as PNG
+                                      </button>
+                                      <button type="button" onclick="resetDonutFilters()">
+                                          <i class="fa-solid fa-rotate-right"></i> Reset Segments
+                                      </button>
+                                  </div>
+                              </div>
+                          </div>
+                      </div>
+
+                      <div class="chart-card-body donut-body-layout">
+                          <!-- Donut Canvas & Animated Center Info Overlay -->
+                          <div class="donut-chart-wrapper">
+                              <div class="donut-canvas-container">
+                                  <canvas id="serviceDonutChart"></canvas>
+                                  <div class="donut-center-overlay" id="donutCenterInfo" aria-live="polite">
+                                      <div class="donut-center-val" id="donutCenterNumber">0</div>
+                                      <div class="donut-center-lbl" id="donutCenterLabel">Total Services</div>
+                                      <div class="donut-center-sub" id="donutCenterSubtext">100% Network</div>
+                                  </div>
+                              </div>
+                          </div>
+
+                          <!-- Clean Interactive Legend with colored indicators -->
+                          <div class="donut-custom-legend" id="donutCustomLegend" role="group" aria-label="Service Network Categories">
+                              <!-- Dynamically generated by JS -->
+                          </div>
+                      </div>
+                  </div>
+
+                  <!-- GRAPH 2: ANIMATED BOOKINGS & REVENUE PERFORMANCE COMBINED GRAPH -->
+                  <div class="premium-chart-card" id="performanceTrendCard">
+                      <div class="chart-card-header">
+                          <div class="chart-card-title-group">
+                              <div class="chart-card-icon" style="background: rgba(8, 145, 178, 0.1); color: var(--brand-secondary);">
+                                  <i class="fa-solid fa-chart-line"></i>
+                              </div>
+                              <div>
+                                  <h3 class="chart-card-title">Bookings & Revenue Performance</h3>
+                                  <p class="chart-card-subtitle">Dual-axis volume growth vs monetary yield</p>
+                              </div>
+                          </div>
+                          <div class="chart-card-actions">
+                              <!-- Time Range Filter Pills -->
+                              <div class="chart-filter-pills" id="perfFilterGroup" role="tablist">
+                                  <button type="button" class="filter-pill active" data-range="all" onclick="applyPerformanceFilter('all', this)">All Time</button>
+                                  <button type="button" class="filter-pill" data-range="year" onclick="applyPerformanceFilter('year', this)">This Year</button>
+                                  <button type="button" class="filter-pill" data-range="90d" onclick="applyPerformanceFilter('90d', this)">6 Months</button>
+                                  <button type="button" class="filter-pill" data-range="30d" onclick="applyPerformanceFilter('30d', this)">This Month</button>
+                                  <button type="button" class="filter-pill" data-range="7d" onclick="applyPerformanceFilter('7d', this)">7 Days</button>
+                              </div>
+
+                              <!-- Action dropdown -->
+                              <div class="chart-action-dropdown">
+                                  <button class="chart-action-btn" type="button" onclick="toggleChartMenu('perfMenu')" title="Options">
+                                      <i class="fa-solid fa-ellipsis-vertical"></i>
+                                  </button>
+                                  <div class="chart-dropdown-menu" id="perfMenu">
+                                      <button type="button" onclick="exportChartAsPNG('performanceTrendChart', 'Bookings_Revenue_Performance.png')">
+                                          <i class="fa-solid fa-download"></i> Export as PNG
+                                      </button>
+                                  </div>
+                              </div>
+                          </div>
+                      </div>
+
+                      <div class="chart-card-body performance-body-layout">
+                          <!-- Dual-Axis Combined Canvas -->
+                          <div class="performance-canvas-container" id="performanceCanvasWrapper">
+                              <canvas id="performanceTrendChart"></canvas>
+                          </div>
+
+                          <!-- Skeleton and Empty State -->
+                          <div class="chart-skeleton-loader" id="perfChartSkeleton" style="display: none;">
+                              <div class="skeleton-bar" style="height: 40px; margin-bottom: 8px;"></div>
+                              <div class="skeleton-bar" style="height: 140px; margin-bottom: 8px;"></div>
+                              <div class="skeleton-bar" style="height: 80px;"></div>
+                          </div>
+                          <div class="chart-empty-state" id="perfChartEmptyState" style="display: none;">
+                              <div class="empty-icon"><i class="fa-solid fa-chart-simple"></i></div>
+                              <div class="empty-title">No Timeline Data Found</div>
+                              <div class="empty-desc">No bookings or revenue records match the selected period.</div>
+                          </div>
+                      </div>
+                  </div>
+
+              </div>
+          </div>
+
+          <!-- ================= VENDORS ================= -->
+          <div id="vendorsSection" style="display:none;">
+            <div style="display:flex; justify-content:space-between; align-items: center; margin-bottom: 16px;">
+                <h2 id="vendorSectionHeading" style="font-family: var(--font-heading);">All Vendors</h2>
+                <div style="display:flex; align-items:center; gap:12px;">
+                    <button id="showAllVendorsBtn" class="viewBtn vendor-filter-reset" type="button" style="display:none;">
+                        <i class="fa-solid fa-store"></i>
+                        Show All Vendors
+                    </button>
+                    <div class="search-wrapper" style="max-width: 250px;">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                        <input type="text" id="vendorSearch" class="top-search" placeholder="Search vendors...">
+                    </div>
+                </div>
+            </div>
+            <div class="table-container">
+                <table id="vendorTable">
+                    <thead>
+                        <tr>
+                            <th>Profile</th>
+                            <th>Name</th>
+                            <th>Email / Contact</th>
+                            <th>User Type</th>
+                            <th>Revenue</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                            <th style="text-align: center;">Invoice</th>
+                        </tr>
+                    </thead>
+                    <tbody id="vendorTableBody">
+                    </tbody>
+                </table>
+            </div>
+
+            <div id="filteredListingsSection" class="filtered-listings-section">
+                <div class="filtered-listings-header">
+                    <div>
+                        <h2 id="filteredListingsHeading">All Vendor Listings</h2>
+                        <p id="filteredListingsSummary">0 listings found</p>
+                    </div>
+                    <div class="search-wrapper" style="max-width: 280px;">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                        <input
+                            type="text"
+                            id="listingSearch"
+                            class="top-search"
+                            placeholder="Search listings..."
+                        >
+                    </div>
+                </div>
+                <div class="table-container">
+                    <table id="filteredListingsTable">
+                        <thead>
+                            <tr>
+                                <th id="filteredListingNameHeader">Listing Name</th>
+                                <th>ID</th>
+                                <th>Type</th>
+                                <th>Vendor</th>
+                                <th>Details</th>
+                            </tr>
+                        </thead>
+                        <tbody id="filteredListingsTableBody">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div id="bedAvailabilitySection" class="filtered-listings-section" style="display:none;">
+                <div class="filtered-listings-header">
+                    <div>
+                        <h2 id="bedAvailabilityHeading">Beds Availability</h2>
+                        <p id="bedAvailabilitySummary">0 rooms found</p>
+                    </div>
+                    <div class="search-wrapper" style="max-width: 280px;">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                        <input
+                            type="text"
+                            id="bedAvailabilitySearch"
+                            class="top-search"
+                            placeholder="Search availability..."
+                        >
+                    </div>
+                </div>
+                <div class="table-container">
+                    <table id="bedAvailabilityTable">
+                        <thead>
+                            <tr>
+                                <th>Vendor</th>
+                                <th>Hospital</th>
+                                <th>Room Type</th>
+                                <th>Total Beds</th>
+                                <th>Availability</th>
+                                <th>Pricing</th>
+                                <th>Details</th>
+                            </tr>
+                        </thead>
+                        <tbody id="bedAvailabilityTableBody">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+          </div>
+
+          <!-- ================= USERS ================= -->
+          <div id="usersSection" style="display:none;">
+              <div style="display:flex; justify-content:space-between; align-items: center; margin-bottom: 16px;">
+                  <h2 style="font-family: var(--font-heading);">Users Management</h2>
+                  <div class="search-wrapper" style="max-width: 250px;">
+                      <i class="fa-solid fa-magnifying-glass"></i>
+                      <input type="text" id="userSearch" class="top-search" placeholder="Search users...">
+                  </div>
+              </div>
+              <div class="table-container">
+                  <table id="usersTable">
+                      <thead>
+                          <tr>
+                              <th>Profile</th>
+                              <th>Name</th>
+                              <th>Email / Contact</th>
+                              <th>User Type</th>
+                              <th>Status</th>
+                          </tr>
+                      </thead>
+                      <tbody id="usersTableBody">
+                      </tbody>
+                  </table>
+              </div>
+          </div>
+
+          <!-- ================= BOOKINGS ================= -->
+          <div id="bookingsSection" style="display:none;">
+              <h2 style="font-family: var(--font-heading); margin-bottom: 16px;">Bookings</h2>
+              <div class="table-container">
+                  <table class="adminTable">
+                      <thead>
+                          <tr>
+                              <th>ID</th>
+                              <th>User</th>
+                              <th>Type</th>
+                              <th>Amount</th>
+                              <th>Status</th>
+                              <th>Date</th>
+                          </tr>
+                      </thead>
+                      <tbody id="bookingsTableBody">
+                      </tbody>
+                  </table>
+              </div>
+          </div>
+
+          <!-- ================= ORDERS ================= -->
+          <div id="ordersSection" style="display:none;">
+              <h2 style="font-family: var(--font-heading); margin-bottom: 16px;">Orders</h2>
+              <div class="table-container">
+                  <table class="adminTable">
+                      <thead>
+                          <tr>
+                              <th>ID</th>
+                              <th>User</th>
+                              <th>Type</th>
+                              <th>Amount</th>
+                              <th>Payment</th>
+                              <th>Status</th>
+                          </tr>
+                      </thead>
+                      <tbody id="ordersTableBody">
+                      </tbody>
+                  </table>
+              </div>
+          </div>
+
+          <!-- ================= PAYMENTS ================= -->
+          <div id="paymentsSection" style="display:none;">
+              <div style="margin-bottom:16px;">
+                  <h2 style="font-family: var(--font-heading);">Payments</h2>
+                  <h3 id="totalRevenue" style="font-family: var(--font-body); color: var(--icon-blue-text); margin-top: 8px;">Total Revenue : ₹0</h3>
+              </div>
+              <div class="table-container">
+                  <table class="adminTable">
+                      <thead>
+                          <tr>
+                              <th>ID</th>
+                              <th>User</th>
+                              <th>Payment For</th>
+                              <th>Method</th>
+                              <th>Transaction</th>
+                              <th>Amount</th>
+                              <th>Status</th>
+                          </tr>
+                      </thead>
+                      <tbody id="paymentsTableBody">
+                      </tbody>
+                  </table>
+              </div>
+          </div>
+
+          <!-- ================= PRODUCTS ================= -->
+          <div id="productsSection" style="display:none;">
+              <h2 style="font-family: var(--font-heading); margin-bottom: 16px;">Products Inventory</h2>
+              <div class="table-container">
+                  <table class="adminTable">
+                      <thead>
+                          <tr>
+                              <th>ID</th>
+                              <th>Image</th>
+                              <th>Product</th>
+                              <th>Vendor</th>
+                              <th>Price</th>
+                              <th>Stock</th>
+                          </tr>
+                      </thead>
+                      <tbody id="productsTableBody">
+                      </tbody>
+                  </table>
+              </div>
+          </div>
+
+          <!-- ================= COMMISSION ================= -->
+          <div id="commissionSection" style="display:none;">
+              <h2 style="font-family: var(--font-heading); margin-bottom: 16px;">Commission Rates</h2>
+              <div class="table-container">
+                  <table class="adminTable">
+                      <thead>
+                          <tr>
+                              <th>User Type</th>
+                              <th>Commission %</th>
+                              <th>Action</th>
+                          </tr>
+                      </thead>
+                      <tbody id="commissionTableBody">
+                      </tbody>
+                  </table>
+              </div>
+          </div>
+
+          <!-- ================= REVENUE ================= -->
+          <div id="revenueSection" style="display:none;">
+            <div class="saas-activity-grid" style="margin-bottom: 24px;">
+                <div class="dashCard">
+                      <div class="card-icon icon-green"><i class="fa-solid fa-arrow-down"></i></div>
+                      <div class="card-content">
+                          <h3>Total Incoming</h3>
+                          <h1 id="incomingAmount">₹0</h1>
+                      </div>
+                  </div>
+                  <div class="dashCard">
+                      <div class="card-icon icon-red"><i class="fa-solid fa-arrow-up"></i></div>
+                      <div class="card-content">
+                          <h3>Total Paid To Vendors</h3>
+                          <h1 id="vendorPaidAmount">₹0</h1>
+                      </div>
+                  </div>
+                  <div class="dashCard">
+                      <div class="card-icon icon-blue"><i class="fa-solid fa-wallet"></i></div>
+                      <div class="card-content">
+                          <h3>Total Net Balance</h3>
+                          <h1 id="platformRevenueAmount">₹0</h1>
+                      </div>
+                  </div>
+              </div>
+
+              <div class="table-container">
+                  <table class="adminTable">
+                      <thead>
+                          <tr>
+                              <th>Vendor</th>
+                              <th>User Type</th>
+                              <th>Total Incoming</th>
+                              <th>Unpaid Balance</th>
+                              <th>Gross Vendor Revenue</th>
+                              <th>Paid</th>
+                              <th>Remaining</th>
+                          </tr>
+                      </thead>
+                      <tbody id="revenueTableBody">
+                      </tbody>
+                  </table>
+              </div>
+          </div>
+
+          <!-- ================= NET BALANCE ================= -->
+        <div id="netBalanceSection" style="display:none;">
+            <div class="saas-activity-grid" style="margin-bottom: 24px;">
+                <div class="dashCard">
+                      <div class="card-icon icon-blue"><i class="fa-solid fa-wallet"></i></div>
+                      <div class="card-content">
+                          <h3>Total Net Balance</h3>
+                          <h1 id="netBalanceAmount">Rs 0</h1>
+                      </div>
+                  </div>
+                  <div class="dashCard">
+                      <div class="card-icon icon-green"><i class="fa-solid fa-indian-rupee-sign"></i></div>
+                      <div class="card-content">
+                          <h3>Total Gross Revenue</h3>
+                          <h1 id="netBalanceGrossAmount">Rs 0</h1>
+                      </div>
+                  </div>
+                  <div class="dashCard">
+                      <div class="card-icon icon-red"><i class="fa-solid fa-money-bill-transfer"></i></div>
+                      <div class="card-content">
+                          <h3>Total Paid To Vendors</h3>
+                          <h1 id="netBalancePaidAmount">Rs 0</h1>
+                      </div>
+                  </div>
+              </div>
+
+              <h2 style="font-family: var(--font-heading); margin-bottom: 16px;">Vendor Net Balances</h2>
+              <div class="table-container">
+                  <table class="adminTable">
+                      <thead>
+                          <tr>
+                              <th>Vendor</th>
+                              <th>User Type</th>
+                              <th>Gross Revenue</th>
+                              <th>Paid To Vendor</th>
+                              <th>Net Balance</th>
+                          </tr>
+                      </thead>
+                      <tbody id="netBalanceTableBody">
+                      </tbody>
+                  </table>
+              </div>
+          </div>
+      </main>
+  </div>
+
+  <!-- ================= MODALS ================= -->
+  <div id="vendorDetailsModal">
+      <div id="vendorDetailsBox">
+                      <div id="vendorDetailsHeader" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                <h2 style="margin:0;">Vendor Details</h2>
+                <div style="display: flex; gap: 12px; align-items: center;">
+                    
+                    <button id="closeVendorModal" style="background: transparent; border: none; font-size: 20px; cursor: pointer; color: #64748b;"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+            </div>
+          <div id="vendorDetailsContent">
+          </div>
+      </div>
+  </div>
+
+  <div id="vendorInvoiceModal">
+      <div id="vendorInvoiceBox">
+          <div id="vendorInvoiceContent"></div>
+      </div>
+  </div>
+
+  <script src="/js/vendor-panel-controls.js?v=20260625-ui"></script>
+  <script src="/js/ui-interactions.js"></script>
+  <script src="/js/admin.js?v=20260912-vendornamefix"></script>
+  <script src="/js/sidebar-toggle.js"></script>
+</body>
+</html>
+
+
+
+

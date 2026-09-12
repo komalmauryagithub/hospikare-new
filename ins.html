@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="icon" type="image/png" href="/assets/logo.png">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Insurance - HospiKare</title>
+    <script>
+      (function() {
+        try {
+          const savedTheme = localStorage.getItem('hk_theme');
+          if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.setAttribute('data-theme', 'dark');
+          } else {
+            document.documentElement.removeAttribute('data-theme');
+          }
+        } catch (e) {}
+      })();
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" type="text/css" href="/css/admin.css?v=20260821-v6">
+    <link rel="stylesheet" type="text/css" href="/css/modern-ui.css?v=20260821-v6">
+    <link rel="stylesheet" type="text/css" href="/css/theme-system.css?v=20260821-v6">
+    <link rel="stylesheet" type="text/css" href="/css/enhancements.css?v=20260821-v6">
+    <link rel="stylesheet" type="text/css" href="/css/mobile-ui.css?v=20260821-v6">
+    <link rel="stylesheet" type="text/css" href="/css/ins.css?v=20260821-v6">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="with-sidebar">
+
+  <!-- SIDEBAR -->
+  <aside id="sidebar">
+      <div class="logo-area">
+          <img id="logoImage" src="/assets/logo2.png" alt="Logo">
+          <div class="vendor-badge"><i class="fa-solid fa-shield-heart"></i> Insurance Partner</div>
+      </div>
+
+      <div id="menu">
+          <div class="menu-category">MAIN</div>
+          <div class="menuItem active" id="dashboardBtn">
+              <i class="fa-solid fa-border-all"></i>
+              <span>Dashboard</span>
+          </div>
+
+          <div class="menu-category">INSURANCE</div>
+          <div class="menuItem" id="plansBtn">
+              <i class="fa-solid fa-shield-heart"></i>
+              <span>Insurance Plans</span>
+          </div>
+          <div class="menuItem" id="bookingsBtn">
+              <i class="fa-solid fa-calendar-check"></i>
+              <span>Bookings</span>
+          </div>
+          <div class="menuItem" id="customersBtn">
+              <i class="fa-solid fa-users"></i>
+              <span>Customers</span>
+          </div>
+          <div class="menuItem" id="claimsBtn">
+              <i class="fa-solid fa-file-medical"></i>
+              <span>Claims</span>
+          </div>
+
+          <div class="menu-category">FINANCE</div>
+          <div class="menuItem" id="paymentsBtn">
+              <i class="fa-solid fa-credit-card"></i>
+              <span>Payments</span>
+          </div>
+          <div class="menuItem" style="color: #EF4B5F; margin-top: auto;" onclick="logout(event)">
+              <i class="fa-solid fa-right-from-bracket"></i>
+              <span>Logout</span>
+          </div>
+      </div>
+  </aside>
+
+  <!-- MAIN WRAPPER -->
+  <div id="mainContentWrapper">
+      <!-- TOP NAVBAR -->
+      <nav id="topNavbar">
+          <div class="nav-left">
+              <div>
+                  <div class="nav-title">Insurance</div>
+                  <div class="nav-subtitle" id="welcomeText">Welcome back, Admin!</div>
+              </div>
+          </div>
+          
+          <div class="nav-center">
+              <div class="search-wrapper">
+                  <i class="fa-solid fa-magnifying-glass"></i>
+                  <input type="text" class="top-search" placeholder="Search leads, users, campaigns...">
+              </div>
+          </div>
+
+          <div class="nav-right">
+              <div class="dashboard-date-filter insurance-date-filter">
+                  <button
+                      id="dashboardDateFilterBtn"
+                      class="date-picker-btn"
+                      type="button"
+                      aria-expanded="false"
+                      aria-controls="dashboardDateFilterPanel"
+                  >
+                      <i class="fa-regular fa-calendar"></i>
+                      <span id="dashboardDateFilterText">All Time</span>
+                      <i class="fa-solid fa-chevron-down date-filter-chevron"></i>
+                  </button>
+                  <div id="dashboardDateFilterPanel" class="dashboard-date-panel" hidden>
+                      <div class="date-filter-panel-title">
+                          <strong>Filter Insurance</strong>
+                          <span>Search by date, month or year</span>
+                      </div>
+                      <div class="date-filter-mode" role="radiogroup" aria-label="Insurance date filter type">
+                          <label>
+                              <input type="radio" name="dashboardDateFilterMode" value="date" checked>
+                              Date
+                          </label>
+                          <label>
+                              <input type="radio" name="dashboardDateFilterMode" value="month">
+                              Month
+                          </label>
+                          <label>
+                              <input type="radio" name="dashboardDateFilterMode" value="year">
+                              Year
+                          </label>
+                      </div>
+                      <div class="date-filter-fields" data-date-mode-field="date">
+                          <label>
+                              From Date
+                              <input id="dashboardDateFrom" type="date">
+                          </label>
+                          <label>
+                              To Date
+                              <input id="dashboardDateTo" type="date">
+                          </label>
+                      </div>
+                      <div class="date-filter-fields single-date-field" data-date-mode-field="month" hidden>
+                          <label>
+                              Month
+                              <input id="dashboardDateMonth" type="month">
+                          </label>
+                      </div>
+                      <div class="date-filter-fields single-date-field" data-date-mode-field="year" hidden>
+                          <label>
+                              Year
+                              <select id="dashboardDateYear"></select>
+                          </label>
+                      </div>
+                      <p id="dashboardDateFilterError" class="date-filter-error"></p>
+                      <div class="date-filter-actions">
+                          <button id="clearDashboardDateFilter" class="date-filter-clear" type="button">
+                              Clear
+                          </button>
+                          <button id="applyDashboardDateFilter" class="date-filter-apply" type="button">
+                              <i class="fa-solid fa-magnifying-glass"></i>
+                              Search
+                          </button>
+                      </div>
+                  </div>
+              </div>
+              
+              <button class="header-icon-btn" id="themeToggleBtn" title="Toggle Theme" type="button" style="margin-right: 8px;"><i class="fa-solid fa-moon"></i></button>
+          <button class="header-icon-btn" id="fullScreenBtn" title="Full Screen" type="button" style="margin-right: 12px;"><i class="fa-solid fa-expand"></i></button>
+          <div class="profile-dropdown-wrapper" style="position: relative;">
+              <div class="profile-section" id="profileDropdownTrigger" style="cursor:pointer;" aria-label="Open profile menu" title="Profile Menu" onclick="document.getElementById('profileDropdownMenu').classList.toggle('hidden'); event.stopPropagation();">
+                  <div class="profile-info">
+                      <div class="profile-name">Insurance Partner</div>
+                      <div class="profile-role">Vendor</div>
+                  </div>
+                  <div class="profile-avatar">
+                      <img loading="lazy" src="https://ui-avatars.com/api/?name=Insurance+Partner&background=2b6cb0&color=fff" alt="Profile" style="width: 100%; height: 100%; border-radius: 50%;">
+                  </div>
+              </div>
+              <div class="profile-dropdown-menu hidden" id="profileDropdownMenu" style="position: absolute; top: calc(100% + 10px); right: 0; background: var(--surface, #ffffff); box-shadow: 0 10px 25px rgba(0,0,0,0.1); border-radius: 12px; z-index: 1000; min-width: 220px; padding: 8px 0; border: 1px solid var(--border, #e2e8f0); overflow: hidden;">
+                  <div class="dropdown-item" id="profileSectionTrigger" onclick="document.getElementById('profileDropdownMenu').classList.add('hidden')" style="padding: 12px 20px; cursor: pointer; display: flex; align-items: center; gap: 12px; color: var(--text, #1e293b); font-weight: 500; font-size: 14px; transition: background 0.2s;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='transparent'">
+                      <i class="fa-solid fa-user-pen" style="color: #3b82f6;"></i> <span id="profileTriggerText">Complete Profile</span>
+                  </div>
+              </div>
+          </div>
+          <script>
+              document.addEventListener('click', function(e) {
+                  const menu = document.getElementById('profileDropdownMenu');
+                  const trigger = document.getElementById('profileDropdownTrigger');
+                  if (menu && trigger && !menu.classList.contains('hidden') && !trigger.contains(e.target) && !menu.contains(e.target)) {
+                      menu.classList.add('hidden');
+                  }
+              });
+          </script>
+              <i class="fa-solid fa-right-from-bracket" id="logoutBtn" style="cursor:pointer; color: var(--trend-down); margin-left: 12px; font-size: 18px;" onclick="logout(event)" title="Logout"></i>
+          </div>
+      </nav>
+
+      <main id="mainContainer">
+          <!-- Content loaded dynamically -->
+      </main>
+    <!-- Modal for Adding Insurance -->
+    <div id="insuranceModal" class="modal-overlay" style="display:none;">
+        <div id="insuranceModalBox">
+            <div id="insuranceModalHeader" style="padding: 20px 24px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;">
+                <h2 style="font-family: var(--font-heading);">Add Insurance Plan</h2>
+                <button id="closeInsuranceModal" onclick="closeInsuranceModal()" style="background: transparent; border: none; font-size: 20px; color: var(--text-muted); cursor: pointer;"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <form id="insuranceForm" enctype="multipart/form-data">
+                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; margin-bottom: 24px;">
+                    <!-- Company Details -->
+                    <h3 style="grid-column: span 2; margin-top: 16px; border-bottom: 1px solid var(--border-color); padding-bottom: 8px;">Company Details</h3>
+                    <div style="display: flex; flex-direction: column; gap: 8px;">
+                        <label style="font-size: 13px; font-weight: 600; color: var(--text-muted);">Company Name</label>
+                        <input type="text" name="comp_name" class="top-search" style="border-radius: var(--rounded-sm);">
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 8px;">
+                        <label style="font-size: 13px; font-weight: 600; color: var(--text-muted);">Company Type</label>
+                        <select name="comp_type" class="top-search" style="border-radius: var(--rounded-sm);">
+                            <option value="">Select Type</option>
+                            <option value="Health">Health</option>
+                            <option value="Life">Life</option>
+                            <option value="General">General</option>
+                        </select>
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 8px; grid-column: span 2;">
+                        <label style="font-size: 13px; font-weight: 600; color: var(--text-muted);">Description</label>
+                        <input type="text" name="ins_description" class="top-search" style="border-radius: var(--rounded-sm);">
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 8px;">
+                        <label style="font-size: 13px; font-weight: 600; color: var(--text-muted);">IRDAI Number</label>
+                        <input type="text" name="irdai_number" class="top-search" style="border-radius: var(--rounded-sm);">
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 8px;">
+                        <label style="font-size: 13px; font-weight: 600; color: var(--text-muted);">Company PAN</label>
+                        <input type="text" name="comp_pan" class="top-search" style="border-radius: var(--rounded-sm);">
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 8px;">
+                        <label style="font-size: 13px; font-weight: 600; color: var(--text-muted);">GST Number</label>
+                        <input type="text" name="gst_number" class="top-search" style="border-radius: var(--rounded-sm);">
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 8px;">
+                        <label style="font-size: 13px; font-weight: 600; color: var(--text-muted);">Certificate</label>
+                        <input type="file" name="reg_doc" style="font-size: 13px;">
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 8px; grid-column: span 2;">
+                        <label style="font-size: 13px; font-weight: 600; color: var(--text-muted);">Office Address</label>
+                        <input type="text" name="ins_address" class="top-search" style="border-radius: var(--rounded-sm);">
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 8px;">
+                        <label style="font-size: 13px; font-weight: 600; color: var(--text-muted);">Address Proof</label>
+                        <input type="file" name="policy_doc" style="font-size: 13px;">
+                    </div>
+
+                    <!-- Claim Details -->
+                    <h3 style="grid-column: span 2; margin-top: 16px; border-bottom: 1px solid var(--border-color); padding-bottom: 8px;">Claim Details</h3>
+                    <div style="display: flex; flex-direction: column; gap: 8px;">
+                        <label style="font-size: 13px; font-weight: 600; color: var(--text-muted);">Claim Type</label>
+                        <select name="claim_type" class="top-search" style="border-radius: var(--rounded-sm);">
+                            <option value="">Select Type</option>
+                            <option value="Cashless">Cashless</option>
+                            <option value="Reimbursement">Reimbursement</option>
+                        </select>
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 8px; grid-column: span 2;">
+                        <label style="font-size: 13px; font-weight: 600; color: var(--text-muted);">Required Documents</label>
+                        <input type="text" name="required_docs" class="top-search" style="border-radius: var(--rounded-sm);">
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 8px;">
+                        <label style="font-size: 13px; font-weight: 600; color: var(--text-muted);">Claim Approval Time</label>
+                        <input type="text" name="claim_approval_time" class="top-search" style="border-radius: var(--rounded-sm);">
+                    </div>
+
+                    <!-- Support Details -->
+                    <h3 style="grid-column: span 2; margin-top: 16px; border-bottom: 1px solid var(--border-color); padding-bottom: 8px;">Support Details</h3>
+                    <div style="display: flex; flex-direction: column; gap: 8px;">
+                        <label style="font-size: 13px; font-weight: 600; color: var(--text-muted);">Customer Support Number</label>
+                        <input type="text" name="contact_number" class="top-search" style="border-radius: var(--rounded-sm);">
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 8px;">
+                        <label style="font-size: 13px; font-weight: 600; color: var(--text-muted);">Email Support</label>
+                        <input type="email" name="ins_email" class="top-search" style="border-radius: var(--rounded-sm);">
+                    </div>
+                </div>
+                <button type="submit" id="saveInsuranceBtn" class="btn-base" style="width: 100%; background-color: var(--sidebar-active-bg); color: white; justify-content: center; padding: 12px; font-size: 15px;">
+                    Save Insurance
+                </button>
+            </form>
+        </div>
+    </div>
+    
+  <!-- VENDOR PROFILE MODAL -->
+  <div id="profileModal" style="display:none; position:fixed; inset:0; background:rgba(7,26,61,0.75); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); z-index:999999; align-items:center; justify-content:center; padding:20px; overflow-y:auto;">
+    <div style="width:min(720px, 100%); max-height:90vh; background:var(--hk-card-bg, #fff); border-radius:20px; box-shadow:0 24px 60px rgba(7,26,61,0.3); overflow:hidden; display:flex; flex-direction:column; border:1px solid var(--hk-border, #e2e8f0);">
+      <div style="display:flex; justify-content:space-between; align-items:center; padding:20px 26px; border-bottom:1px solid var(--hk-divider, #e2e8f0); flex-shrink:0; background:var(--hk-surface-soft, #f8faff);">
+        <div>
+          <h3 style="margin:0; font-size:20px; font-weight:800; font-family:var(--font-heading); color:var(--hk-text-main, #0f172a);">Profile Details</h3>
+          <p style="margin:2px 0 0; font-size:12.5px; color:var(--hk-text-muted, #64748b);">Manage your insurance company registration and policy parameters</p>
+        </div>
+        <button type="button" id="closeProfileModal" style="border:none; background:transparent; font-size:24px; cursor:pointer; color:var(--hk-text-muted, #475569); line-height:1;">×</button>
+      </div>
+      <form id="vendorProfileForm" enctype="multipart/form-data" style="padding:24px 26px; display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:18px; overflow-y:auto; max-height:calc(90vh - 92px);">
+        <div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Name</label><input type="text" id="profileName" name="name" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px; background:var(--hk-surface, #fff); color:var(--hk-text-main, #101828);" required></div>
+        <div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Email / Contact</label><input type="text" id="profileEmail" name="email_or_contact" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px; background:var(--hk-surface, #fff); color:var(--hk-text-main, #101828);" required></div>
+        <div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">User Type</label><select id="profileUserType" name="user_type" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px; background:var(--hk-surface, #fff); color:var(--hk-text-main, #101828);"><option>Hospital</option><option>Ambulance</option><option>Lab Test</option><option>Insurance</option><option>Medicines</option><option>Medical Equipments</option></select></div>
+        <div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Profile Photo</label><input type="file" id="profilePhoto" name="profile_photo" accept="image/*" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px;"></div>
+        <div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Identity Proof</label><input type="file" id="profileIdentity" name="identity_proof" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px;"></div>
+        <div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Bank Account</label><input type="text" id="profileBank" name="bank_account" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px; background:var(--hk-surface, #fff); color:var(--hk-text-main, #101828);"></div>
+        <div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">IFSC Code</label><input type="text" id="profileIfsc" name="ifsc" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px; background:var(--hk-surface, #fff); color:var(--hk-text-main, #101828);"></div>
+        <div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Cancelled Cheque</label><input type="file" id="profileCheque" name="cheque" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px;"></div>
+        <div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Company Name</label><input type="text" id="profileCompName" name="comp_name" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px; background:var(--hk-surface, #fff); color:var(--hk-text-main, #101828);"></div>
+        <div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Company Type</label><input type="text" id="profileCompType" name="comp_type" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px; background:var(--hk-surface, #fff); color:var(--hk-text-main, #101828);"></div>
+        <div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Description</label><input type="text" id="profileInsuranceDescription" name="description" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px; background:var(--hk-surface, #fff); color:var(--hk-text-main, #101828);"></div>
+        <div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">IRDAI Number</label><input type="text" id="profileIrdai" name="irdai" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px; background:var(--hk-surface, #fff); color:var(--hk-text-main, #101828);"></div>
+        <div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Company PAN</label><input type="text" id="profileCompPan" name="comp_pan" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px; background:var(--hk-surface, #fff); color:var(--hk-text-main, #101828);"></div>
+        <div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">GST</label><input type="text" id="profileGst" name="gst" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px; background:var(--hk-surface, #fff); color:var(--hk-text-main, #101828);"></div>
+        <div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Office Address</label><input type="text" id="profileInsuranceAddress" name="offc_add" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px; background:var(--hk-surface, #fff); color:var(--hk-text-main, #101828);"></div>
+        <div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Claim Type</label><input type="text" id="profileClaimType" name="claim_type" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px; background:var(--hk-surface, #fff); color:var(--hk-text-main, #101828);"></div>
+        <div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Required Documents</label><input type="text" id="profileDocReq" name="doc_req" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px; background:var(--hk-surface, #fff); color:var(--hk-text-main, #101828);"></div>
+        <div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Claim Time</label><input type="text" id="profileClaimTime" name="claim_time" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px; background:var(--hk-surface, #fff); color:var(--hk-text-main, #101828);"></div>
+        <div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Customer Support Number</label><input type="text" id="profileCustSupNum" name="cust_sup_num" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px; background:var(--hk-surface, #fff); color:var(--hk-text-main, #101828);"></div>
+        <div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Email Support</label><input type="text" id="profileEmailSup" name="email_sup" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px; background:var(--hk-surface, #fff); color:var(--hk-text-main, #101828);"></div>
+        <div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Contact Person</label><input type="text" id="profileContactPerson" name="contact_person" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px; background:var(--hk-surface, #fff); color:var(--hk-text-main, #101828);"></div>
+        <div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Website</label><input type="text" id="profileWebsite" name="website" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px; background:var(--hk-surface, #fff); color:var(--hk-text-main, #101828);"></div>
+        <div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Insurance Price</label><input type="text" id="profileInsPrice" name="ins_price" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px; background:var(--hk-surface, #fff); color:var(--hk-text-main, #101828);"></div>
+        <div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Claim Price</label><input type="text" id="profileClaimPrice" name="claim_price" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px; background:var(--hk-surface, #fff); color:var(--hk-text-main, #101828);"></div>
+        <div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Incorporation Certificate</label><input type="file" id="profileInsuranceIncorp" name="incorp_cert" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px;"></div>
+        <div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Address Proof</label><input type="file" id="profileInsuranceAddressProof" name="add_proof" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px;"></div>
+        <div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Set Password</label><input type="password" id="profilePassword" name="password" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px; background:var(--hk-surface, #fff); color:var(--hk-text-main, #101828);"></div>
+        <div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Confirm Password</label><input type="password" id="profileConfirmPassword" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px; background:var(--hk-surface, #fff); color:var(--hk-text-main, #101828);"></div>
+        <div style="grid-column:1 / -1; display:flex; justify-content:flex-end; gap:12px; margin-top:8px;" id="profileModalActionButtons">
+          <button type="button" id="closeProfileBtn" style="padding:10px 18px; border:1px solid var(--hk-border, #cbd5e1); background:var(--hk-surface, #fff); border-radius:10px; cursor:pointer; color:var(--hk-text-main, #101828); font-weight:600;">Close</button>
+          <button type="button" id="enableProfileEditBtn" style="padding:10px 18px; border:none; background:var(--hk-primary-blue, #3b82f6); color:#fff; border-radius:10px; cursor:pointer; font-weight:600;"><i class="fa-solid fa-pen"></i> Edit</button>
+          <button type="button" id="cancelProfileEdit" style="display:none; padding:10px 18px; border:1px solid var(--hk-border, #cbd5e1); background:var(--hk-surface, #fff); border-radius:10px; cursor:pointer; color:var(--hk-text-main, #101828); font-weight:600;">Cancel</button>
+          <button type="submit" id="saveProfileBtn" style="display:none; padding:10px 18px; border:none; background:var(--hk-primary-blue, #2563eb); color:#fff; border-radius:10px; cursor:pointer; font-weight:600;">Save Profile</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="/js/vendor-dashboard-ui.js?v=20260821-v6"></script>
+  <script src="/js/vendor-panel-controls.js?v=20260821-v6"></script>
+  <script src="/js/ins.js?v=20260821-v6"></script>
+  <script src="/js/sidebar-toggle.js?v=20260821-v6"></script>
+  <script src="/js/ui-interactions.js?v=20260821-v6"></script>
+</body>
+</html>
+
+
+

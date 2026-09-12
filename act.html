@@ -1,0 +1,126 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="icon" type="image/png" href="/assets/logo.png">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Activities - HospiKare</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" type="text/css" href="/css/act.css?v=20260821-v4">
+    <link rel="stylesheet" type="text/css" href="/css/modern-ui.css?v=20260821-v4">
+    <link rel="stylesheet" type="text/css" href="/css/theme-system.css?v=20260821-v4">
+    <link rel="stylesheet" type="text/css" href="/css/enhancements.css?v=20260821-v4">
+    <link rel="stylesheet" type="text/css" href="/css/mobile-ui.css?v=20260821-v4">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+    <link rel="stylesheet" href="/css/sidebar-override.css">
+
+    <style>
+        /* THEME ADAPTIVE STYLES */
+        table thead, table thead tr, table thead th, th, .bookingTable th, #hospitalTable th, .availabilityTable th {
+            background-color: var(--surface-soft, #eef1fa);
+            background: var(--surface-soft, #eef1fa);
+            color: var(--brand-primary, #2563eb);
+        }
+        #addHospitalBtn, button[id*="add"], .saveUpdateBtn {
+            background-color: var(--brand-primary, #2563eb) !important;
+            background: var(--brand-primary, #2563eb) !important;
+            color: white !important;
+            background-image: none !important;
+        }
+
+        /* PROFESSIONAL TABLE STYLES FOR ACTIVITY PAGE */
+        .activityTable {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            border: 1px solid #E2E8F0;
+        }
+        .activityTable thead th {
+            background: #1E293B !important;
+            color: white !important;
+            padding: 15px 20px;
+            text-align: left;
+            font-size: 13px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 2px solid #334155;
+        }
+        .activityTable tbody td {
+            padding: 16px 20px;
+            border-bottom: 1px solid #E2E8F0;
+            color: #334155;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        .activityTable tbody tr:hover {
+            background-color: #F8FAFC;
+        }
+        .activityTable tbody tr:last-child td {
+            border-bottom: none;
+        }
+        .invoice-btn {
+            background: #2563eb;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s ease;
+        }
+        .invoice-btn:hover {
+            background: #1d4ed8;
+            box-shadow: 0 4px 12px rgba(37,99,235,0.2);
+        }
+    </style>
+<script src="/js/invoice-template.js?v=6"></script>
+</head>
+<body>
+    <nav id="navbar">
+        <div id="leftNavbar">
+            <div id="logoBox">
+                <img
+                    src="/assets/logo2.png"
+                    id="logoImage"
+                >
+            </div>
+        </div>
+        <div id="centerNavbar">
+            <div class="navItem activeNav">
+                <i class="fa-solid fa-box"></i>
+                <span>
+                    Orders
+                </span>
+            </div>
+            <div class="navItem">
+                <i class="fa-solid fa-clock-rotate-left"></i>
+                <span>
+                    History
+                </span>
+            </div>
+            <div class="navItem">
+                <i class="fa-solid fa-credit-card"></i>
+                <span>
+                    Payment
+                </span>
+            </div>
+        </div>
+    </nav>
+    <div id="mainContainer">
+    </div>
+
+    <script src="/js/act.js?v=4"></script>
+</body>
+</html>
+
