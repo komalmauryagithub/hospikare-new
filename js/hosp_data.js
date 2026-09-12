@@ -355,8 +355,10 @@ document.getElementById("appointmentForm");
 appointmentForm.addEventListener(
     "submit",
     async function(e){
-
         e.preventDefault();
+
+        alert("Booking is temporarily disabled. Live room availability check requires real-time Hospital API integration, which is coming soon.");
+        return;
 
         const savedUser =
         JSON.parse(
@@ -577,3 +579,4 @@ function closeRoomImage(){
     const overlay = document.getElementById('roomImageOverlay');
     if(overlay) overlay.classList.remove('active');
 }
+

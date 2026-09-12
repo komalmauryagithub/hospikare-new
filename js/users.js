@@ -1,4 +1,4 @@
-(() => {
+﻿(() => {
     const USER_KEY = "productUser";
     const CART_KEY = "hospikareUserCart";
     const FALLBACK_IMAGE = "/assets/logo.png";
@@ -732,6 +732,11 @@
 
     async function handleAmbulanceBooking(event) {
         event.preventDefault();
+        
+        // As per business logic, real-time ambulance booking is blocked until APIs are integrated
+        alert("Booking disabled: Live ambulance availability requires real-time API integration with hospitals.");
+        return;
+        
         const user = requireUser();
         if (!user) {
             return;
@@ -1582,6 +1587,8 @@
         }, 2800);
     }
 })();
+
+
 
 
 
