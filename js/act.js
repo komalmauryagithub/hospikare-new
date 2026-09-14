@@ -1,78 +1,52 @@
-﻿const navItems =
-    document.querySelectorAll(
-        ".navItem"
-    );
+﻿const navItems = document.querySelectorAll(".navItem");
 
 /* ================= NAVIGATION ================= */
 
 navItems.forEach(item => {
-
-    item.addEventListener(
-        "click",
-        () => {
-
-            navItems.forEach(nav => {
-
-                nav.classList.remove(
-                    "activeNav"
-                );
-
-            });
-
-            item.classList.add(
-                "activeNav"
-            );
-
-            const text =
-                item.innerText
-                .toLowerCase();
-
-            if(
-                text.includes(
-                    "orders"
-                )
-            ){
-
-                loadOrders();
-
-            }
-
-            else if(
-                text.includes(
-                    "history"
-                )
-            ){
-
-                loadHistory();
-
-            }
-
-            else if(
-                text.includes(
-                    "payment"
-                )
-            ){
-
-                loadPayments();
-
-            }
-
+    item.addEventListener("click", () => {
+        navItems.forEach(nav => {
+            nav.classList.remove("activeNav");
+        });
+        item.classList.add("activeNav");
+        const text = item.innerText.toLowerCase();
+        if(text.includes("orders")){
+            loadOrders();
         }
-    );
-
+        else if(text.includes("history")){
+            loadHistory();
+        }
+        else if(text.includes("payment")){
+            loadPayments();
+        }
+    });
 });
 
 /* ================= DEFAULT ================= */
 
 loadOrders();
 
+/* ================= UTILITIES ================= */
+
+function getUserIdQuery() {
+    const userStr = localStorage.getItem("hk_user");
+    if (userStr) {
+        try {
+            const userObj = JSON.parse(userStr);
+            if (userObj && userObj.id) {
+                return "?user_id=" + userObj.id;
+            }
+        } catch(e) {}
+    }
+    return "";
+}
+
 /* ================= ORDERS ================= */
 
 async function loadOrders(){
     try{
         const [resOrders, resHistory] = await Promise.all([
-            fetch('/api/user/orders'),
-            fetch('/api/user/history')
+            fetch('/api/user/orders' + getUserIdQuery()),
+            fetch('/api/user/history' + getUserIdQuery())
         ]);
         
         const result = await resOrders.json();
@@ -98,8 +72,13 @@ async function loadOrders(){
 
         let html = `
         <div class="activityBox">
-            <h2>My Orders</h2>
-            <table class="activityTable">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid #e2e8f0;">
+                <h2 style="margin: 0; font-size: 24px; color: #1e293b; font-weight: 700;">My Orders</h2>
+                <button onclick="window.location.href='/users.html'" style="background: white; color: #475569; border: 1px solid #cbd5e1; padding: 10px 18px; border-radius: 8px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); font-size: 14px; transition: all 0.2s;" onmouseover="this.style.background='#f8fafc'; this.style.borderColor='#94a3b8';" onmouseout="this.style.background='white'; this.style.borderColor='#cbd5e1';">
+                    <i class="fa-solid fa-arrow-left"></i> Back to Dashboard
+                </button>
+            </div>
+            <table class="activityTable" style="margin-top: 0;">
                 <thead>
                     <tr>
                         <th>ID</th>
@@ -114,26 +93,35 @@ async function loadOrders(){
         `;
 
         if(result.success && result.orders.length > 0) {
-
             result.orders.forEach(order => {
                 let invoiceBtnHtml = "";
                 let isPaid = order.payment_status && order.payment_status.toLowerCase() === 'paid';
                 if (isPaid) {
                     invoiceBtnHtml = `<button class="invoice-btn" onclick="viewCustomerInvoice(${order.id}, '${order.type}', ${order.total_amount})"><i class="fa-solid fa-file-invoice"></i> View Invoice</button>`;
                 } else {
-                    invoiceBtnHtml = `<span style="color: #94A3B8; font-size: 13px; font-weight: 600;">Not Paid</span>`;
+                    invoiceBtnHtml = `<span style="color: #94a3b8; font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 6px;"><i class="fa-regular fa-clock"></i> Pending Payment</span>`;
                 }
+
+                const pStat = (order.payment_status || "Pending").toLowerCase();
+                let pBg = '#fef3c7', pCol = '#b45309';
+                if (pStat === 'paid') { pBg = '#dcfce7'; pCol = '#166534'; }
+                else if (pStat === 'failed' || pStat === 'cancelled') { pBg = '#fee2e2'; pCol = '#991b1b'; }
+
+                const oStat = (order.order_status || "Pending").toLowerCase();
+                let oBg = '#fef3c7', oCol = '#b45309';
+                if (oStat === 'completed' || oStat === 'delivered' || oStat === 'placed' || oStat === 'approved') { oBg = '#e0e7ff'; oCol = '#3730a3'; }
+                else if (oStat === 'cancelled') { oBg = '#fee2e2'; oCol = '#991b1b'; }
 
                 html += `
                 <tr>
-                    <td style="font-weight: 600; color: #1E40AF;">#${order.id}</td>
-                    <td style="font-weight: 500;">${order.type}</td>
-                    <td style="font-weight: 600;">₹${order.total_amount}</td>
+                    <td style="font-weight: 700; color: #1e293b;">#${order.id}</td>
+                    <td style="font-weight: 600; color: #334155;">${order.type}</td>
+                    <td style="font-weight: 700; color: #0f172a;">₹${order.total_amount}</td>
                     <td>
-                        <span style="background: ${isPaid ? '#DCFCE7' : '#FEF2F2'}; color: ${isPaid ? '#166534' : '#991B1B'}; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 600;">${order.payment_status || "Pending"}</span>
+                        <span style="display: inline-flex; align-items: center; justify-content: center; background: ${pBg}; color: ${pCol}; padding: 6px 12px; border-radius: 999px; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">${order.payment_status || "Pending"}</span>
                     </td>
                     <td>
-                        <span style="background: #F1F5F9; color: #475569; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 600;">${order.order_status || "Pending"}</span>
+                        <span style="display: inline-flex; align-items: center; justify-content: center; background: ${oBg}; color: ${oCol}; padding: 6px 12px; border-radius: 999px; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">${order.order_status || "Pending"}</span>
                     </td>
                     <td>${invoiceBtnHtml}</td>
                 </tr>
@@ -153,78 +141,107 @@ async function loadOrders(){
 
         html += `
                 </tbody>
-
             </table>
-
         </div>
         `;
 
-        document.getElementById(
-            "mainContainer"
-        ).innerHTML = html;
-
+        document.getElementById("mainContainer").innerHTML = html;
     }
     catch(error){
-
-        console.log(
-            "Orders Error:",
-            error
-        );
-
+        console.log("Orders Error:", error);
     }
-
 }
 
 /* ================= HISTORY ================= */
 
 async function loadHistory(){
-
     try{
+        const response = await fetch('/api/user/history' + getUserIdQuery());
+        const result = await response.json();
+        
+        let html = `
+        <div class="activityBox">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid #e2e8f0;">
+                <h2 style="margin: 0; font-size: 24px; color: #1e293b; font-weight: 700;">My History</h2>
+                <button onclick="window.location.href='/users.html'" style="background: white; color: #475569; border: 1px solid #cbd5e1; padding: 10px 18px; border-radius: 8px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); font-size: 14px; transition: all 0.2s;" onmouseover="this.style.background='#f8fafc'; this.style.borderColor='#94a3b8';" onmouseout="this.style.background='white'; this.style.borderColor='#cbd5e1';">
+                    <i class="fa-solid fa-arrow-left"></i> Back to Dashboard
+                </button>
+            </div>
+            <table class="activityTable" style="margin-top: 0;">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Type</th>
+                        <th>Status</th>
+                        <th>Amount</th>
+                        <th>Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+        `;
 
-        const response =
-            
+        if(result.success && result.history && result.history.length > 0) {
+            result.history.forEach(h => {
+                const oStat = (h.booking_status || "Pending").toLowerCase();
+                let oBg = '#fef3c7', oCol = '#b45309';
+                if (oStat === 'completed' || oStat === 'delivered' || oStat === 'placed' || oStat === 'approved' || oStat === 'paid') { oBg = '#e0e7ff'; oCol = '#3730a3'; }
+                else if (oStat === 'cancelled') { oBg = '#fee2e2'; oCol = '#991b1b'; }
 
-        document.getElementById(
-            "mainContainer"
-        ).innerHTML = html;
+                html += `
+                <tr>
+                    <td style="font-weight: 700; color: #1e293b;">#${h.id}</td>
+                    <td style="font-weight: 600; color: #334155;">${h.type}</td>
+                    <td>
+                        <span style="display: inline-flex; align-items: center; justify-content: center; background: ${oBg}; color: ${oCol}; padding: 6px 12px; border-radius: 999px; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">${h.booking_status || "Pending"}</span>
+                    </td>
+                    <td style="font-weight: 700; color: #0f172a;">₹${h.total_amount}</td>
+                    <td style="color: #64748b; font-weight: 500;">${new Date(h.created_at).toLocaleDateString()}</td>
+                </tr>
+                `;
+            });
+        }
+        else{
+            html += `
+            <tr>
+                <td colspan="5" style="text-align: center; color: #94A3B8; padding: 40px; font-size: 14px;">
+                    <i class="fa-solid fa-clock-rotate-left" style="font-size: 28px; margin-bottom: 12px; display: block; color: #CBD5E1;"></i>
+                    No History Found
+                </td>
+            </tr>
+            `;
+        }
 
+        html += `
+                </tbody>
+            </table>
+        </div>
+        `;
+
+        document.getElementById("mainContainer").innerHTML = html;
     }
     catch(error){
-
-        console.log(
-            "History Error:",
-            error
-        );
-
+        console.log("History Error:", error);
     }
-
 }
 
+/* ================= PAYMENTS ================= */
+
 async function loadPayments(){
-
     try{
-
-        const response =
-            await fetch(
-                '/api/user/payments'
-            );
-
-        const result =
-            await response.json();
+        const response = await fetch('/api/user/payments' + getUserIdQuery());
+        const result = await response.json();
 
         let html = `
         <div class="activityBox">
-
-            <h2>
-                Payment History
-            </h2>
-
-            <table class="activityTable">
-
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid #e2e8f0;">
+                <h2 style="margin: 0; font-size: 24px; color: #1e293b; font-weight: 700;">My Payments</h2>
+                <button onclick="window.location.href='/users.html'" style="background: white; color: #475569; border: 1px solid #cbd5e1; padding: 10px 18px; border-radius: 8px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); font-size: 14px; transition: all 0.2s;" onmouseover="this.style.background='#f8fafc'; this.style.borderColor='#94a3b8';" onmouseout="this.style.background='white'; this.style.borderColor='#cbd5e1';">
+                    <i class="fa-solid fa-arrow-left"></i> Back to Dashboard
+                </button>
+            </div>
+            <table class="activityTable" style="margin-top: 0;">
                 <thead>
-
                     <tr>
-
                         <th>ID</th>
                         <th>Payment For</th>
                         <th>Method</th>
@@ -232,93 +249,55 @@ async function loadPayments(){
                         <th>Amount</th>
                         <th>Status</th>
                         <th>Date</th>
-
                     </tr>
-
                 </thead>
-
                 <tbody>
         `;
 
-        if(
-            result.success &&
-            result.payments.length > 0
-        ){
-
-            result.payments.forEach(
-                payment => {
+        if(result.success && result.payments.length > 0){
+            result.payments.forEach(payment => {
+                const pStat = (payment.payment_status || "Pending").toLowerCase();
+                let pBg = '#fef3c7', pCol = '#b45309';
+                if (pStat === 'paid') { pBg = '#dcfce7'; pCol = '#166534'; }
+                else if (pStat === 'failed' || pStat === 'cancelled') { pBg = '#fee2e2'; pCol = '#991b1b'; }
 
                 html += `
                 <tr>
-
+                    <td style="font-weight: 700; color: #1e293b;">#${payment.id}</td>
+                    <td style="font-weight: 600; color: #334155;">${payment.payment_for}</td>
+                    <td style="font-weight: 500;">${payment.payment_method}</td>
+                    <td style="font-weight: 500; font-family: monospace; color: #64748b;">${payment.transaction_id}</td>
+                    <td style="font-weight: 700; color: #0f172a;">₹${payment.amount}</td>
                     <td>
-                        #${payment.id}
+                        <span style="display: inline-flex; align-items: center; justify-content: center; background: ${pBg}; color: ${pCol}; padding: 6px 12px; border-radius: 999px; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">${payment.payment_status || "Pending"}</span>
                     </td>
-
-                    <td>
-                        ${payment.payment_for}
-                    </td>
-
-                    <td>
-                        ${payment.payment_method}
-                    </td>
-
-                    <td>
-                        ${payment.transaction_id}
-                    </td>
-
-                    <td>
-                        ₹${payment.amount}
-                    </td>
-
-                    <td>
-                        ${payment.payment_status}
-                    </td>
-
-                    <td>
-                        ${new Date(
-                            payment.paid_at
-                        ).toLocaleDateString()}
-                    </td>
-
+                    <td style="color: #64748b; font-weight: 500;">${new Date(payment.paid_at).toLocaleDateString()}</td>
                 </tr>
                 `;
             });
-
         }
         else{
-
             html += `
             <tr>
-
-                <td colspan="7" style="text-align: center; color: #94A3B8; padding: 40px; font-size: 14px;"><i class="fa-solid fa-credit-card" style="font-size: 28px; margin-bottom: 12px; display: block; color: #CBD5E1;"></i>No Payments Found</td>
-
+                <td colspan="7" style="text-align: center; color: #94A3B8; padding: 40px; font-size: 14px;">
+                    <i class="fa-solid fa-credit-card" style="font-size: 28px; margin-bottom: 12px; display: block; color: #CBD5E1;"></i>
+                    No Payments Found
+                </td>
             </tr>
             `;
         }
 
         html += `
                 </tbody>
-
             </table>
-
         </div>
         `;
 
-        document.getElementById(
-            "mainContainer"
-        ).innerHTML = html;
-
+        document.getElementById("mainContainer").innerHTML = html;
     }
     catch(error){
-
-        console.log(
-            "Payment Load Error:",
-            error
-        );
-
+        console.log("Payment Load Error:", error);
     }
-
 }
 
 window.viewCustomerInvoice = function(id, type, amount) {
@@ -348,10 +327,3 @@ window.viewCustomerInvoice = function(id, type, amount) {
     win.document.write(`<html><head><title>Invoice #${data.invoiceNo}</title></head><body style="margin:0; background:#f0f0f0;"><div style="text-align:center; padding:20px;"><button onclick="window.print()" style="background:#2563eb; color:white; padding:10px 20px; border:none; border-radius:5px; cursor:pointer; font-size:16px;">Print Invoice</button></div>${html}</body></html>`);
     win.document.close();
 };
-
-
-
-
-
-
-

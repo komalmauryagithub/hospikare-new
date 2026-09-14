@@ -4,123 +4,180 @@
     <link rel="icon" type="image/png" href="/assets/logo.png">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Activities - HospiKare</title>
+    <title>My Activities - HospiKare</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" type="text/css" href="/css/act.css?v=20260821-v4">
-    <link rel="stylesheet" type="text/css" href="/css/modern-ui.css?v=20260821-v4">
-    <link rel="stylesheet" type="text/css" href="/css/theme-system.css?v=20260821-v4">
-    <link rel="stylesheet" type="text/css" href="/css/enhancements.css?v=20260821-v4">
-    <link rel="stylesheet" type="text/css" href="/css/mobile-ui.css?v=20260821-v4">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
-    <link rel="stylesheet" href="/css/sidebar-override.css">
-
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+    <link rel="stylesheet" href="/css/theme-system.css?v=20260912-lightfix">
+    <link rel="stylesheet" href="/css/base.css?v=20260912-lightfix">
+    <link rel="stylesheet" href="/css/layout.css?v=20260912-lightfix">
+    <link rel="stylesheet" href="/css/components.css?v=20260912-lightfix">
+    <link rel="stylesheet" href="/css/users.css?v=20260912-layoutfix">
+    <link rel="stylesheet" href="/css/mobile-ui.css?v=20260912-lightfix">
+    
     <style>
-        /* THEME ADAPTIVE STYLES */
-        table thead, table thead tr, table thead th, th, .bookingTable th, #hospitalTable th, .availabilityTable th {
-            background-color: var(--surface-soft, #eef1fa);
-            background: var(--surface-soft, #eef1fa);
-            color: var(--brand-primary, #2563eb);
-        }
-        #addHospitalBtn, button[id*="add"], .saveUpdateBtn {
-            background-color: var(--brand-primary, #2563eb) !important;
-            background: var(--brand-primary, #2563eb) !important;
-            color: white !important;
-            background-image: none !important;
+        body {
+            background-color: var(--hk-off-white, #f8fafc);
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            padding: 0;
+            padding-top: 80px; /* Space for fixed navbar */
         }
 
-        /* PROFESSIONAL TABLE STYLES FOR ACTIVITY PAGE */
-        .activityTable {
-            width: 100%;
-            border-collapse: separate;
-            border-spacing: 0;
+        /* Nav Tabs */
+        .page-header-section {
             background: white;
-            border-radius: 8px;
-            overflow: hidden;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-            border: 1px solid #E2E8F0;
+            border-bottom: 1px solid #e2e8f0;
+            padding: 24px 0 0 0;
+            margin-bottom: 32px;
+        }
+        .page-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+        .page-title {
+            font-size: 28px;
+            font-weight: 800;
+            color: #0f172a;
+            margin: 0 0 20px 0;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+        .tabs-container {
+            display: flex;
+            gap: 32px;
+        }
+        .navItem {
+            padding: 12px 0;
+            color: #64748b;
+            font-weight: 600;
+            font-size: 15px;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
+        }
+        .navItem:hover {
+            color: #2563eb;
+        }
+        .navItem.activeNav {
+            color: #2563eb;
+            border-bottom-color: #2563eb;
+        }
+
+        /* PROFESSIONAL TABLE STYLES */
+        .activityBox {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+            border: 1px solid #e2e8f0;
+            padding: 32px;
+            margin-bottom: 40px;
+        }
+        .activityTable {
+            width: 100% !important;
+            border-collapse: separate !important;
+            border-spacing: 0 !important;
+            background: white !important;
         }
         .activityTable thead th {
-            background: #1E293B !important;
-            color: white !important;
-            padding: 15px 20px;
-            text-align: left;
-            font-size: 13px;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            border-bottom: 2px solid #334155;
+            background: #f8fafc !important;
+            color: #475569 !important;
+            padding: 16px 24px !important;
+            text-align: left !important;
+            font-size: 13px !important;
+            font-weight: 700 !important;
+            text-transform: uppercase !important;
+            letter-spacing: 0.05em !important;
+            border-bottom: 1px solid #e2e8f0 !important;
+            border-top: 1px solid #e2e8f0 !important;
         }
+        .activityTable thead th:first-child { border-top-left-radius: 8px; border-left: 1px solid #e2e8f0; }
+        .activityTable thead th:last-child { border-top-right-radius: 8px; border-right: 1px solid #e2e8f0; }
+        
         .activityTable tbody td {
-            padding: 16px 20px;
-            border-bottom: 1px solid #E2E8F0;
-            color: #334155;
-            font-size: 14px;
-            font-weight: 500;
+            padding: 20px 24px !important;
+            border-bottom: 1px solid #f1f5f9 !important;
+            color: #475569 !important;
+            font-size: 14px !important;
+            font-weight: 500 !important;
+            vertical-align: middle !important;
         }
-        .activityTable tbody tr:hover {
-            background-color: #F8FAFC;
-        }
-        .activityTable tbody tr:last-child td {
-            border-bottom: none;
+        .activityTable tbody tr:last-child td { border-bottom: none !important; }
+        .activityTable tbody tr:hover td {
+            background: #f8fafc !important;
         }
         .invoice-btn {
-            background: #2563eb;
-            color: white;
+            background: white;
+            color: #2563eb;
+            border: 1px solid #bfdbfe;
             padding: 8px 16px;
-            border-radius: 6px;
-            border: none;
-            cursor: pointer;
-            font-size: 13px;
+            border-radius: 8px;
             font-weight: 600;
+            font-size: 13px;
+            cursor: pointer;
             display: inline-flex;
             align-items: center;
             gap: 6px;
-            transition: all 0.2s ease;
+            transition: all 0.2s;
         }
         .invoice-btn:hover {
-            background: #1d4ed8;
-            box-shadow: 0 4px 12px rgba(37,99,235,0.2);
+            background: #eff6ff;
+            border-color: #93c5fd;
         }
     </style>
-<script src="/js/invoice-template.js?v=6"></script>
+    <script src="/js/invoice-template.js?v=9"></script>
 </head>
 <body>
-    <nav id="navbar">
-        <div id="leftNavbar">
-            <div id="logoBox">
-                <img
-                    src="/assets/logo2.png"
-                    id="logoImage"
-                >
-            </div>
+        <nav class="navbar" id="navbar" style="background: white !important; border-bottom: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center; padding: 0 40px; height: 80px;">
+        <div class="logoSection" style="display: flex; align-items: center;">
+            <a href="/users.html">
+                <img src="/assets/logo.png" alt="HospiKare Logo" class="logo-img" style="height: 50px; width: auto; object-fit: contain;">
+            </a>
         </div>
-        <div id="centerNavbar">
-            <div class="navItem activeNav">
-                <i class="fa-solid fa-box"></i>
-                <span>
-                    Orders
-                </span>
-            </div>
-            <div class="navItem">
-                <i class="fa-solid fa-clock-rotate-left"></i>
-                <span>
-                    History
-                </span>
-            </div>
-            <div class="navItem">
-                <i class="fa-solid fa-credit-card"></i>
-                <span>
-                    Payment
-                </span>
-            </div>
+        <div style="display: flex; align-items: center; gap: 24px;">
+            <a href="/users.html" style="color: #475569; font-weight: 600; text-decoration: none; font-size: 15px; transition: color 0.2s;" onmouseover="this.style.color='#2563eb'" onmouseout="this.style.color='#475569'">
+                <i class="fa-solid fa-house"></i> Back to Home
+            </a>
+            <a href="/users.html" style="background: #2563eb; color: white; padding: 10px 20px; border-radius: 8px; font-weight: 600; text-decoration: none; font-size: 14px; box-shadow: 0 2px 4px rgba(37,99,235,0.2); transition: background 0.2s;" onmouseover="this.style.background='#1d4ed8'" onmouseout="this.style.background='#2563eb'">
+                Dashboard
+            </a>
         </div>
     </nav>
-    <div id="mainContainer">
+
+    <div class="page-header-section">
+        <div class="page-container">
+            <h1 class="page-title">My Account</h1>
+            <div class="tabs-container" id="centerNavbar">
+                <div class="navItem activeNav">
+                    <i class="fa-solid fa-box"></i>
+                    <span>Orders</span>
+                </div>
+                <div class="navItem">
+                    <i class="fa-solid fa-clock-rotate-left"></i>
+                    <span>History</span>
+                </div>
+                <div class="navItem">
+                    <i class="fa-solid fa-credit-card"></i>
+                    <span>Payment</span>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <script src="/js/act.js?v=4"></script>
+    <div class="page-container">
+        <div id="mainContainer">
+            <!-- Content loaded by JS -->
+        </div>
+    </div>
+
+    <script src="/js/act.js?v=9"></script>
 </body>
 </html>
+
+
+
 

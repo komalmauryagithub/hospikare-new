@@ -1133,13 +1133,26 @@
           </div>
 
           <!-- ================= ORDERS ================= -->
-          <div id="ordersSection" style="display:none;">
-              <h2 style="font-family: var(--font-heading); margin-bottom: 16px;">Orders</h2>
+                    <div id="ordersSection" style="display:none;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 15px;">
+                  <h2 style="font-family: var(--font-heading); margin: 0;">Orders</h2>
+                  <div style="display: flex; align-items: center; gap: 10px; background: var(--surface-soft); padding: 8px 16px; border-radius: 8px; border: 1px solid var(--hk-grey-200);">
+                      <i class="fa-solid fa-filter" style="color: var(--brand-primary);"></i>
+                      <select id="ordersDateFilter" style="border: none; background: transparent; font-weight: 600; color: var(--text-dark); outline: none; cursor: pointer;">
+                          <option value="all">All Time</option>
+                          <option value="today">Today</option>
+                          <option value="yesterday">Yesterday</option>
+                          <option value="this_week">This Week</option>
+                          <option value="this_month">This Month</option>
+                      </select>
+                  </div>
+              </div>
               <div class="table-container">
                   <table class="adminTable">
                       <thead>
                           <tr>
                               <th>ID</th>
+                              <th>Date</th>
                               <th>User</th>
                               <th>Type</th>
                               <th>Amount</th>
@@ -1152,7 +1165,6 @@
                   </table>
               </div>
           </div>
-
           <!-- ================= PAYMENTS ================= -->
           <div id="paymentsSection" style="display:none;">
               <div style="margin-bottom:16px;">
@@ -1331,10 +1343,13 @@
 
   <script src="/js/vendor-panel-controls.js?v=20260625-ui"></script>
   <script src="/js/ui-interactions.js"></script>
-  <script src="/js/admin.js?v=20260912-vendornamefix"></script>
+  <script src="/js/admin.js?v=999"></script>
   <script src="/js/sidebar-toggle.js"></script>
 </body>
 </html>
+
+
+
 
 
 

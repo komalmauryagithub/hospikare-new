@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <link rel="icon" type="image/png" href="/assets/logo.png">
@@ -224,6 +224,16 @@
                     <input type="text" id="hospital_facilities" placeholder="e.g. 24x7 Pharmacy, ICU, ER" class="top-search" style="border-radius: var(--rounded-sm);">
                 </div>
                 
+                <!-- NEW API INTEGRATION FIELDS -->
+                <div style="display: flex; flex-direction: column; gap: 8px;">
+                    <label style="font-size: 13px; font-weight: 600; color: var(--text-muted);"><i class="fa-solid fa-code"></i> Live API URL</label>
+                    <input type="text" id="hospital_live_api_url" placeholder="https://api.yourhospital.com/v1" class="top-search" style="border-radius: var(--rounded-sm);">
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 8px;">
+                    <label style="font-size: 13px; font-weight: 600; color: var(--text-muted);"><i class="fa-solid fa-key"></i> Live API Key</label>
+                    <input type="password" id="hospital_live_api_key" placeholder="Enter secure API key" class="top-search" style="border-radius: var(--rounded-sm);">
+                </div>
+                
                 <div style="grid-column: span 2;">
                     <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 8px; margin-bottom: 12px;">
                         <h3 style="font-size: 15px; font-weight: 700; color: var(--text-muted);">Rooms</h3>
@@ -364,6 +374,8 @@
         <div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Address</label><input type="text" id="profileHospitalAddress" name="address" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px; background:var(--hk-surface, #fff); color:var(--hk-text-main, #101828);"></div>
         <div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Location</label><input type="text" id="profileHospitalLocation" name="location" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px; background:var(--hk-surface, #fff); color:var(--hk-text-main, #101828);"></div>
         <div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Facilities</label><input type="text" id="profileHospitalFacilities" name="facilities" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px; background:var(--hk-surface, #fff); color:var(--hk-text-main, #101828);"></div>
+        <div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Live API URL</label><input type="text" id="profileLiveApiUrl" name="live_api_url" placeholder="https://api.yourhospital.com/v1" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px; background:var(--hk-surface, #fff); color:var(--hk-text-main, #101828);"></div>
+        <div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Live API Key</label><input type="password" id="profileLiveApiKey" name="live_api_key" placeholder="API Key" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px; background:var(--hk-surface, #fff); color:var(--hk-text-main, #101828);"></div>
         <div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Hospital Registration</label><input type="file" id="profileHospitalRegCertificate" name="hospital_reg_certificate" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px;"></div>
         <div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Shop License</label><input type="file" id="profileHospitalShopLicense" name="shop_license" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px;"></div>
         <div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Medical Council Registration</label><input type="file" id="profileHospitalMedicalCouncil" name="medical_council_registration" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px;"></div>

@@ -1,4 +1,4 @@
-require("dotenv").config();
+﻿require("dotenv").config();
 const session = require("express-session");
 const express = require("express");
 const mysql = require("mysql2/promise");
@@ -6405,51 +6405,31 @@ app.get("/api/admin/orders", async (req, res) => {
   try {
     const orders = [];
 
-    /* ================= MEDICINE ================= */
+    // 1. Medicine
+    const [medicine] = await pool.query(`SELECT umo.id, pu.full_name AS user_name, umo.total_amount, umo.payment_status, umo.order_status, 'Medicine' AS type, umo.ordered_at AS created_at FROM user_medicine_orders umo LEFT JOIN product_users pu ON umo.user_id = pu.id`);
+    // 2. Equipment
+    const [equipment] = await pool.query(`SELECT ueo.id, pu.full_name AS user_name, ueo.total_amount, ueo.payment_status, ueo.order_status, 'Equipment' AS type, ueo.created_at FROM user_equipment_orders ueo LEFT JOIN product_users pu ON ueo.user_id = pu.id`);
+    // 3. Hospital Bookings
+    const [hospital] = await pool.query(`SELECT hb.id, pu.full_name AS user_name, hb.total_amount, hb.booking_status AS payment_status, hb.booking_status AS order_status, 'Hospital Booking' AS type, hb.created_at FROM user_hospital_bookings hb LEFT JOIN product_users pu ON hb.user_id = pu.id`);
+    // 4. Ambulance Bookings
+    const [ambulance] = await pool.query(`SELECT ab.id, pu.full_name AS user_name, ab.total_amount, ab.booking_status AS payment_status, ab.booking_status AS order_status, 'Ambulance Booking' AS type, ab.created_at FROM user_ambulance_bookings ab LEFT JOIN product_users pu ON ab.user_id = pu.id`);
+    // 5. Insurance
+    const [insurance] = await pool.query(`SELECT ip.id, pu.full_name AS user_name, ip.premium_amount AS total_amount, ip.payment_status AS payment_status, ip.insurance_status AS order_status, 'Insurance' AS type, ip.created_at FROM user_insurance_purchases ip LEFT JOIN product_users pu ON ip.user_id = pu.id`);
+    // 6. Lab Tests
+    const [labs] = await pool.query(`SELECT lb.id, pu.full_name AS user_name, lb.total_amount, lb.payment_status AS payment_status, lb.booking_status AS order_status, 'Lab Booking' AS type, lb.created_at FROM user_lab_test_bookings lb LEFT JOIN product_users pu ON lb.user_id = pu.id`);
 
-    const [medicineOrders] = await pool.query(`
-            SELECT
-                umo.id,
-                pu.full_name AS user_name,
-                umo.total_amount,
-                umo.payment_status,
-                umo.order_status,
-                'Medicine' AS type
-            FROM user_medicine_orders umo
+    orders.push(...medicine, ...equipment, ...hospital, ...ambulance, ...insurance, ...labs);
 
-            LEFT JOIN product_users pu
-            ON umo.user_id = pu.id
-            `);
-
-    /* ================= EQUIPMENT ================= */
-
-    const [equipmentOrders] = await pool.query(`
-            SELECT
-                ueo.id,
-                pu.full_name AS user_name,
-                ueo.total_amount,
-                ueo.payment_status,
-                ueo.order_status,
-                'Equipment' AS type
-            FROM user_equipment_orders ueo
-
-            LEFT JOIN product_users pu
-            ON ueo.user_id = pu.id
-            `);
-
-    orders.push(...medicineOrders);
-    orders.push(...equipmentOrders);
+    // Sort descending by date
+    orders.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 
     res.json({
       success: true,
-      orders,
+      orders
     });
   } catch (error) {
     console.log(error);
-
-    res.json({
-      success: false,
-    });
+    res.json({ success: false });
   }
 });
 
@@ -8063,4 +8043,14 @@ async function startServer() {
 }
 
 startServer();
+
+
+
+
+
+
+
+
+
+
 

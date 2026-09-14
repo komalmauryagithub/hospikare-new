@@ -1,4 +1,4 @@
-    let revenueChart;
+﻿    let revenueChart;
     let vendorChart;
     let userTypeRevenueChart;
     let bookingChart;
@@ -3580,7 +3580,93 @@
     window.hideAllSections = hideAllSections;
     window.setupDashboardInteractions = setupDashboardInteractions;
 
+// ===== INJECTED BY AI TO OVERRIDE loadOrders WITH DATE FILTERS =====
 
+let hkAllOrdersData = [];
 
+async function loadOrders(){
+    try{
+        const response = await fetch('/api/admin/orders');
+        const result = await response.json();
+        
+        if(result.success) {
+            hkAllOrdersData = result.orders;
+            renderOrdersFiltered(hkAllOrdersData);
+        }
+    }
+    catch(error){
+        console.log("Orders Load Error", error);
+    }
+}
 
+function renderOrdersFiltered(ordersArray) {
+    const tbody = document.getElementById("ordersTableBody");
+    if(!tbody) return;
+    tbody.innerHTML = "";
+    
+    if(!ordersArray || ordersArray.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:#94A3B8; padding:30px;">No orders found for selected filter</td></tr>`;
+        return;
+    }
 
+    ordersArray.forEach(order => {
+        const dateStr = order.created_at ? new Date(order.created_at).toLocaleString() : "N/A";
+        tbody.innerHTML += `
+        <tr>
+            <td data-label="Order ID">#${order.id}</td>
+            <td data-label="Date">${dateStr}</td>
+            <td data-label="User">${order.user_name || 'N/A'}</td>
+            <td data-label="Type">${order.type}</td>
+            <td data-label="Amount">₹${order.total_amount}</td>
+            <td data-label="Payment">
+                <span class="status-badge status-pending" style="background: var(--surface-soft); color: var(--brand-primary); padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 700;">
+                    ${order.payment_status || "Pending"}
+                </span>
+            </td>
+            <td data-label="Status">
+                <span class="status-badge" style="background: var(--surface-soft); color: var(--brand-secondary); padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 700;">
+                    ${order.order_status || "Pending"}
+                </span>
+            </td>
+        </tr>
+        `;
+    });
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+    const ordersDateFilter = document.getElementById("ordersDateFilter");
+    if(ordersDateFilter) {
+        ordersDateFilter.addEventListener("change", (e) => {
+            const filter = e.target.value;
+            if(filter === "all") {
+                renderOrdersFiltered(hkAllOrdersData);
+                return;
+            }
+            
+            const now = new Date();
+            const filtered = hkAllOrdersData.filter(order => {
+                if(!order.created_at) return false;
+                const orderDate = new Date(order.created_at);
+                
+                if(filter === "today") {
+                    return orderDate.toDateString() === now.toDateString();
+                }
+                else if(filter === "yesterday") {
+                    const yesterday = new Date();
+                    yesterday.setDate(yesterday.getDate() - 1);
+                    return orderDate.toDateString() === yesterday.toDateString();
+                }
+                else if(filter === "this_week") {
+                    const weekAgo = new Date();
+                    weekAgo.setDate(weekAgo.getDate() - 7);
+                    return orderDate >= weekAgo;
+                }
+                else if(filter === "this_month") {
+                    return orderDate.getMonth() === now.getMonth() && orderDate.getFullYear() === now.getFullYear();
+                }
+                return true;
+            });
+            renderOrdersFiltered(filtered);
+        });
+    }
+});

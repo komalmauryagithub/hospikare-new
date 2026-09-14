@@ -601,6 +601,14 @@ document.getElementById("hospitalForm")
             "facilities",
             document.getElementById("hospital_facilities").value
         );
+        formData.append(
+            "live_api_url",
+            document.getElementById("hospital_live_api_url").value
+        );
+        formData.append(
+            "live_api_key",
+            document.getElementById("hospital_live_api_key").value
+        );
         const hospitalImages = document.getElementById("hospital_images");
         const maxHospitalImages = hospitalImages && hospitalImages.files ? Math.min(hospitalImages.files.length, 4) : 0;
         for(let i = 0; i < maxHospitalImages; i++){
@@ -1716,3 +1724,26 @@ if(processCSVBtn) {
         reader.readAsText(file);
     });
 }
+
+
+document.getElementById('vendorProfileForm')?.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const form = event.target;
+    const password = document.getElementById('profilePassword')?.value || '';
+    const confirmPassword = document.getElementById('profileConfirmPassword')?.value || '';
+    if (password && password !== confirmPassword) {
+        alert('Passwords do not match');
+        return;
+    }
+    const formData = new FormData(form);
+    if (!password) formData.delete('password');
+    const response = await fetch('/api/user/profile', { method: 'PUT', credentials: 'include', body: formData });
+    const result = await response.json();
+    if (result.success) {
+        alert('Profile updated successfully');
+        closeProfileModal();
+        await loadUserProfile();
+    } else {
+        alert(result.message || 'Profile update failed');
+    }
+});
