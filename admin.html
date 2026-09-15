@@ -1158,6 +1158,7 @@
                               <th>Amount</th>
                               <th>Payment</th>
                               <th>Status</th>
+                              <th>Action</th>
                           </tr>
                       </thead>
                       <tbody id="ordersTableBody">
@@ -1345,8 +1346,20 @@
   <script src="/js/ui-interactions.js"></script>
   <script src="/js/admin.js?v=999"></script>
   <script src="/js/sidebar-toggle.js"></script>
+    <div id="adminOrderModal" class="modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9999; align-items:center; justify-content:center;">
+        <div style="background:var(--card-bg, #ffffff); color:var(--text-main, #1e293b); width:90%; max-width:600px; border-radius:12px; padding:24px; max-height:90vh; overflow-y:auto; position:relative; border: 1px solid var(--border-color, #e2e8f0); box-shadow: 0 4px 20px rgba(0,0,0,0.1);">
+            <button onclick="document.getElementById('adminOrderModal').style.display='none'" style="position:absolute; top:20px; right:20px; background:none; border:none; font-size:20px; cursor:pointer; color: var(--text-main, #1e293b);"><i class="fa-solid fa-xmark"></i></button>
+            <h2 style="margin-top:0; color:var(--text-main, #1e293b); font-family:var(--font-heading);">Order Details</h2>
+            <div id="adminOrderModalContent" style="margin-top:20px;"></div>
+        </div>
+    </div>
 </body>
 </html>
+
+
+
+
+
 
 
 

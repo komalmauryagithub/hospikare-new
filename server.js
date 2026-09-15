@@ -5060,6 +5060,225 @@ app.post("/api/user/insurance-renewal", async (req, res) => {
 });
 
 //45
+
+// ======================= NEW CHECKOUT FLOW =======================
+
+app.post("/api/checkout", upload.single("prescription"), async (req, res) => {
+    const conn = await pool.getConnection();
+    await conn.beginTransaction();
+    try {
+        if (!req.session.productUser) {
+            return res.json({ success: false, message: "Unauthorized. Please login." });
+        }
+        
+        const userId = req.session.productUser.id;
+        const cart = JSON.parse(req.body.cart || '[]');
+        const deliveryAddress = req.body.delivery_address || 'No address provided';
+        const prescriptionFile = req.file ? req.file.filename : null;
+
+        if (!cart || cart.length === 0) {
+            return res.json({ success: false, message: "Cart is empty" });
+        }
+
+        let totalCartAmount = 0;
+        let createdOrders = []; // To track { type, id }
+
+        // Group items by type and vendor
+        const grouped = { medicine: {}, equipment: {} };
+
+        for (let item of cart) {
+            if (item.type === 'medicine') {
+                const [medRows] = await conn.query(`SELECT * FROM med_lists WHERE medicine_id = ?`, [item.id]);
+                if (medRows.length === 0) throw new Error(`Medicine ${item.name} not found`);
+                const med = medRows[0];
+                const vendorId = med.vendor_id;
+                
+                if (!grouped.medicine[vendorId]) grouped.medicine[vendorId] = { items: [], total: 0, requiresPrescription: false };
+                
+                const price = Number(med.selling_price) || 0;
+                const subtotal = price * item.qty;
+                totalCartAmount += subtotal;
+                grouped.medicine[vendorId].total += subtotal;
+                if (med.prescription_required === 'Yes' || med.prescription_required === 'yes') {
+                    grouped.medicine[vendorId].requiresPrescription = true;
+                }
+                
+                grouped.medicine[vendorId].items.push({
+                    medicine_id: med.medicine_id,
+                    qty: item.qty,
+                    price: price,
+                    subtotal: subtotal
+                });
+            } else if (item.type === 'equipment') {
+                const [eqRows] = await conn.query(`SELECT * FROM med_eq_prd WHERE product_id = ?`, [item.id]);
+                if (eqRows.length === 0) throw new Error(`Equipment ${item.name} not found`);
+                const eq = eqRows[0];
+                const vendorId = eq.vendor_id;
+                
+                if (!grouped.equipment[vendorId]) grouped.equipment[vendorId] = { items: [], total: 0 };
+                
+                const price = Number(eq.selling_price) || 0;
+                const subtotal = price * item.qty;
+                totalCartAmount += subtotal;
+                grouped.equipment[vendorId].total += subtotal;
+                
+                grouped.equipment[vendorId].items.push({
+                    equipment_id: eq.product_id,
+                    qty: item.qty,
+                    price: price,
+                    subtotal: subtotal
+                });
+            }
+        }
+
+        // Create local orders
+        for (const vendorId in grouped.medicine) {
+            const group = grouped.medicine[vendorId];
+            const prescStatus = group.requiresPrescription ? 'PENDING' : 'NOT_REQUIRED';
+            if (group.requiresPrescription && !prescriptionFile) {
+                throw new Error("Prescription is required for some medicines in your cart.");
+            }
+
+            const [orderRes] = await conn.query(
+                `INSERT INTO user_medicine_orders (user_id, medicine_vendor_id, delivery_address, total_amount, payment_method, payment_status, order_status, prescription_file, prescription_status)
+                 VALUES (?, ?, ?, ?, 'online', 'pending', 'PENDING_PAYMENT', ?, ?)`,
+                [userId, vendorId, deliveryAddress, group.total, prescriptionFile, prescStatus]
+            );
+            const orderId = orderRes.insertId;
+            createdOrders.push({ type: 'medicine', id: orderId });
+
+            for (let item of group.items) {
+                await conn.query(
+                    `INSERT INTO user_medicine_order_items (medicine_order_id, medicine_id, quantity, price, subtotal)
+                     VALUES (?, ?, ?, ?, ?)`,
+                    [orderId, item.medicine_id, item.qty, item.price, item.subtotal]
+                );
+            }
+        }
+
+        for (const vendorId in grouped.equipment) {
+            const group = grouped.equipment[vendorId];
+            const [orderRes] = await conn.query(
+                `INSERT INTO user_equipment_orders (user_id, equipment_vendor_id, order_type, delivery_address, total_amount, payment_status, order_status)
+                 VALUES (?, ?, 'buy', ?, ?, 'pending', 'PENDING_PAYMENT')`,
+                [userId, vendorId, deliveryAddress, group.total]
+            );
+            const orderId = orderRes.insertId;
+            createdOrders.push({ type: 'equipment', id: orderId });
+
+            for (let item of group.items) {
+                await conn.query(
+                    `INSERT INTO user_equipment_order_items (equipment_order_id, equipment_id, quantity, price, subtotal)
+                     VALUES (?, ?, ?, ?, ?)`,
+                    [orderId, item.equipment_id, item.qty, item.price, item.subtotal]
+                );
+            }
+        }
+
+        if (totalCartAmount <= 0) throw new Error("Cart total is zero");
+
+        // Create Razorpay Order
+        const rzpOptions = {
+            amount: Math.round(totalCartAmount * 100),
+            currency: "INR",
+            receipt: "receipt_" + Date.now()
+        };
+        const rzpOrder = await razorpay.orders.create(rzpOptions);
+
+        // Update local orders with razorpay_order_id
+        for (let ord of createdOrders) {
+            if (ord.type === 'medicine') {
+                await conn.query(`UPDATE user_medicine_orders SET razorpay_order_id = ? WHERE id = ?`, [rzpOrder.id, ord.id]);
+            } else {
+                await conn.query(`UPDATE user_equipment_orders SET razorpay_order_id = ? WHERE id = ?`, [rzpOrder.id, ord.id]);
+            }
+        }
+
+        await conn.commit();
+        conn.release();
+
+        res.json({
+            success: true,
+            razorpay_order_id: rzpOrder.id,
+            amount: rzpOptions.amount,
+            key: process.env.RAZORPAY_KEY_ID
+        });
+
+    } catch (error) {
+        await conn.rollback();
+        conn.release();
+        console.error("Checkout Error:", error);
+        res.json({ success: false, message: error.message || "Checkout failed" });
+    }
+});
+
+app.post("/api/verify-payment", async (req, res) => {
+    try {
+        const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
+        
+        const expectedSignature = crypto
+            .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET)
+            .update(razorpay_order_id + "|" + razorpay_payment_id)
+            .digest("hex");
+            
+        if (expectedSignature !== razorpay_signature) {
+            // Update to FAILED
+            await pool.query(`UPDATE user_medicine_orders SET payment_status = 'failed', order_status = 'CANCELLED' WHERE razorpay_order_id = ?`, [razorpay_order_id]);
+            await pool.query(`UPDATE user_equipment_orders SET payment_status = 'failed', order_status = 'CANCELLED' WHERE razorpay_order_id = ?`, [razorpay_order_id]);
+            return res.json({ success: false, message: "Invalid payment signature" });
+        }
+
+        // Success
+        await pool.query(`UPDATE user_medicine_orders SET payment_status = 'paid', order_status = 'CONFIRMED', razorpay_payment_id = ? WHERE razorpay_order_id = ?`, [razorpay_payment_id, razorpay_order_id]);
+        await pool.query(`UPDATE user_equipment_orders SET payment_status = 'paid', order_status = 'CONFIRMED', razorpay_payment_id = ? WHERE razorpay_order_id = ?`, [razorpay_payment_id, razorpay_order_id]);
+
+        // Create transaction logs (optional but good practice based on existing app logic)
+        const [medOrders] = await pool.query(`SELECT user_id, id, total_amount FROM user_medicine_orders WHERE razorpay_order_id = ?`, [razorpay_order_id]);
+        for(let ord of medOrders) {
+            await pool.query(`INSERT INTO user_payments (user_id, payment_for, reference_id, payment_method, transaction_id, amount, payment_status) VALUES (?, 'medicine_order', ?, 'razorpay', ?, ?, 'success')`, [ord.user_id, ord.id, razorpay_payment_id, ord.total_amount]);
+        }
+        
+        const [eqOrders] = await pool.query(`SELECT user_id, id, total_amount FROM user_equipment_orders WHERE razorpay_order_id = ?`, [razorpay_order_id]);
+        for(let ord of eqOrders) {
+            await pool.query(`INSERT INTO user_payments (user_id, payment_for, reference_id, payment_method, transaction_id, amount, payment_status) VALUES (?, 'equipment_order', ?, 'razorpay', ?, ?, 'success')`, [ord.user_id, ord.id, razorpay_payment_id, ord.total_amount]);
+        }
+
+        res.json({ success: true, message: "Payment verified successfully" });
+    } catch(err) {
+        console.error("Payment Verify Error:", err);
+        res.json({ success: false, message: "Payment verification failed" });
+    }
+});
+
+app.post("/api/vendor/order/status", async (req, res) => {
+    try {
+        if (!req.session.user && !req.session.admin) return res.json({ success: false, message: "Unauthorized" });
+        const { order_id, type, order_status, prescription_status } = req.body;
+        
+        if (type === 'medicine') {
+            const updates = [];
+            const params = [];
+            if (order_status) { updates.push('order_status = ?'); params.push(order_status); }
+            if (prescription_status) { updates.push('prescription_status = ?'); params.push(prescription_status); }
+            
+            if (updates.length > 0) {
+                params.push(order_id);
+                await pool.query(`UPDATE user_medicine_orders SET ${updates.join(', ')} WHERE id = ?`, params);
+            }
+        } else if (type === 'equipment') {
+            if (order_status) {
+                await pool.query(`UPDATE user_equipment_orders SET order_status = ? WHERE id = ?`, [order_status, order_id]);
+            }
+        }
+        res.json({ success: true });
+    } catch(err) {
+        console.error("Status Update Error:", err);
+        res.json({ success: false });
+    }
+});
+
+// ======================= END NEW CHECKOUT FLOW =======================
+
 app.post("/api/buy-product", async (req, res) => {
   try {
     const {
@@ -5912,7 +6131,57 @@ app.post("/api/insurance/claims/status", async (req, res) => {
 });
 
 //53
+// ==================== UPDATED VENDOR ORDERS ====================
 app.get("/api/medicine/orders", async (req, res) => {
+    try {
+        if (!req.session.user) return res.json({ success: false, message: "Unauthorized" });
+        const vendorId = req.session.user.id;
+        
+        const sql = `
+            SELECT umo.id, umo.total_amount, umo.payment_status, umo.order_status, umo.ordered_at, umo.delivery_address, umo.prescription_status, umo.prescription_file,
+            p.full_name, p.email, p.phone,
+            (SELECT JSON_ARRAYAGG(JSON_OBJECT('name', ml.medicine_name, 'qty', umoi.quantity, 'price', umoi.price)) 
+             FROM user_medicine_order_items umoi JOIN med_lists ml ON umoi.medicine_id = ml.medicine_id 
+             WHERE umoi.medicine_order_id = umo.id) AS products
+            FROM user_medicine_orders umo 
+            LEFT JOIN product_users p ON umo.user_id = p.id
+            WHERE umo.medicine_vendor_id = ?
+            ORDER BY umo.id DESC
+        `;
+        const [orders] = await pool.query(sql, [vendorId]);
+        res.json({ success: true, orders });
+    } catch(err) {
+        console.error(err);
+        res.json({ success: false });
+    }
+});
+
+app.get("/api/equipment/orders", async (req, res) => {
+    try {
+        if (!req.session.user) return res.json({ success: false, message: "Unauthorized" });
+        const vendorId = req.session.user.id;
+        
+        const sql = `
+            SELECT ueo.id, ueo.total_amount, ueo.payment_status, ueo.order_status, ueo.created_at as ordered_at, ueo.delivery_address,
+            p.full_name, p.email, p.phone,
+            (SELECT JSON_ARRAYAGG(JSON_OBJECT('name', mep.product_name, 'qty', ueoi.quantity, 'price', ueoi.price)) 
+             FROM user_equipment_order_items ueoi JOIN med_eq_prd mep ON ueoi.equipment_id = mep.product_id 
+             WHERE ueoi.equipment_order_id = ueo.id) AS products
+            FROM user_equipment_orders ueo 
+            LEFT JOIN product_users p ON ueo.user_id = p.id
+            WHERE ueo.equipment_vendor_id = ?
+            ORDER BY ueo.id DESC
+        `;
+        const [orders] = await pool.query(sql, [vendorId]);
+        res.json({ success: true, orders });
+    } catch(err) {
+        console.error(err);
+        res.json({ success: false });
+    }
+});
+// ==================== END UPDATED VENDOR ORDERS ====================
+
+app.get("/api/medicine/orders_OLD", async (req, res) => {
   try {
     if (!req.session.user) {
       return res.json({
@@ -6045,7 +6314,7 @@ app.get("/api/medicine/dashboard", async (req, res) => {
 });
 
 //54
-app.get("/api/equipment/orders", async (req, res) => {
+app.get("/api/equipment/orders_OLD", async (req, res) => {
   try {
     if (!req.session.user) {
       return res.json({
@@ -6406,9 +6675,25 @@ app.get("/api/admin/orders", async (req, res) => {
     const orders = [];
 
     // 1. Medicine
-    const [medicine] = await pool.query(`SELECT umo.id, pu.full_name AS user_name, umo.total_amount, umo.payment_status, umo.order_status, 'Medicine' AS type, umo.ordered_at AS created_at FROM user_medicine_orders umo LEFT JOIN product_users pu ON umo.user_id = pu.id`);
+    
     // 2. Equipment
-    const [equipment] = await pool.query(`SELECT ueo.id, pu.full_name AS user_name, ueo.total_amount, ueo.payment_status, ueo.order_status, 'Equipment' AS type, ueo.created_at FROM user_equipment_orders ueo LEFT JOIN product_users pu ON ueo.user_id = pu.id`);
+    // 1. Medicine
+      const [medicine] = await pool.query(`
+        SELECT umo.id, pu.full_name AS user_name, umo.total_amount, umo.payment_status, umo.order_status, 
+        'Medicine' AS type, umo.ordered_at AS created_at, umo.delivery_address, umo.prescription_status, umo.prescription_file,
+        (SELECT JSON_ARRAYAGG(JSON_OBJECT('name', ml.medicine_name, 'qty', umoi.quantity, 'price', umoi.price)) 
+         FROM user_medicine_order_items umoi JOIN med_lists ml ON umoi.medicine_id = ml.medicine_id 
+         WHERE umoi.medicine_order_id = umo.id) AS products
+        FROM user_medicine_orders umo LEFT JOIN product_users pu ON umo.user_id = pu.id`);
+
+      // 2. Equipment
+      const [equipment] = await pool.query(`
+        SELECT ueo.id, pu.full_name AS user_name, ueo.total_amount, ueo.payment_status, ueo.order_status, 
+        'Equipment' AS type, ueo.created_at, ueo.delivery_address, NULL as prescription_status, NULL as prescription_file,
+        (SELECT JSON_ARRAYAGG(JSON_OBJECT('name', mep.product_name, 'qty', ueoi.quantity, 'price', ueoi.price)) 
+         FROM user_equipment_order_items ueoi JOIN med_eq_prd mep ON ueoi.equipment_id = mep.product_id 
+         WHERE ueoi.equipment_order_id = ueo.id) AS products
+        FROM user_equipment_orders ueo LEFT JOIN product_users pu ON ueo.user_id = pu.id`);
     // 3. Hospital Bookings
     const [hospital] = await pool.query(`SELECT hb.id, pu.full_name AS user_name, hb.total_amount, hb.booking_status AS payment_status, hb.booking_status AS order_status, 'Hospital Booking' AS type, hb.created_at FROM user_hospital_bookings hb LEFT JOIN product_users pu ON hb.user_id = pu.id`);
     // 4. Ambulance Bookings
@@ -8043,6 +8328,13 @@ async function startServer() {
 }
 
 startServer();
+
+
+
+
+
+
+
 
 
 

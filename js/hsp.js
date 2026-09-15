@@ -1,4 +1,4 @@
-let appliedDashboardDateFrom = "";
+﻿let appliedDashboardDateFrom = "";
 let appliedDashboardDateTo = "";
 let appliedDashboardRangeLabel = "All Time";
 let hospitalPanelSearchTerm = "";
@@ -891,7 +891,7 @@ async function loadHospitals(){
                 <td>${hospital.city || '-'}</td>
                 <td>${hospital.address || '-'}</td>
                 <td>${roomCount} rooms</td>
-                <td><span class="status-badge" style="background:#dcfce7; color:#16a34a;">${hospital.status || 'Active'}</span></td>
+                <td><span style="padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 700; display: inline-block; background:#dcfce7; color:#16a34a;">${hospital.status || 'Active'}</span></td>
             </tr>
             `;
         });
@@ -962,7 +962,7 @@ async function loadAvailability(){
                     <td>${room.room_type || '-'}</td>
                     <td>${room.total_beds || '-'}</td>
                     <td style="font-weight:600; color:#16a34a;">₹${room.pricing || '0'}</td>
-                    <td><span class="status-badge" style="${badgeStyle}">${room.availability || 'N/A'}</span></td>
+                    <td><span style="padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 700; display: inline-block; ${badgeStyle}">${room.availability || 'N/A'}</span></td>
                 </tr>
                 `;
             });
@@ -1025,12 +1025,12 @@ async function loadBookings(){
             tbody.innerHTML += `
             <tr>
                 <td>${booking.id}</td>
-                <td><span style="font-weight:600; color:#1e293b;">${booking.patient_name}</span></td>
+                <td><span style="font-weight:600; color:var(--text-main, #1e293b);">${booking.patient_name}</span></td>
                 <td>${booking.patient_age} / ${booking.patient_gender}</td>
                 <td>${booking.hospital_name}</td>
                 <td>
-                    <span class="status-badge" style="background:#e0e7ff; color:#4338ca; display:block; margin-bottom:4px;">${booking.room_type}</span>
-                    <span style="font-size:12px; color:#64748b;">${booking.bed_type}</span>
+                    <span style="padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 700; display: inline-block; background:#e0e7ff; color:#4338ca; display:block; margin-bottom:4px;">${booking.room_type}</span>
+                    <span style="font-size:12px; color:var(--text-muted, #64748b);">${booking.bed_type}</span>
                 </td>
                 <td>${booking.admission_date}</td>
                 <td>${booking.discharge_date}</td>
@@ -1089,11 +1089,11 @@ async function loadPayments(){
             let statusColor = payment.payment_status === 'Success' ? 'background:#dcfce7; color:#15803d;' : 'background:#fef3c7; color:#b45309;';
             tbody.innerHTML += `
             <tr>
-                <td><span style="font-weight:600; color:#475569;">#${payment.vendor_id}</span></td>
-                <td style="font-weight:700; font-size:15px; color:#1e293b;">₹${payment.amount}</td>
-                <td><span style="font-family:monospace; color:#64748b;">${payment.razorpay_payment_id || '-'}</span></td>
+                <td><span style="font-weight:600; color:var(--text-muted, #475569);">#${payment.vendor_id}</span></td>
+                <td style="font-weight:700; font-size:15px; color:var(--text-main, #1e293b);">₹${payment.amount}</td>
+                <td><span style="font-family:monospace; color:var(--text-muted, #64748b);">${payment.razorpay_payment_id || '-'}</span></td>
                 <td>
-                    <span class="status-badge" style="${statusColor}">${payment.payment_status || '-'}</span>
+                    <span style="padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 700; display: inline-block; ${statusColor}">${payment.payment_status || '-'}</span>
                 </td>
                 <td>${payment.paid_at ? new Date(payment.paid_at).toLocaleString() : '-'}</td>
             </tr>
@@ -1231,7 +1231,7 @@ async function loadDashboard(){
                                 <p style="font-size: 12px; color: var(--hk-text-muted); margin: 0;">Inpatient & outpatient admissions</p>
                             </div>
                         </div>
-                        <span class="status-badge" style="background: rgba(40, 100, 240, 0.1); color: var(--hk-primary-blue); font-size: 12px; font-weight: 700;">₹ Financial Stream</span>
+                        <span style="padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 700; display: inline-block; background: rgba(40, 100, 240, 0.1); color: var(--hk-primary-blue); font-size: 12px; font-weight: 700;">₹ Financial Stream</span>
                     </div>
                     <div style="position: relative; height: 280px; width: 100%;">
                         <canvas id="hspRevenueChart"></canvas>
@@ -1489,9 +1489,9 @@ async function loadDashboard(){
             bookings.slice(0,5).forEach(booking => {
                 bookingBody.innerHTML += `
                 <tr>
-                    <td style="font-weight:600; color:#1e293b;">${booking.patient_name}</td>
+                    <td style="font-weight:600; color:var(--text-main, #1e293b);">${booking.patient_name}</td>
                     <td>${booking.hospital_name}</td>
-                    <td><span class="status-badge" style="background:#dcfce7; color:#15803d;">Confirmed</span></td>
+                    <td><span style="padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 700; display: inline-block; background:#dcfce7; color:#15803d;">Confirmed</span></td>
                 </tr>
                 `;
             });
@@ -1505,8 +1505,8 @@ async function loadDashboard(){
                 let statusColor = payment.payment_status === 'Success' ? 'background:#dcfce7; color:#15803d;' : 'background:#fef3c7; color:#b45309;';
                 paymentBody.innerHTML += `
                 <tr>
-                    <td style="font-weight:700; color:#1e293b;">₹${payment.amount}</td>
-                    <td><span class="status-badge" style="${statusColor}">${payment.payment_status}</span></td>
+                    <td style="font-weight:700; color:var(--text-main, #1e293b);">₹${payment.amount}</td>
+                    <td><span style="padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 700; display: inline-block; ${statusColor}">${payment.payment_status}</span></td>
                     <td>${payment.paid_at ? new Date(payment.paid_at).toLocaleDateString() : '-'}</td>
                 </tr>
                 `;
@@ -1747,3 +1747,5 @@ document.getElementById('vendorProfileForm')?.addEventListener('submit', async (
         alert(result.message || 'Profile update failed');
     }
 });
+
+

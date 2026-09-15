@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Manrope:wght@600;700;800&display=swap');
+﻿@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Manrope:wght@600;700;800&display=swap');
 
 :root {
   /* Colors */
@@ -3372,7 +3372,7 @@ tr:hover td { background-color: #f8fafc; }
 
 /* Make sure links/spans inside hovered rows also turn black */
 [data-theme="dark"] tr:hover td a,
-[data-theme="dark"] tr:hover td span:not(.statusBadge):not(.activeStatus):not(.inactiveStatus):not(.rejectedStatus):not(.pendingStatus) {
+[data-theme="dark"] tr:hover td span:not(.statusBadge):not(.status-badge):not(.activeStatus):not(.inactiveStatus):not(.rejectedStatus):not(.pendingStatus) {
     color: #0F172A !important;
 }
 
@@ -3957,3 +3957,11 @@ tr:hover td { background-color: #f8fafc; }
         display: inline-block !important;
     }
 }
+
+/* Ensure status-badge text becomes white on row hover in dark mode */
+[data-theme="dark"] tr:hover td span.status-badge, [data-theme="dark"] tr:hover td span[class*="status-badge"] {
+    color: #FFFFFF !important;
+}
+
+
+

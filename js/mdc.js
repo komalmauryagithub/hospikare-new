@@ -1,4 +1,4 @@
-async function fillProfileForm(profile, details = {}) {
+﻿async function fillProfileForm(profile, details = {}) {
     if (!profile) return;
     const nameField = document.getElementById("profileName");
     const emailField = document.getElementById("profileEmail");
@@ -449,6 +449,34 @@ async function loadMedicines(){
     }
 }
 
+window.updateOrderStatus = async function(id, type, orderStatus, prescriptionStatus) {
+    try {
+        const body = { order_id: id, type: type };
+        if (orderStatus) body.order_status = orderStatus;
+        if (prescriptionStatus) body.prescription_status = prescriptionStatus;
+
+        const response = await fetch('/api/vendor/order/status', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(body)
+        });
+        const result = await response.json();
+        if (result.success) {
+            alert('Status updated successfully');
+            if(type === 'medicine') {
+                if(typeof loadMedicineOrders === 'function') loadMedicineOrders();
+            } else {
+                if(typeof loadEquipmentOrders === 'function') loadEquipmentOrders();
+            }
+        } else {
+            alert('Failed to update status');
+        }
+    } catch(e) {
+        console.error(e);
+        alert('An error occurred');
+    }
+};
+
 async function loadMedicineOrders(){
     try{
         const response = await fetch('/api/medicine/orders');
@@ -462,97 +490,100 @@ async function loadMedicineOrders(){
                     <p style="margin:0; font-size:13px; color:var(--hk-text-muted);">View, track and dispatch pharmacy prescription orders</p>
                 </div>
             </div>
-            <div class="table-wrapper">
+            <div class="table-wrapper" style="overflow-x:auto;">
                 <table id="ordersTable" class="adminTable">
                     <thead>
                         <tr>
                             <th>ID</th>
                             <th>Customer</th>
-                            <th>Email</th>
-                            <th>Phone</th>
-                            <th>Medicine</th>
-                            <th>Qty</th>
-                            <th>Price</th>
-                            <th>Subtotal</th>
+                            <th>Products</th>
                             <th>Total</th>
                             <th>Order Status</th>
                             <th>Payment</th>
+                            <th>Prescription</th>
+                            <th>Action</th>
                         </tr>
                     </thead>
                     <tbody>
         `;
 
         if(result.success){
-            const orders = filterMedicineRecords(
-                result.orders,
-                ["ordered_at", "created_at"]
-            );
-
+            const orders = result.orders;
             if(orders.length > 0){
                 orders.forEach(order => {
-                    const isDelivered = (order.order_status || '').toLowerCase() === 'delivered';
-                    const isPaid = (order.payment_status || '').toLowerCase() === 'paid';
+                    let prodStr = '';
+                    if(order.products && Array.isArray(order.products)) {
+                        prodStr = order.products.map(p => `${p.name} (x${p.qty})`).join('<br>');
+                    } else if (typeof order.products === 'string') {
+                        try {
+                            const pArr = JSON.parse(order.products);
+                            prodStr = pArr.map(p => `${p.name} (x${p.qty})`).join('<br>');
+                        } catch(e){}
+                    }
+
+                    let prespHtml = '<span style="color:#888;">Not Required</span>';
+                    if (order.prescription_status !== 'NOT_REQUIRED') {
+                        prespHtml = `
+                            <div>
+                                <strong>Status:</strong> ${order.prescription_status}<br>
+                                ${order.prescription_file ? `<a href="/uploads/${order.prescription_file}" target="_blank" style="color:var(--brand-primary); text-decoration:underline;">View File</a>` : ''}
+                            </div>
+                        `;
+                    }
+
+                    const statuses = ['PENDING_PAYMENT', 'CONFIRMED', 'PROCESSING', 'PACKED', 'READY_FOR_PICKUP', 'PICKED_UP', 'OUT_FOR_DELIVERY', 'DELIVERED', 'CANCELLED', 'REJECTED'];
+                    let statusSelect = `<select id="status_${order.id}" style="padding:4px; border-radius:4px; border:1px solid #ddd;">`;
+                    statuses.forEach(s => {
+                        const sel = ((order.order_status || "").toUpperCase() === s.toUpperCase()) ? 'selected' : '';
+                        statusSelect += `<option value="${s}" ${sel}>${s}</option>`;
+                    });
+                    statusSelect += `</select>`;
+
+                    let actionHtml = `<button onclick="updateOrderStatus(${order.id}, 'medicine', document.getElementById('status_${order.id}').value, null)" style="padding:5px 10px; border-radius:6px; background:var(--brand-primary); color:#fff; border:none; cursor:pointer;">Update Status</button>`;
+                    
+                    if (order.prescription_status === 'PENDING') {
+                        actionHtml += `
+                            <div style="margin-top:5px; display:flex; gap:5px;">
+                                <button onclick="updateOrderStatus(${order.id}, 'medicine', null, 'APPROVED')" style="padding:4px 8px; font-size:11px; background:green; color:#fff; border:none; border-radius:4px; cursor:pointer;">Approve</button>
+                                <button onclick="updateOrderStatus(${order.id}, 'medicine', null, 'REJECTED')" style="padding:4px 8px; font-size:11px; background:red; color:#fff; border:none; border-radius:4px; cursor:pointer;">Reject</button>
+                            </div>
+                        `;
+                    }
+
                     html += `
                     <tr>
                         <td style="font-weight:600; color:var(--hk-primary-blue);">#${order.id}</td>
-                        <td style="font-weight:600; color:var(--hk-text-main);">${order.full_name}</td>
-                        <td>${order.email}</td>
-                        <td>${order.phone}</td>
-                        <td style="font-weight:600; color:var(--hk-text-main);">${order.medicine_name}</td>
-                        <td style="font-weight:600;">${order.quantity}</td>
-                        <td>₹${order.price}</td>
-                        <td>₹${order.subtotal}</td>
-                        <td style="font-weight:700; color:var(--hk-text-main);">₹${order.total_amount}</td>
-                        <td><span class="status-badge ${isDelivered ? 'active' : 'pending'}"><i class="fa-solid ${isDelivered ? 'fa-check' : 'fa-clock'}"></i> ${order.order_status}</span></td>
-                        <td><span class="status-badge ${isPaid ? 'active' : 'pending'}"><i class="fa-solid ${isPaid ? 'fa-circle-check' : 'fa-hourglass-half'}"></i> ${order.payment_status}</span></td>
+                        <td>
+                            <div style="font-weight:600;">${order.full_name}</div>
+                            <div style="font-size:12px; color:#666;">${order.phone}</div>
+                            <div style="font-size:11px; color:#888;">${order.delivery_address}</div>
+                        </td>
+                        <td style="font-size:13px;">${prodStr}</td>
+                        <td style="font-weight:700; color:var(--hk-text-main);">Rs. ${order.total_amount}</td>
+                        <td>${statusSelect}</td>
+                        <td><span class="status-badge ${order.payment_status==='paid'?'active':'cancelled'}">${order.payment_status}</span></td>
+                        <td>${prespHtml}</td>
+                        <td>${actionHtml}</td>
                     </tr>
                     `;
                 });
+            } else {
+                html += `<tr><td colspan="8" style="text-align:center;">No orders found</td></tr>`;
             }
-            else{
-                html += `
-                <tr>
-                    <td colspan="11" style="text-align:center; padding:56px 24px;">
-                        <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; gap:12px;">
-                            <div style="width:56px; height:56px; border-radius:50%; background:rgba(40,100,240,0.1); color:#2864F0; display:flex; align-items:center; justify-content:center; font-size:24px;">
-                                <i class="fa-solid fa-box-open"></i>
-                            </div>
-                            <h4 style="margin:0; font-size:16px; font-weight:700; color:var(--hk-text-main);">No Orders Found</h4>
-                            <p style="margin:0; font-size:13px; color:var(--hk-text-muted); max-width:320px;">Customer prescription orders will appear here as soon as they are placed.</p>
-                        </div>
-                    </td>
-                </tr>
-                `;
-            }
-        }
-        else{
-            html += `
-            <tr>
-                <td colspan="11" style="text-align:center; padding:56px 24px;">
-                    <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; gap:12px;">
-                        <div style="width:56px; height:56px; border-radius:50%; background:rgba(40,100,240,0.1); color:#2864F0; display:flex; align-items:center; justify-content:center; font-size:24px;">
-                            <i class="fa-solid fa-box-open"></i>
-                        </div>
-                        <h4 style="margin:0; font-size:16px; font-weight:700; color:var(--hk-text-main);">No Orders Found</h4>
-                        <p style="margin:0; font-size:13px; color:var(--hk-text-muted); max-width:320px;">Customer prescription orders will appear here as soon as they are placed.</p>
-                    </div>
-                </td>
-            </tr>
-            `;
+        } else {
+            html += `<tr><td colspan="8" style="text-align:center;">No orders found</td></tr>`;
         }
 
         html += `
                     </tbody>
                 </table>
             </div>
-        </div>
-        `;
+        </div>`;
 
-        document.getElementById("mainContent").innerHTML = html;
-        reapplyVendorSearch();
-    }
-    catch(error){
-        console.log(error);
+document.getElementById("mainContent").style.display = "block"; document.getElementById("mainContent").innerHTML = html;
+        
+    } catch(err) {
+        console.error(err);
     }
 }
 
@@ -1196,3 +1227,6 @@ window.addEventListener("hk-theme-change", () => {
         loadDashboard();
     }
 });
+
+
+

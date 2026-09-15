@@ -3599,13 +3599,121 @@ async function loadOrders(){
     }
 }
 
+window.viewAdminOrder = function(id) {
+    const order = hkAllOrdersData.find(o => o.id == id);
+    if(!order) return;
+    
+    let detailsHtml = `
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px; margin-bottom:20px;">
+            <div><strong>Order ID:</strong> #${order.id}</div>
+            <div><strong>Type:</strong> ${order.type}</div>
+            <div><strong>Customer:</strong> ${order.user_name}</div>
+            <div><strong>Date:</strong> ${new Date(order.created_at).toLocaleString()}</div>
+            <div><strong>Total Amount:</strong> Rs. ${order.total_amount}</div>
+            <div><strong>Payment Status:</strong> ${order.payment_status}</div>
+        </div>
+    `;
+
+    if (order.type === 'Medicine' || order.type === 'Equipment') {
+        detailsHtml += `
+            <div style="margin-bottom:15px;">
+                <strong>Delivery Address:</strong><br>
+                ${order.delivery_address || 'N/A'}
+            </div>
+        `;
+
+        if (order.type === 'Medicine' && order.prescription_status) {
+            detailsHtml += `
+                <div style="margin-bottom:15px;">
+                    <strong>Prescription Status:</strong> ${order.prescription_status}<br>
+                    ${order.prescription_file ? `<a href="/uploads/${order.prescription_file}" target="_blank" style="color:var(--brand-primary);">View Prescription</a>` : ''}
+                </div>
+            `;
+        }
+
+        let prodStr = 'None';
+        if(order.products && Array.isArray(order.products)) {
+            prodStr = order.products.map(p => `&bull; ${p.name} (x${p.qty}) - Rs. ${p.price}`).join('<br>');
+        } else if (typeof order.products === 'string') {
+            try {
+                const pArr = JSON.parse(order.products);
+                prodStr = pArr.map(p => `&bull; ${p.name} (x${p.qty}) - Rs. ${p.price}`).join('<br>');
+            } catch(e){}
+        }
+        
+        detailsHtml += `
+            <div style="margin-bottom:20px;">
+                <strong>Products:</strong><br>
+                ${prodStr}
+            </div>
+        `;
+
+        const statuses = ['PENDING_PAYMENT', 'CONFIRMED', 'PROCESSING', 'PACKED', 'READY_FOR_PICKUP', 'PICKED_UP', 'OUT_FOR_DELIVERY', 'DELIVERED', 'CANCELLED', 'REJECTED'];
+        let statusSelect = `<select id="adminStatusUpdate" style="padding:8px; border-radius:6px; border:1px solid var(--border-color, #e2e8f0); background:var(--card-bg, #ffffff); color:var(--text-main, #1e293b); width:100%; margin-bottom:10px;">`;
+        statuses.forEach(s => {
+            const sel = ((order.order_status || "").toUpperCase() === s.toUpperCase()) ? 'selected' : '';
+            statusSelect += `<option value="${s}" ${sel}>${s}</option>`;
+        });
+        statusSelect += `</select>`;
+
+        detailsHtml += `
+            <div style="background:var(--hk-surface-soft, #f8fafc); padding:15px; border-radius:8px; border: 1px solid var(--border-color, #e2e8f0); color:var(--text-main, #1e293b);">
+                <label style="font-weight:600; display:block; margin-bottom:5px;">Update Order Status</label>
+                ${statusSelect}
+                <button onclick="submitAdminStatusUpdate(${order.id}, '${order.type.toLowerCase()}')" style="padding:8px 16px; background:var(--brand-primary); color:#fff; border:none; border-radius:6px; cursor:pointer; font-weight:600;">Update Status</button>
+            </div>
+        `;
+    } else {
+        detailsHtml += `
+            <div style="background:var(--hk-surface-soft, #f8fafc); padding:15px; border-radius:8px; border: 1px solid var(--border-color, #e2e8f0); color:var(--text-main, #1e293b);">
+                <label style="font-weight:600; display:block; margin-bottom:5px;">Order Status</label>
+                <div>${order.order_status}</div>
+                <small style="color:var(--text-muted, #64748b);">(Status updates are only available for Medicine and Equipment orders via this interface)</small>
+            </div>
+        `;
+    }
+
+    document.getElementById('adminOrderModalContent').innerHTML = detailsHtml;
+    const modal = document.getElementById('adminOrderModal');
+    modal.style.display = 'flex';
+};
+
+window.submitAdminStatusUpdate = async function(id, type) {
+    const newStatus = document.getElementById('adminStatusUpdate').value;
+    try {
+        const body = { order_id: id, type: type, order_status: newStatus };
+        const response = await fetch('/api/vendor/order/status', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(body)
+        });
+        const result = await response.json();
+        if (result.success) {
+            alert('Order status updated successfully');
+            document.getElementById('adminOrderModal').style.display = 'none';
+            // Reload orders
+            if(typeof loadOrders === 'function') loadOrders();
+        } else {
+            alert('Failed to update status');
+        }
+    } catch(e) {
+        alert('Error updating status');
+    }
+};
+
 function renderOrdersFiltered(ordersArray) {
     const tbody = document.getElementById("ordersTableBody");
     if(!tbody) return;
     tbody.innerHTML = "";
     
+    // Check if the table header has "Action" column, if not, add it
+    const thead = tbody.closest('table').querySelector('thead tr');
+    if (thead && !thead.innerHTML.includes('Action')) {
+        thead.innerHTML += '<th>Action</th>';
+    }
+    
     if(!ordersArray || ordersArray.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:#94A3B8; padding:30px;">No orders found for selected filter</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; color:var(--text-muted, #64748b); padding:30px;">No orders found for selected filter</td></tr>`;
         return;
     }
 
@@ -3617,7 +3725,7 @@ function renderOrdersFiltered(ordersArray) {
             <td data-label="Date">${dateStr}</td>
             <td data-label="User">${order.user_name || 'N/A'}</td>
             <td data-label="Type">${order.type}</td>
-            <td data-label="Amount">₹${order.total_amount}</td>
+            <td data-label="Amount">Rs. ${order.total_amount}</td>
             <td data-label="Payment">
                 <span class="status-badge status-pending" style="background: var(--surface-soft); color: var(--brand-primary); padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 700;">
                     ${order.payment_status || "Pending"}
@@ -3627,6 +3735,9 @@ function renderOrdersFiltered(ordersArray) {
                 <span class="status-badge" style="background: var(--surface-soft); color: var(--brand-secondary); padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 700;">
                     ${order.order_status || "Pending"}
                 </span>
+            </td>
+            <td data-label="Action">
+                <button onclick="viewAdminOrder(${order.id})" style="padding:4px 8px; border-radius:4px; border:none; background:var(--brand-primary); color:white; cursor:pointer;">View</button>
             </td>
         </tr>
         `;
@@ -3670,3 +3781,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 });
+
+
+
+

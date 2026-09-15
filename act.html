@@ -25,6 +25,45 @@
             padding-top: 80px; /* Space for fixed navbar */
         }
 
+        /* Activity Navbar */
+        .act-navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            z-index: 1000;
+            background: white !important;
+            box-sizing: border-box;
+            border-bottom: 1px solid #e2e8f0;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 40px;
+            height: 80px;
+        }
+        .act-logo-section { display: flex; align-items: center; }
+        .act-logo-img { height: 55px; width: auto; object-fit: contain; transform: scale(2.2); transform-origin: left center; }
+        .act-nav-right { display: flex; align-items: center; gap: 24px; }
+        .act-home-link {
+            color: #475569; font-weight: 600; text-decoration: none; font-size: 15px; transition: color 0.2s;
+        }
+        .act-home-link:hover { color: #2563eb; }
+        .act-dashboard-btn {
+            background: #2563eb; color: white; padding: 10px 20px; border-radius: 8px; font-weight: 600; text-decoration: none; font-size: 14px; box-shadow: 0 2px 4px rgba(37,99,235,0.2); transition: background 0.2s;
+        }
+        .act-dashboard-btn:hover { background: #1d4ed8; }
+
+        @media (max-width: 640px) {
+            .act-navbar { padding: 0 16px; height: 70px; }
+            body { padding-top: 70px; }
+            .act-logo-img { width: 140px; height: auto; transform: scale(1.2); transform-origin: left center; }
+            .act-nav-right { gap: 12px; }
+            .act-home-text { display: none; }
+            .act-dashboard-btn { padding: 8px 12px; font-size: 13px; }
+            .act-home-link i { font-size: 18px; }
+        }
+
         /* Nav Tabs */
         .page-header-section {
             background: white;
@@ -132,17 +171,17 @@
     <script src="/js/invoice-template.js?v=9"></script>
 </head>
 <body>
-        <nav class="navbar" id="navbar" style="background: white !important; border-bottom: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center; padding: 0 40px; height: 80px;">
-        <div class="logoSection" style="display: flex; align-items: center;">
+        <nav class="act-navbar" id="navbar">
+        <div class="act-logo-section">
             <a href="/users.html">
-                <img src="/assets/logo.png" alt="HospiKare Logo" class="logo-img" style="height: 50px; width: auto; object-fit: contain;">
+                <img src="/assets/logo.png" alt="HospiKare Logo" class="act-logo-img">
             </a>
         </div>
-        <div style="display: flex; align-items: center; gap: 24px;">
-            <a href="/users.html" style="color: #475569; font-weight: 600; text-decoration: none; font-size: 15px; transition: color 0.2s;" onmouseover="this.style.color='#2563eb'" onmouseout="this.style.color='#475569'">
-                <i class="fa-solid fa-house"></i> Back to Home
+        <div class="act-nav-right">
+            <a href="/users.html" class="act-home-link">
+                <i class="fa-solid fa-house"></i> <span class="act-home-text">Back to Home</span>
             </a>
-            <a href="/users.html" style="background: #2563eb; color: white; padding: 10px 20px; border-radius: 8px; font-weight: 600; text-decoration: none; font-size: 14px; box-shadow: 0 2px 4px rgba(37,99,235,0.2); transition: background 0.2s;" onmouseover="this.style.background='#1d4ed8'" onmouseout="this.style.background='#2563eb'">
+            <a href="/users.html" class="act-dashboard-btn">
                 Dashboard
             </a>
         </div>
@@ -175,8 +214,21 @@
     </div>
 
     <script src="/js/act.js?v=9"></script>
+    <!-- Floating Emergency Button -->
+    <a href="tel:108" class="floating-emergency">
+        <i class="fa-solid fa-phone"></i>
+        <span>108</span>
+    </a>
 </body>
 </html>
+
+
+
+
+
+
+
+
 
 
 

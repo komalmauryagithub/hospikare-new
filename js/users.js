@@ -201,7 +201,7 @@
         });
     }
 
-    async function handleCartCheckout() {
+        async function handleCartCheckout() {
         const total = cartTotal();
         if (total <= 0) {
             toast("Your cart is empty");
@@ -211,39 +211,89 @@
         const user = requireUser();
         if (!user) return;
 
-        await payAndRun({
-            amount: total,
-            name: "HospiKare Pharmacy",
-            description: "Cart Checkout",
-            prefillName: user.full_name,
-            onSuccess: async response => {
-                let successCount = 0;
-                // Process each item
-                for (let item of state.cart) {
-                    const purchaseData = await postJson("/api/buy-product", {
-                        user_id: user.id,
-                        product_type: item.type,
-                        product_id: item.id,
-                        quantity: item.qty,
-                        total_amount: item.price * item.qty,
-                        razorpay_order_id: response.razorpay_order_id,
-                        razorpay_payment_id: response.razorpay_payment_id
+        const address = document.getElementById('cartDeliveryAddress')?.value.trim();
+        if (!address) {
+            toast("Please enter a delivery address");
+            return;
+        }
+
+        const btn = document.getElementById('checkoutCartBtn');
+        const oldText = btn.innerHTML;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Processing...';
+        btn.disabled = true;
+
+        try {
+            const formData = new FormData();
+            formData.append("cart", JSON.stringify(state.cart));
+            formData.append("delivery_address", address);
+            
+            const pFile = document.getElementById('cartPrescription')?.files[0];
+            if (pFile) {
+                formData.append("prescription", pFile);
+            }
+
+            const response = await fetch("/api/checkout", {
+                method: "POST",
+                body: formData
+            });
+            const result = await response.json();
+
+            if (!result.success) {
+                toast(result.message || "Checkout failed");
+                btn.innerHTML = oldText;
+                btn.disabled = false;
+                return;
+            }
+
+            // Open Razorpay
+            const options = {
+                key: result.key,
+                amount: result.amount,
+                currency: "INR",
+                name: "HospiKare",
+                description: "Cart Checkout",
+                order_id: result.razorpay_order_id,
+                prefill: {
+                    name: user.full_name,
+                    email: user.email,
+                    contact: user.phone
+                },
+                theme: {
+                    color: "#2563eb"
+                },
+                handler: async function(paymentResponse) {
+                    const verifyData = await postJson("/api/verify-payment", {
+                        razorpay_order_id: paymentResponse.razorpay_order_id,
+                        razorpay_payment_id: paymentResponse.razorpay_payment_id,
+                        razorpay_signature: paymentResponse.razorpay_signature
                     });
-                    if (purchaseData && purchaseData.success) {
-                        successCount++;
+                    
+                    if (verifyData.success) {
+                        toast("Payment Successful! Check My Orders.");
+                        state.cart = [];
+                        saveCart();
+                        renderCart();
+                        updateCartUI();
+                        closeModal("cartModal");
+                    } else {
+                        toast(verifyData.message || "Payment Verification Failed");
                     }
                 }
-
-                toast(`Successfully purchased ${successCount} item(s)! Check My Orders for Invoices.`);
-
-                // Clear cart
-                state.cart = [];
-                saveCart();
-                renderCart();
-                updateCartUI();
-                closeModal("cartModal");
-            }
-        });
+            };
+            
+            const rzp = new Razorpay(options);
+            rzp.on('payment.failed', function(res){
+                toast("Payment Failed or Cancelled");
+            });
+            rzp.open();
+            
+        } catch (error) {
+            console.error(error);
+            toast("An error occurred during checkout");
+        } finally {
+            btn.innerHTML = oldText;
+            btn.disabled = false;
+        }
     }
 
     function wireCart() {
@@ -1295,6 +1345,11 @@
         `).join("");
 
         setText("cartTotal", formatMoney(cartTotal()));
+        const hasMedicine = state.cart.some(item => item.type === 'medicine');
+        const prescGroup = document.getElementById('prescriptionUploadGroup');
+        if (prescGroup) {
+            prescGroup.style.display = hasMedicine ? 'block' : 'none';
+        }
     }
 
     function updateCartItem(key, action) {
@@ -1587,6 +1642,8 @@
         }, 2800);
     }
 })();
+
+
 
 
 

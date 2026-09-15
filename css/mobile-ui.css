@@ -1,4 +1,4 @@
-/* ==========================================================================
+﻿/* ==========================================================================
    mobile-ui.css - HospiKare 2026 Mobile & Tablet Enterprise Design System
    Deep Teal (#0F766E) | Soft Cyan (#22D3EE) | Coral SOS (#EF4444) | Mint (#10B981)
    ========================================================================== */
@@ -24,10 +24,10 @@
 /* ── FLOATING EMERGENCY SOS BUTTON ── */
 .floating-sos-btn {
   position: fixed;
-  bottom: 84px;
-  right: 20px;
-  width: 62px;
-  height: 62px;
+  bottom: 110px;
+  right: 30px;
+  width: 70px;
+  height: 70px;
   border-radius: 50%;
   background: linear-gradient(135deg, #EF4444 0%, #DC2626 100%);
   color: #FFFFFF;
@@ -49,7 +49,7 @@
 }
 
 .floating-sos-btn i {
-  font-size: 20px;
+  font-size: 24px;
 }
 
 .floating-sos-btn span {
@@ -272,3 +272,17 @@
   font-size: 10px;
   color: var(--hk-text-muted);
 }
+
+
+@media (max-width: 900px) {
+  .floating-sos-btn {
+    bottom: 154px;
+    right: 20px;
+    width: 60px;
+    height: 60px;
+  }
+  .floating-sos-btn i {
+    font-size: 20px;
+  }
+}
+

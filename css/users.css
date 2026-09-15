@@ -1,4 +1,4 @@
-html {
+﻿html {
     scroll-behavior: smooth;
 }
 
@@ -69,6 +69,8 @@ body.authLocked {
 
 .navRight {
     display: flex;
+    position: relative;
+    z-index: 10;
     align-items: center;
     gap: 0.75rem;
 }
@@ -1406,6 +1408,15 @@ section[id] {
 }
 
 @media (max-width: 640px) {
+    .navbar { padding: 0 10px !important; }
+    .logoSection {
+        min-width: auto;
+    }
+    .navbar .logo-img {
+        transform: scale(1.4);
+        width: 130px;
+        transform-origin: left center;
+    }
     .navbar {
         /* height: auto; */
         min-height: 70px;
@@ -1413,9 +1424,14 @@ section[id] {
         padding-bottom: 0.75rem;
     }
 
-    .nav-emergency,
     #logoutBtn {
         display: none;
+    }
+    
+    .nav-emergency {
+        display: inline-flex !important;
+        padding: 6px 12px !important;
+        font-size: 13px !important;
     }
 
     .btn {
@@ -1628,3 +1644,73 @@ section[id] {
     color: rgba(255, 255, 255, 0.8) !important;
 }
 
+
+
+
+
+/* FLOATING EMERGENCY BUTTON */
+.floating-emergency {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    z-index: 9999;
+    background-color: #EF4444; /* Standard Red */
+    color: white !important;
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 8px 24px rgba(239, 68, 68, 0.4);
+    font-weight: 800;
+    font-size: 15px;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    animation: pulse-emergency 2s infinite;
+    line-height: 1.1;
+}
+
+.floating-emergency i {
+    font-size: 22px;
+    margin-bottom: 3px;
+}
+
+.floating-emergency:hover {
+    transform: scale(1.1) translateY(-5px);
+    box-shadow: 0 12px 28px rgba(239, 68, 68, 0.6);
+}
+
+@keyframes pulse-emergency {
+    0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+    70% { box-shadow: 0 0 0 15px rgba(239, 68, 68, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+}
+
+@media (max-width: 900px) {
+    .floating-emergency {
+        bottom: 84px;
+        right: 20px;
+        width: 60px;
+        height: 60px;
+        font-size: 13px;
+    }
+    .floating-emergency i {
+        font-size: 18px;
+        margin-bottom: 2px;
+    }
+}
+
+
+
+
+@media (max-width: 640px) {
+    .navRight {
+        gap: 0.4rem !important;
+    }
+    .menuBtn {
+        width: 38px !important;
+        height: 38px !important;
+    }
+}

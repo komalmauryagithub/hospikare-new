@@ -78,7 +78,7 @@ async function loadOrders(){
                     <i class="fa-solid fa-arrow-left"></i> Back to Dashboard
                 </button>
             </div>
-            <table class="activityTable" style="margin-top: 0;">
+            <div style="width: 100%; overflow-x: auto; border-radius: 8px;"><table class="activityTable" style="margin-top: 0; min-width: 600px;">
                 <thead>
                     <tr>
                         <th>ID</th>
@@ -167,7 +167,7 @@ async function loadHistory(){
                     <i class="fa-solid fa-arrow-left"></i> Back to Dashboard
                 </button>
             </div>
-            <table class="activityTable" style="margin-top: 0;">
+            <div style="width: 100%; overflow-x: auto; border-radius: 8px;"><table class="activityTable" style="margin-top: 0; min-width: 600px;">
                 <thead>
                     <tr>
                         <th>ID</th>
@@ -239,7 +239,7 @@ async function loadPayments(){
                     <i class="fa-solid fa-arrow-left"></i> Back to Dashboard
                 </button>
             </div>
-            <table class="activityTable" style="margin-top: 0;">
+            <div style="width: 100%; overflow-x: auto; border-radius: 8px;"><table class="activityTable" style="margin-top: 0; min-width: 600px;">
                 <thead>
                     <tr>
                         <th>ID</th>
@@ -327,3 +327,4 @@ window.viewCustomerInvoice = function(id, type, amount) {
     win.document.write(`<html><head><title>Invoice #${data.invoiceNo}</title></head><body style="margin:0; background:#f0f0f0;"><div style="text-align:center; padding:20px;"><button onclick="window.print()" style="background:#2563eb; color:white; padding:10px 20px; border:none; border-radius:5px; cursor:pointer; font-size:16px;">Print Invoice</button></div>${html}</body></html>`);
     win.document.close();
 };
+
