@@ -1726,6 +1726,18 @@ if(processCSVBtn) {
 }
 
 
+const profileSectionTrigger = document.getElementById("profileSectionTrigger");
+if (profileSectionTrigger) {
+    profileSectionTrigger.addEventListener("click", (event) => {
+        if (event.target.closest("#logoutBtn")) return;
+        openProfileModal();
+    });
+}
+document.getElementById("closeProfileModal")?.addEventListener("click", closeProfileModal);
+
+// Load user profile on page load
+loadUserProfile();
+
 document.getElementById('vendorProfileForm')?.addEventListener('submit', async (event) => {
     event.preventDefault();
     const form = event.target;
@@ -1747,5 +1759,7 @@ document.getElementById('vendorProfileForm')?.addEventListener('submit', async (
         alert(result.message || 'Profile update failed');
     }
 });
+
+
 
 

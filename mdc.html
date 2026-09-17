@@ -20,11 +20,11 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" type="text/css" href="/css/admin.css?v=20260821-v7">
-    <link rel="stylesheet" type="text/css" href="/css/modern-ui.css?v=20260821-v6">
+    <link rel="stylesheet" type="text/css" href="/css/admin.css?v=20260917-fix1">
+    <link rel="stylesheet" type="text/css" href="/css/modern-ui.css?v=20260917-fix4">
     <link rel="stylesheet" type="text/css" href="/css/theme-system.css?v=20260821-v6">
     <link rel="stylesheet" type="text/css" href="/css/enhancements.css?v=20260821-v6">
-    <link rel="stylesheet" type="text/css" href="/css/mobile-ui.css?v=20260821-v6">
+    <link rel="stylesheet" type="text/css" href="/css/mobile-ui.css?v=20260917-fix3">
     <link rel="stylesheet" type="text/css" href="/css/mdc.css?v=20260821-v6">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -396,7 +396,7 @@
       <form id="vendorProfileForm" enctype="multipart/form-data" style="padding:24px 26px; display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:18px; overflow-y:auto; max-height:calc(90vh - 92px);">
         <div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Name</label><input type="text" id="profileName" name="name" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px; background:var(--hk-surface, #fff); color:var(--hk-text-main, #101828);" required></div>
         <div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Email / Contact</label><input type="text" id="profileEmail" name="email_or_contact" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px; background:var(--hk-surface, #fff); color:var(--hk-text-main, #101828);" required></div>
-        <div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">User Type</label><select id="profileUserType" name="user_type" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px; background:var(--hk-surface, #fff); color:var(--hk-text-main, #101828);"><option>Hospital</option><option>Ambulance</option><option>Lab Test</option><option>Insurance</option><option>Medicines</option><option>Medical Equipments</option></select></div>
+        <div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">User Type</label><input type="text" readonly id="profileUserType" name="user_type" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px; background:#f1f5f9; color:var(--hk-text-main, #101828); cursor:not-allowed;"></div>
         <div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Profile Photo</label><input type="file" id="profilePhoto" name="profile_photo" accept="image/*" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px;"></div>
         <div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Identity Proof</label><input type="file" id="profileIdentity" name="identity_proof" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px;"></div>
         <div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Bank Account</label><input type="text" id="profileBank" name="bank_account" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px; background:var(--hk-surface, #fff); color:var(--hk-text-main, #101828);"></div>
@@ -416,8 +416,8 @@
         <div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Address Proof</label><input type="file" id="profilePharmAddressProof" name="address_proof" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px;"></div>
         <div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">GST Certificate</label><input type="file" id="profileGstCert" name="gst_cer" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px;"></div>
         <div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Pharmacy Certificate</label><input type="file" id="profilePharmCert" name="pharm_cer" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px;"></div>
-        <div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Set Password</label><input type="password" id="profilePassword" name="password" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px; background:var(--hk-surface, #fff); color:var(--hk-text-main, #101828);"></div>
-        <div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Confirm Password</label><input type="password" id="profileConfirmPassword" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px; background:var(--hk-surface, #fff); color:var(--hk-text-main, #101828);"></div>
+        
+        
         <div style="grid-column:1 / -1; display:flex; justify-content:flex-end; gap:12px; margin-top:8px;" id="profileModalActionButtons">
           <button type="button" id="closeProfileBtn" style="padding:10px 18px; border:1px solid var(--hk-border, #cbd5e1); background:var(--hk-surface, #fff); border-radius:10px; cursor:pointer; color:var(--hk-text-main, #101828); font-weight:600;">Close</button>
           <button type="button" id="enableProfileEditBtn" style="padding:10px 18px; border:none; background:var(--hk-primary-blue, #3b82f6); color:#fff; border-radius:10px; cursor:pointer; font-weight:600;"><i class="fa-solid fa-pen"></i> Edit</button>
@@ -435,6 +435,12 @@
   <script src="/js/ui-interactions.js?v=20260821-v6"></script>
 </body>
 </html>
+
+
+
+
+
+
 
 
 

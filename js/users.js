@@ -29,7 +29,17 @@
 
     document.addEventListener("DOMContentLoaded", init);
 
-    function init() {
+    async function init() {
+        // Sync session state with backend
+        try {
+            const res = await apiGet('/api/user/profile');
+            if (res && res.success && res.user) {
+                localStorage.setItem(USER_KEY, JSON.stringify(res.user));
+            } else {
+                localStorage.removeItem(USER_KEY);
+            }
+        } catch(e) {}
+
         state.user = getSavedUser();
         state.cart = getCart();
 
@@ -421,13 +431,18 @@
         }
     }
 
-    function logoutUser() {
+    async function logoutUser() {
+        try {
+            await apiPost('/api/user/logout', {});
+        } catch(e) {
+            console.error('Logout API failed:', e);
+        }
         localStorage.removeItem(USER_KEY);
         state.user = null;
         updateUserUI();
         loadUserInsuranceDashboard();
-        toast("Logged out");
-        showAuthModal();
+        toast('Logged out');
+        window.location.href = '/rg.html';
     }
 
     function updateUserUI() {
@@ -1642,6 +1657,8 @@
         }, 2800);
     }
 })();
+
+
 
 
 

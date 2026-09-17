@@ -1,4 +1,4 @@
-/* ═══════════════════════════════════════════════════════════════════════
+﻿/* ═══════════════════════════════════════════════════════════════════════
    HOSPIKARE - HEALTHCARE COMMAND CENTRE DESIGN SYSTEM v5.0
    Award-Winning Healthcare Operations & Vendor SaaS Interface
    ═══════════════════════════════════════════════════════════════════════ */
@@ -1008,7 +1008,7 @@ body.sidebar-collapsed .navItem:hover {
   inset: 0 !important;
   top: 0 !important;
   left: 0 !important;
-  width: 100vw !important;
+  width: 100% !important;
   height: 100vh !important;
   background: rgba(7, 26, 61, 0.75) !important;
   backdrop-filter: blur(12px) !important;
@@ -1209,7 +1209,7 @@ table.adminTable {
 }
 
 h2, .section-title, #reportsSection h2, #labSection h2, #bookingSection h2, #patientsSection h2, #paymentsSection h2 {
-  color: #0F172A !important;
+  color: var(--hk-text-main) !important;
   font-family: var(--font-heading) !important;
   font-size: 22px !important;
   font-weight: 700 !important;
@@ -1474,4 +1474,6 @@ div[id$="Wrapper"] {
   opacity: 1;
   pointer-events: auto;
 }
+
+
 

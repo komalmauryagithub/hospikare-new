@@ -32,7 +32,7 @@ Thumbs.db
 *.suo
 *.ntvs*
 *.njsproj
-*.sln
+*.slnnodem
 *.sw?
 
 # Temporary files

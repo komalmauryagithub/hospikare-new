@@ -2249,14 +2249,14 @@
             notifBtn.onclick = (e) => {
                 e.stopPropagation();
                 notifPanel.classList.toggle("panel-open");
-                if (profileMenu) profileMenu.classList.remove("menu-open");
+                if (profileMenu) profileMenu.classList.add("hidden");
             };
         }
 
         if (profileTrigger && profileMenu) {
             profileTrigger.onclick = (e) => {
                 e.stopPropagation();
-                profileMenu.classList.toggle("menu-open");
+                profileMenu.classList.toggle("hidden");
                 if (notifPanel) notifPanel.classList.remove("panel-open");
             };
         }
@@ -2266,7 +2266,7 @@
                 notifPanel.classList.remove("panel-open");
             }
             if (profileMenu && !profileMenu.contains(e.target) && !profileTrigger.contains(e.target)) {
-                profileMenu.classList.remove("menu-open");
+                profileMenu.classList.add("hidden");
             }
         });
 
@@ -3648,30 +3648,14 @@ window.viewAdminOrder = function(id) {
             </div>
         `;
 
-        const statuses = ['PENDING_PAYMENT', 'CONFIRMED', 'PROCESSING', 'PACKED', 'READY_FOR_PICKUP', 'PICKED_UP', 'OUT_FOR_DELIVERY', 'DELIVERED', 'CANCELLED', 'REJECTED'];
-        let statusSelect = `<select id="adminStatusUpdate" style="padding:8px; border-radius:6px; border:1px solid var(--border-color, #e2e8f0); background:var(--card-bg, #ffffff); color:var(--text-main, #1e293b); width:100%; margin-bottom:10px;">`;
-        statuses.forEach(s => {
-            const sel = ((order.order_status || "").toUpperCase() === s.toUpperCase()) ? 'selected' : '';
-            statusSelect += `<option value="${s}" ${sel}>${s}</option>`;
-        });
-        statusSelect += `</select>`;
+}
 
-        detailsHtml += `
-            <div style="background:var(--hk-surface-soft, #f8fafc); padding:15px; border-radius:8px; border: 1px solid var(--border-color, #e2e8f0); color:var(--text-main, #1e293b);">
-                <label style="font-weight:600; display:block; margin-bottom:5px;">Update Order Status</label>
-                ${statusSelect}
-                <button onclick="submitAdminStatusUpdate(${order.id}, '${order.type.toLowerCase()}')" style="padding:8px 16px; background:var(--brand-primary); color:#fff; border:none; border-radius:6px; cursor:pointer; font-weight:600;">Update Status</button>
-            </div>
-        `;
-    } else {
-        detailsHtml += `
-            <div style="background:var(--hk-surface-soft, #f8fafc); padding:15px; border-radius:8px; border: 1px solid var(--border-color, #e2e8f0); color:var(--text-main, #1e293b);">
-                <label style="font-weight:600; display:block; margin-bottom:5px;">Order Status</label>
-                <div>${order.order_status}</div>
-                <small style="color:var(--text-muted, #64748b);">(Status updates are only available for Medicine and Equipment orders via this interface)</small>
-            </div>
-        `;
-    }
+    detailsHtml += `
+        <div style="background:var(--hk-surface-soft, #f8fafc); padding:15px; border-radius:8px; border: 1px solid var(--border-color, #e2e8f0); color:var(--text-main, #1e293b);">
+            <label style="font-weight:600; display:block; margin-bottom:5px;">Current Status</label>
+            <div style="font-weight: 700; color: var(--brand-secondary, #3b82f6);">${order.order_status}</div>
+        </div>
+    `;
 
     document.getElementById('adminOrderModalContent').innerHTML = detailsHtml;
     const modal = document.getElementById('adminOrderModal');
@@ -3781,6 +3765,13 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 });
+
+
+
+
+
+
+
 
 
 

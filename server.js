@@ -2140,9 +2140,12 @@ app.get("/api/user/profile", async (req, res) => {
       details = rows[0] || null;
     }
 
+    const [userRows] = await pool.query("SELECT id, name, users_type, emailorcontact, profile_photo, bank_account, ifsc, identity_proof, cheque FROM users WHERE id = ?", [userId]);
+    const fullUser = userRows[0] || req.session.user;
+
     res.json({
       success: true,
-      user: req.session.user,
+      user: fullUser,
       details,
     });
   } catch (error) {
@@ -8345,4 +8348,15 @@ startServer();
 
 
 
+
+
+
+
+// Emergency GET logout to clear stuck sessions
+app.get('/logout', (req, res) => {
+    req.session.destroy(() => {
+        res.clearCookie('connect.sid');
+        res.redirect('/');
+    });
+});
 
