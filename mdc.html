@@ -20,12 +20,12 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" type="text/css" href="/css/admin.css?v=20260917-fix1">
-    <link rel="stylesheet" type="text/css" href="/css/modern-ui.css?v=20260917-fix4">
-    <link rel="stylesheet" type="text/css" href="/css/theme-system.css?v=20260821-v6">
-    <link rel="stylesheet" type="text/css" href="/css/enhancements.css?v=20260821-v6">
+    <link rel="stylesheet" type="text/css" href="/css/admin.css?v=20260917-fix3">
+    <link rel="stylesheet" type="text/css" href="/css/modern-ui.css?v=20260917-fix3">
+    <link rel="stylesheet" type="text/css" href="/css/theme-system.css?v=20260917-fix3">
+    <link rel="stylesheet" type="text/css" href="/css/enhancements.css?v=20260917-fix3">
     <link rel="stylesheet" type="text/css" href="/css/mobile-ui.css?v=20260917-fix3">
-    <link rel="stylesheet" type="text/css" href="/css/mdc.css?v=20260821-v6">
+    <link rel="stylesheet" type="text/css" href="/css/mdc.css?v=20260917-fix3">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
@@ -394,47 +394,45 @@
         <button type="button" id="closeProfileModal" style="border:none; background:transparent; font-size:24px; cursor:pointer; color:var(--hk-text-muted, #475569); line-height:1;">×</button>
       </div>
       <form id="vendorProfileForm" enctype="multipart/form-data" style="padding:24px 26px; display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:18px; overflow-y:auto; max-height:calc(90vh - 92px);">
-        <div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Name</label><input type="text" id="profileName" name="name" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px; background:var(--hk-surface, #fff); color:var(--hk-text-main, #101828);" required></div>
-        <div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Email / Contact</label><input type="text" id="profileEmail" name="email_or_contact" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px; background:var(--hk-surface, #fff); color:var(--hk-text-main, #101828);" required></div>
-        <div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">User Type</label><input type="text" readonly id="profileUserType" name="user_type" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px; background:#f1f5f9; color:var(--hk-text-main, #101828); cursor:not-allowed;"></div>
-        <div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Profile Photo</label><input type="file" id="profilePhoto" name="profile_photo" accept="image/*" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px;"></div>
-        <div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Identity Proof</label><input type="file" id="profileIdentity" name="identity_proof" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px;"></div>
-        <div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Bank Account</label><input type="text" id="profileBank" name="bank_account" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px; background:var(--hk-surface, #fff); color:var(--hk-text-main, #101828);"></div>
-        <div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">IFSC Code</label><input type="text" id="profileIfsc" name="ifsc" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px; background:var(--hk-surface, #fff); color:var(--hk-text-main, #101828);"></div>
-        <div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Cancelled Cheque</label><input type="file" id="profileCheque" name="cheque" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px;"></div>
-        <div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Pharmacy Name</label><input type="text" id="profilePharmName" name="pharm_name" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px; background:var(--hk-surface, #fff); color:var(--hk-text-main, #101828);"></div>
-        <div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Owner Name</label><input type="text" id="profileOwnerName" name="owner_name" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px; background:var(--hk-surface, #fff); color:var(--hk-text-main, #101828);"></div>
-        <div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Shop Type</label><input type="text" id="profileShopType" name="shop_type" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px; background:var(--hk-surface, #fff); color:var(--hk-text-main, #101828);"></div>
-        <div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Description</label><input type="text" id="profilePharmDescription" name="description" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px; background:var(--hk-surface, #fff); color:var(--hk-text-main, #101828);"></div>
-        <div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Issued By</label><input type="text" id="profileIssuedBy" name="issued_by" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px; background:var(--hk-surface, #fff); color:var(--hk-text-main, #101828);"></div>
-        <div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Address</label><input type="text" id="profilePharmAddress" name="address" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px; background:var(--hk-surface, #fff); color:var(--hk-text-main, #101828);"></div>
-        <div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Location</label><input type="text" id="profilePharmLocation" name="location" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px; background:var(--hk-surface, #fff); color:var(--hk-text-main, #101828);"></div>
-        <div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Pharmacy Council Registration</label><input type="text" id="profilePharmCouncilReg" name="phar_counc_reg" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px; background:var(--hk-surface, #fff); color:var(--hk-text-main, #101828);"></div>
-        <div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Shop Hours</label><input type="text" id="profileShopHours" name="shop_hrs" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px; background:var(--hk-surface, #fff); color:var(--hk-text-main, #101828);"></div>
-        <div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Availability</label><input type="text" id="profilePharmAvailability" name="avlblty" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px; background:var(--hk-surface, #fff); color:var(--hk-text-main, #101828);"></div>
-        <div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Drug License</label><input type="file" id="profileDrugLic" name="drug_lic" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px;"></div>
-        <div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Address Proof</label><input type="file" id="profilePharmAddressProof" name="address_proof" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px;"></div>
-        <div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">GST Certificate</label><input type="file" id="profileGstCert" name="gst_cer" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px;"></div>
-        <div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Pharmacy Certificate</label><input type="file" id="profilePharmCert" name="pharm_cer" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px;"></div>
-        
-        
-        <div style="grid-column:1 / -1; display:flex; justify-content:flex-end; gap:12px; margin-top:8px;" id="profileModalActionButtons">
-          <button type="button" id="closeProfileBtn" style="padding:10px 18px; border:1px solid var(--hk-border, #cbd5e1); background:var(--hk-surface, #fff); border-radius:10px; cursor:pointer; color:var(--hk-text-main, #101828); font-weight:600;">Close</button>
-          <button type="button" id="enableProfileEditBtn" style="padding:10px 18px; border:none; background:var(--hk-primary-blue, #3b82f6); color:#fff; border-radius:10px; cursor:pointer; font-weight:600;"><i class="fa-solid fa-pen"></i> Edit</button>
-          <button type="button" id="cancelProfileEdit" style="display:none; padding:10px 18px; border:1px solid var(--hk-border, #cbd5e1); background:var(--hk-surface, #fff); border-radius:10px; cursor:pointer; color:var(--hk-text-main, #101828); font-weight:600;">Cancel</button>
-          <button type="submit" id="saveProfileBtn" style="display:none; padding:10px 18px; border:none; background:var(--hk-primary-blue, #2563eb); color:#fff; border-radius:10px; cursor:pointer; font-weight:600;">Save Profile</button>
-        </div>
-      </form>
+        <input type="hidden" id="profileEntityType" value="pharmacy">
+        <div style="grid-column:1/-1; display:flex; flex-direction:column; gap:8px;">
+            <label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Select Pharmacy to Complete Profile</label>
+            <select id="entitySelect" name="entity_id" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px; background:var(--hk-surface, #fff); color:var(--hk-text-main, #101828);" required>
+                <option value="">Select Pharmacy...</option>
+            </select>
+        </div><div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Drug License Number</label><input type="text" name="drug_license_number" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px; background:var(--hk-surface, #fff); color:var(--hk-text-main, #101828);" required></div><div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Address</label><input type="text" name="address" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px; background:var(--hk-surface, #fff); color:var(--hk-text-main, #101828);" required></div><div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Contact Number</label><input type="text" name="contact_number" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px; background:var(--hk-surface, #fff); color:var(--hk-text-main, #101828);" required></div><div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Pharmacist Name</label><input type="text" name="pharmacist_name" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px; background:var(--hk-surface, #fff); color:var(--hk-text-main, #101828);" required></div><div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Home Delivery � Yes/No</label><input type="text" name="home_delivery" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px; background:var(--hk-surface, #fff); color:var(--hk-text-main, #101828);" required></div><div style="grid-column:1/-1; margin-top:10px;"><h4 style="margin:0; font-size:15px; color:var(--hk-text-main, #101828);">Documents (Upload)</h4></div><div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Drug License</label><input type="file" name="drug_license_doc" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px; background:var(--hk-surface, #fff); color:var(--hk-text-main, #101828);" required></div><div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Pharmacist Registration Certificate</label><input type="file" name="pharmacist_registration_cert" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px; background:var(--hk-surface, #fff); color:var(--hk-text-main, #101828);" required></div><div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">PAN Card</label><input type="file" name="pan_card" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px; background:var(--hk-surface, #fff); color:var(--hk-text-main, #101828);" required></div><div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Authorized Person ID Proof</label><input type="file" name="authorized_person_id_proof" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px; background:var(--hk-surface, #fff); color:var(--hk-text-main, #101828);" required></div><div style="grid-column:1 / -1; display:flex; justify-content:flex-end; gap:12px; margin-top:8px;" id="profileModalActionButtons">
+        <button type="button" id="closeProfileBtn" style="padding:10px 18px; border:1px solid var(--hk-border, #cbd5e1); background:var(--hk-surface, #fff); border-radius:10px; cursor:pointer; color:var(--hk-text-main, #101828); font-weight:600;" onclick="document.getElementById('profileModalBox').style.display='none'">Close</button>
+        <button type="submit" id="saveProfileBtn" style="padding:10px 18px; border:none; background:var(--hk-primary-blue, #2563eb); color:#fff; border-radius:10px; cursor:pointer; font-weight:600;">Save Profile</button>
+    </div>
+    </form>
     </div>
   </div>
 
-  <script src="/js/vendor-dashboard-ui.js?v=20260821-v6"></script>
-  <script src="/js/vendor-panel-controls.js?v=20260821-v6"></script>
-  <script src="/js/mdc.js?v=20260821-v6"></script>
-  <script src="/js/sidebar-toggle.js?v=20260821-v6"></script>
-  <script src="/js/ui-interactions.js?v=20260821-v6"></script>
+  <script src="/js/vendor-dashboard-ui.js?v=20260917-fix3"></script>
+  <script src="/js/vendor-panel-controls.js?v=20260917-fix3"></script>
+  <script src="/js/mdc.js?v=20260917-fix3"></script>
+  <script src="/js/sidebar-toggle.js?v=20260917-fix3"></script>
+  <script src="/js/ui-interactions.js?v=20260917-fix3"></script>
+<div id="pharmacyModalBox" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:9999; justify-content:center; align-items:center;">
+        <div style="background:var(--hk-surface, white); padding:24px; border-radius:12px; width:400px; max-width:90%; color:var(--hk-text-main, black);">
+            <h3 style="margin-top:0;">Add Pharmacy</h3>
+            <form id="pharmacyForm" onsubmit="event.preventDefault(); fetch('/api/vendor/add-pharmacy-basic', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({pharmacy_name:this.pharmacy_name.value})}).then(()=>location.reload())">
+                <input type="text" name="pharmacy_name" placeholder="Pharmacy Name" style="width:100%; margin-bottom:10px; padding:8px;" required>
+                <button type="submit" style="padding:10px; width:100%; background:#2563eb; color:white; border:none; border-radius:8px;">Add</button>
+                <button type="button" onclick="document.getElementById('pharmacyModalBox').style.display='none'" style="padding:10px; width:100%; margin-top:10px;">Cancel</button>
+            </form>
+        </div>
+    </div>
+    <script>document.getElementById('addPharmacyBtn')?.addEventListener('click', () => document.getElementById('pharmacyModalBox').style.display='flex');</script>
 </body>
 </html>
+
+
+
+
+
+
+
 
 
 

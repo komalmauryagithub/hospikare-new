@@ -153,6 +153,9 @@ function reloadCurrentAmbulancePanel() {
     else if (activeId === "paymentsBtn") {
         loadPayments();
     }
+    else if (activeId === "driversBtn") {
+        loadDrivers();
+    }
     else {
         loadDashboard();
     }
@@ -416,6 +419,8 @@ document.getElementById("availabilitySection").style.display = "none";
 document.getElementById("ambulanceSection").style.display = "none";
 document.getElementById("bookingsSection").style.display = "none";
 document.getElementById("paymentsSection").style.display = "none";
+    if(document.getElementById("driversSection")) document.getElementById("driversSection").style.display = "none";
+    if(document.getElementById("driversSection")) document.getElementById("driversSection").style.display = "none";
 document.getElementById("dashboardSection").style.display = "block";
 
 async function fillProfileForm(profile, details = {}) {
@@ -441,22 +446,16 @@ async function fillProfileForm(profile, details = {}) {
         }
     }
 }
-function openProfileModal() {
-    const modal = document.getElementById("profileModal");
-    if (modal) modal.style.display = "flex";
-}
 
-function closeProfileModal() {
-    const modal = document.getElementById("profileModal");
-    if (modal) modal.style.display = "none";
-}
+
+
 
 async function loadUserProfile(){
     try{
         const response = await fetch('/api/user/profile', { credentials: 'include' });
         const result = await response.json();
         if(result.success){
-            const vendorName = result.user?.name || result.details?.vendor_name || "Vendor";
+            const vendorName = result.user?.company_name || result.user?.name || result.details?.ambulance_service_name || result.details?.vendor_name || "Ambulance Partner";
             const welcomeText = document.getElementById("welcomeText");
             if (welcomeText) welcomeText.innerText = `Welcome ${vendorName}`;
             
@@ -464,14 +463,18 @@ async function loadUserProfile(){
                 el.textContent = vendorName;
             });
 
-            fillProfileForm(result.user, result.details || {});
-            const isComplete = result.user.bank_account && result.user.ifsc;
+            const profileNameEl = document.querySelector('.profile-name');
+            if (profileNameEl) profileNameEl.innerText = vendorName;
+
+            const isCompleted = Boolean(result.user?.vendor_profile_completed);
             const triggerText = document.getElementById('profileTriggerText');
-            if(triggerText) {
-                triggerText.innerText = 'Complete Profile';
+            const triggerIcon = document.getElementById('profileSectionTrigger')?.querySelector('i');
+            if (triggerText) {
+                triggerText.innerText = isCompleted ? 'Show Profile' : 'Complete Profile';
             }
-            if(window.setProfileMode) {
-                window.setProfileMode(isComplete ? 'view' : 'edit');
+            if (triggerIcon) {
+                triggerIcon.className = isCompleted ? 'fa-solid fa-id-card' : 'fa-solid fa-user-pen';
+                triggerIcon.style.color = isCompleted ? '#10b981' : '#3b82f6';
             }
         }
         else{
@@ -492,28 +495,6 @@ if (profileSectionTrigger) {
 }
 document.getElementById("closeProfileModal")?.addEventListener("click", closeProfileModal);
 document.getElementById("cancelProfileEdit")?.addEventListener("click", closeProfileModal);
-document.getElementById("vendorProfileForm")?.addEventListener("submit", async (event) => {
-    event.preventDefault();
-    const form = event.target;
-    const password = document.getElementById("profilePassword")?.value || "";
-    const confirmPassword = document.getElementById("profileConfirmPassword")?.value || "";
-    if (password && password !== confirmPassword) {
-        alert("Passwords do not match");
-        return;
-    }
-    const formData = new FormData(form);
-    if (!password) formData.delete("password");
-    const response = await fetch('/api/user/profile', { method: 'PUT', credentials: 'include', body: formData });
-    const result = await response.json();
-    if (result.success) {
-        alert("Profile updated successfully");
-        closeProfileModal();
-        await loadUserProfile();
-    } else {
-        alert(result.message || "Profile update failed");
-    }
-});
-loadUserProfile();
 
 document.getElementById("logoutBtn")?.addEventListener("click", logout);
 async function logout(event){
@@ -522,14 +503,11 @@ async function logout(event){
         event.preventDefault();
     }
     try{
-        const response =
-            await fetch('/api/user/logout',{
-                    method:'POST',
-                    credentials: 'include'
-                }
-            );
-        const result =
-            await response.json();
+        const response = await fetch('/api/user/logout', {
+            method: 'POST',
+            credentials: 'include'
+        });
+        const result = await response.json();
         if(result.success){
             window.location.href = "/rg.html";
         }
@@ -551,6 +529,7 @@ function openAmbulanceSection(section, activeItem) {
     document.getElementById("availabilitySection").style.display = "none";
     document.getElementById("bookingsSection").style.display = "none";
     document.getElementById("paymentsSection").style.display = "none";
+    if(document.getElementById("driversSection")) document.getElementById("driversSection").style.display = "none";
 
     if (section === "dashboard") {
         document.getElementById("dashboardSection").style.display = "block";
@@ -571,6 +550,10 @@ function openAmbulanceSection(section, activeItem) {
     else if (section === "payments") {
         document.getElementById("paymentsSection").style.display = "block";
         loadPayments();
+    }
+    else if (section === "drivers") {
+        if(document.getElementById("driversSection")) document.getElementById("driversSection").style.display = "block";
+        loadDrivers();
     }
 }
 
@@ -911,6 +894,10 @@ async function loadAmbulances(){
                         ${ambulance.ambulance_type}
                     </td>
                     <td>
+                        <span style="background: #e2e8f0; padding: 4px 8px; border-radius: 6px; font-size: 13px; font-weight: 600; font-family: monospace; color: #1e293b;">${ambulance.vehicle_number || "-"}</span>
+                    </td>
+
+                    <td>
                         ₹${ambulance.base_chrge}
                     </td>
                     <td>
@@ -936,7 +923,8 @@ async function loadAmbulances(){
                         }
                     </td>
                     <td style="text-align: center;">
-                        <i class="fa-solid fa-trash delete-amb-btn" onclick="deleteAmbulance(${ambulance.id})" title="Delete Ambulance"></i>
+                        <i class="fa-solid fa-pen-to-square edit-amb-btn" onclick="openEditAmbulance(${ambulance.id})" title="Edit Ambulance" style="color: var(--primary); cursor: pointer; margin-right: 12px;"></i>
+                        <i class="fa-solid fa-trash delete-amb-btn" onclick="deleteAmbulance(${ambulance.id})" title="Delete Ambulance" style="color: var(--error); cursor: pointer;"></i>
                     </td>
                 </tr>
                 `;
@@ -946,6 +934,93 @@ async function loadAmbulances(){
     catch(error){
         console.log(error);
     }
+}
+
+
+async function openEditAmbulance(ambId) {
+    const form = document.getElementById('ambulanceForm');
+    if(!form) return;
+    form.reset();
+    
+    // Set edit mode
+    let hiddenId = document.getElementById('edit_ambulance_id');
+    if(!hiddenId) {
+        hiddenId = document.createElement('input');
+        hiddenId.type = 'hidden';
+        hiddenId.id = 'edit_ambulance_id';
+        form.prepend(hiddenId);
+    }
+    hiddenId.value = ambId;
+    
+    // Update modal title and button
+    const header = document.getElementById('ambulanceModalHeader');
+    if(header) {
+        const h2 = header.querySelector('h2');
+        if(h2) h2.innerText = 'Edit Ambulance';
+    }
+    const saveBtn = document.getElementById('saveAmbulanceBtn');
+    if (saveBtn) saveBtn.innerText = 'Update Ambulance';
+    
+    try {
+        const res = await fetch('/api/ambulances');
+        const result = await res.json();
+        if(result.success && result.ambulances) {
+            const amb = result.ambulances.find(a => String(a.id) === String(ambId));
+            if(amb) {
+                // Smart select for ambulance_type
+                const typeSelect = document.getElementById('ambulance_type');
+                if(typeSelect && amb.ambulance_type) {
+                    let matched = false;
+                    for(let i = 0; i < typeSelect.options.length; i++) {
+                        const opt = typeSelect.options[i];
+                        if(opt.value === amb.ambulance_type || opt.text === amb.ambulance_type) {
+                            typeSelect.selectedIndex = i;
+                            matched = true;
+                            break;
+                        }
+                    }
+                    if(!matched) {
+                        const lowerVal = amb.ambulance_type.toLowerCase();
+                        for(let i = 0; i < typeSelect.options.length; i++) {
+                            const opt = typeSelect.options[i];
+                            if(opt.value && (opt.value.toLowerCase().includes(lowerVal) || lowerVal.includes(opt.value.toLowerCase()))) {
+                                typeSelect.selectedIndex = i;
+                                matched = true;
+                                break;
+                            }
+                        }
+                    }
+                    if(!matched) {
+                        const newOpt = new Option(amb.ambulance_type, amb.ambulance_type, true, true);
+                        typeSelect.add(newOpt);
+                    }
+                }
+
+                if(document.getElementById('vehicle_number')) document.getElementById('vehicle_number').value = amb.vehicle_number || '';
+                if(document.getElementById('base_chrge')) document.getElementById('base_chrge').value = amb.base_chrge || '';
+                if(document.getElementById('min_chrge')) document.getElementById('min_chrge').value = amb.min_chrge || '';
+                if(document.getElementById('night_chrg')) document.getElementById('night_chrg').value = amb.night_chrg || '';
+                if(document.getElementById('wait_chrg')) document.getElementById('wait_chrg').value = amb.wait_chrg || '';
+                if(document.getElementById('eta')) document.getElementById('eta').value = amb.eta || '';
+                if(document.getElementById('book_time_slot')) document.getElementById('book_time_slot').value = amb.book_time_slot || '';
+                if(document.getElementById('area')) document.getElementById('area').value = amb.area || '';
+                if(document.getElementById('description')) document.getElementById('description').value = amb.description || '';
+
+                // Smart select for status
+                const statusSelect = document.getElementById('status');
+                if(statusSelect && amb.status) {
+                    for(let i = 0; i < statusSelect.options.length; i++) {
+                        if(statusSelect.options[i].value.toLowerCase() === amb.status.toLowerCase() || statusSelect.options[i].text.toLowerCase() === amb.status.toLowerCase()) {
+                            statusSelect.selectedIndex = i;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+    } catch(e) { console.error(e); }
+    
+    document.getElementById('ambulanceModal').style.display = 'flex';
 }
 
 async function deleteAmbulance(id) {
@@ -1059,123 +1134,57 @@ document.getElementById(
     }
 );
 
-document.getElementById(
-    "ambulanceForm"
-).addEventListener(
-    "submit",
-    async(e) => {
-        e.preventDefault();
-        const formData =
-            new FormData();
-        formData.append(
-            "ambulance_type",
-            document.getElementById(
-                "ambulance_type"
-            ).value
-        );
-        formData.append(
-            "base_chrge",
-            document.getElementById(
-                "base_chrge"
-            ).value
-        );
-        formData.append(
-            "min_chrge",
-            document.getElementById(
-                "min_chrge"
-            ).value
-        );
-        formData.append(
-            "night_chrg",
-            document.getElementById(
-                "night_chrg"
-            ).value
-        );
-        formData.append(
-            "wait_chrg",
-            document.getElementById(
-                "wait_chrg"
-            ).value
-        );
-        formData.append(
-            "status",
-            document.getElementById(
-                "status"
-            ).value
-        );
-        formData.append(
-            "eta",
-            document.getElementById(
-                "eta"
-            ).value
-        );
-        formData.append(
-            "book_time_slot",
-            document.getElementById(
-                "book_time_slot"
-            ).value
-        );
-        formData.append(
-            "area",
-            document.getElementById(
-                "area"
-            ).value
-        );
-        formData.append(
-            "description",
-            document.getElementById(
-                "description"
-            ).value
-        );
-        formData.append(
-            "driver_exp",
-            document.getElementById(
-                "driver_exp"
-            ).value
-        );
-        formData.append(
-            "lic",
-            document.getElementById(
-                "lic"
-            ).files[0]
-        );
-        formData.append(
-            "rc",
-            document.getElementById(
-                "rc"
-            ).files[0]
-        );
-        formData.append(
-            "veh_ins",
-            document.getElementById(
-                "veh_ins"
-            ).files[0]
-        );
-        try{
-            const response =
-                await fetch(
-                    '/api/add/ambulance',
-                    {
-                        method:'POST',
-                        body:formData
-                    }
-                );
-            const result =
-                await response.json();
-            if(result.success){
-                showToast(
-                    "Ambulance Added"
-                );
-                document.getElementById(
-                    "ambulanceModal"
-                ).style.display =
-                    "none";
-                loadAmbulances();
+document.getElementById("ambulanceForm")?.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const formData = new FormData();
+    
+    formData.append("ambulance_type", document.getElementById("ambulance_type")?.value || "");
+    formData.append("vehicle_number", document.getElementById("vehicle_number")?.value || "");
+    formData.append("base_chrge", document.getElementById("base_chrge")?.value || "");
+    formData.append("min_chrge", document.getElementById("min_chrge")?.value || "");
+    formData.append("night_chrg", document.getElementById("night_chrg")?.value || "");
+    formData.append("wait_chrg", document.getElementById("wait_chrg")?.value || "");
+    formData.append("status", document.getElementById("status")?.value || "Available");
+    formData.append("eta", document.getElementById("eta")?.value || "");
+    formData.append("book_time_slot", document.getElementById("book_time_slot")?.value || "");
+    formData.append("area", document.getElementById("area")?.value || "");
+    formData.append("description", document.getElementById("description")?.value || "");
+    formData.append("driver_exp", document.getElementById("driver_exp")?.value || "");
+    
+    const rcFile = document.getElementById("rc")?.files?.[0];
+    if (rcFile) formData.append("rc", rcFile);
+    
+    const vehInsFile = document.getElementById("veh_ins")?.files?.[0];
+    if (vehInsFile) formData.append("veh_ins", vehInsFile);
+    
+    const licFile = document.getElementById("lic")?.files?.[0];
+    if (licFile) formData.append("lic", licFile);
+
+    const editId = document.getElementById("edit_ambulance_id")?.value;
+    const isEdit = Boolean(editId);
+    const url = isEdit ? '/api/update/ambulance/' + editId : '/api/add/ambulance';
+
+    try {
+        const response = await fetch(url, {
+            method: 'POST',
+            body: formData
+        });
+        const result = await response.json();
+        if (result.success) {
+            showToast(isEdit ? "Ambulance Updated Successfully!" : "Ambulance Added Successfully!");
+            document.getElementById("ambulanceModal").style.display = "none";
+            document.getElementById("ambulanceForm").reset();
+            if (document.getElementById("edit_ambulance_id")) {
+                document.getElementById("edit_ambulance_id").value = "";
             }
+            loadAmbulances();
+        } else {
+            showToast(result.message || "Failed to save ambulance");
         }
-        catch(error){
-            console.log(error);
-        }
+    } catch (error) {
+        console.error(error);
+        showToast("Error updating ambulance");
+    }
 });
 
 async function loadAmbulanceAvailability(){
@@ -1996,3 +2005,469 @@ window.addEventListener("hk-theme-change", () => {
         loadDashboard();
     }
 });
+
+
+// ====== NEW PROFILE FLOW LOGIC ======
+// ====== AMBULANCE VENDOR PROFILE FLOW ======
+async function openProfileModal() {
+    const modal = document.getElementById("profileModal") || document.getElementById("profileModalBox");
+    if (modal) modal.style.display = "flex";
+    
+    const bannerContainer = document.getElementById('profileStatusBannerContainer');
+    const actionButtons = document.getElementById('profileModalActionButtons');
+    const form = document.getElementById('vendorProfileForm');
+    if (!form) return;
+
+    try {
+        const res = await fetch('/api/user/profile', { credentials: 'include' });
+        const result = await res.json();
+        if (result.success && result.user) {
+            const user = result.user;
+            
+            // Populate fields
+            if (form.elements['company_name']) form.elements['company_name'].value = user.company_name || '';
+            if (form.elements['name']) form.elements['name'].value = user.name || '';
+            if (form.elements['business_reg_number']) form.elements['business_reg_number'].value = user.business_reg_number || '';
+            if (form.elements['contact_number']) form.elements['contact_number'].value = user.contact_number || user.emailorcontact || '';
+            if (form.elements['email']) form.elements['email'].value = user.email || (user.emailorcontact && user.emailorcontact.includes('@') ? user.emailorcontact : '');
+            if (form.elements['service_area']) form.elements['service_area'].value = user.service_area || '';
+            if (form.elements['service_24x7']) form.elements['service_24x7'].value = user.service_24x7 || 'Yes';
+            if (form.elements['business_address']) form.elements['business_address'].value = user.business_address || '';
+
+            const allInputs = form.querySelectorAll('input, select, textarea');
+            const fileInputs = form.querySelectorAll('input[type="file"]');
+            const isCompleted = Boolean(user.vendor_profile_completed);
+            const isEditAllowed = Boolean(user.edit_allowed);
+            const isEditRequested = Boolean(user.edit_requested);
+
+            if (!isCompleted) {
+                // State 1: Profile NOT completed
+                allInputs.forEach(input => {
+                    input.disabled = false;
+                    input.style.backgroundColor = '';
+                    input.style.cursor = 'auto';
+                });
+
+                if (bannerContainer) {
+                    bannerContainer.innerHTML = `
+                        <div style="padding:12px 16px; background:rgba(37,99,235,0.08); border:1px solid rgba(37,99,235,0.2); border-radius:10px; font-size:13px; color:#1d4ed8; font-weight:500; display:flex; align-items:center; gap:8px;">
+                            <i class="fa-solid fa-circle-info" style="font-size:16px;"></i>
+                            <div>Please complete your ambulance vendor details and upload verification documents below.</div>
+                        </div>
+                    `;
+                }
+                if (actionButtons) {
+                    actionButtons.innerHTML = `
+                        <button type="button" id="closeProfileBtn" style="padding:10px 18px; border:1px solid var(--border-color, #cbd5e1); background:var(--card-bg, #fff); border-radius:10px; cursor:pointer; color:var(--text-main, #101828); font-weight:600;" onclick="closeProfileModal()">Close</button>
+                        <button type="submit" id="saveProfileBtn" style="padding:10px 22px; border:none; background:var(--primary, #2563eb); color:#fff; border-radius:10px; cursor:pointer; font-weight:600; display:inline-flex; align-items:center; gap:8px;"><i class="fa-solid fa-floppy-disk"></i> Save Profile</button>
+                    `;
+                }
+            } else if (!isEditAllowed) {
+                // State 2: Profile Completed & Locked
+                allInputs.forEach(input => {
+                    input.disabled = true;
+                    input.style.backgroundColor = 'rgba(0,0,0,0.03)';
+                    input.style.cursor = 'not-allowed';
+                });
+
+                if (!isEditRequested) {
+                    if (bannerContainer) {
+                        bannerContainer.innerHTML = `
+                            <div style="padding:12px 16px; background:#fffbeb; border:1px solid #fde68a; border-radius:10px; font-size:13px; color:#92400e; font-weight:500; display:flex; align-items:center; gap:10px;">
+                                <i class="fa-solid fa-shield-halved" style="color:#d97706; font-size:18px;"></i>
+                                <div style="flex:1;">
+                                    <strong>Vendor Profile is Verified & Locked.</strong> Direct updates are restricted. If you need to update any information or documents, please request permission from Admin.
+                                </div>
+                            </div>
+                        `;
+                    }
+                    if (actionButtons) {
+                        actionButtons.innerHTML = `
+                            <button type="button" id="closeProfileBtn" style="padding:10px 18px; border:1px solid var(--border-color, #cbd5e1); background:var(--card-bg, #fff); border-radius:10px; cursor:pointer; color:var(--text-main, #101828); font-weight:600;" onclick="closeProfileModal()">Close</button>
+                            <button type="button" id="requestAdminEditBtn" style="padding:10px 22px; border:none; background:#d97706; color:#fff; border-radius:10px; cursor:pointer; font-weight:700; display:inline-flex; align-items:center; gap:8px; box-shadow:0 2px 8px rgba(217,119,6,0.25);"><i class="fa-solid fa-lock"></i> Request Admin for Edit</button>
+                        `;
+                        const reqBtn = document.getElementById('requestAdminEditBtn');
+                        if (reqBtn) {
+                            reqBtn.onclick = async () => {
+                                reqBtn.disabled = true;
+                                reqBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Requesting...';
+                                try {
+                                    const reqRes = await fetch('/api/vendor/request-profile-edit/vendor_ambulance/' + user.id, { method: 'POST' });
+                                    const reqData = await reqRes.json();
+                                    if (reqData.success) {
+                                        alert('Edit request sent to Admin successfully! Once Admin approves, you will be able to update your profile details.');
+                                        openProfileModal();
+                                    } else {
+                                        alert(reqData.message || 'Failed to submit request.');
+                                        reqBtn.disabled = false;
+                                        reqBtn.innerHTML = '<i class="fa-solid fa-lock"></i> Request Admin for Edit';
+                                    }
+                                } catch(err) {
+                                    alert('Network error while requesting edit.');
+                                    reqBtn.disabled = false;
+                                    reqBtn.innerHTML = '<i class="fa-solid fa-lock"></i> Request Admin for Edit';
+                                }
+                            };
+                        }
+                    }
+                } else {
+                    // Edit request pending approval
+                    if (bannerContainer) {
+                        bannerContainer.innerHTML = `
+                            <div style="padding:12px 16px; background:#fef3c7; border:1px solid #fcd34d; border-radius:10px; font-size:13px; color:#78350f; font-weight:500; display:flex; align-items:center; gap:10px;">
+                                <i class="fa-solid fa-hourglass-half" style="color:#d97706; font-size:18px;"></i>
+                                <div style="flex:1;">
+                                    <strong>Edit Request Pending Admin Approval.</strong> You have requested to update your vendor profile. Once Admin approves the request, the fields will become editable.
+                                </div>
+                            </div>
+                        `;
+                    }
+                    if (actionButtons) {
+                        actionButtons.innerHTML = `
+                            <button type="button" id="closeProfileBtn" style="padding:10px 18px; border:1px solid var(--border-color, #cbd5e1); background:var(--card-bg, #fff); border-radius:10px; cursor:pointer; color:var(--text-main, #101828); font-weight:600;" onclick="closeProfileModal()">Close</button>
+                            <button type="button" disabled style="padding:10px 20px; border:none; background:#94a3b8; color:#fff; border-radius:10px; cursor:not-allowed; font-weight:600; display:inline-flex; align-items:center; gap:8px;"><i class="fa-solid fa-clock"></i> Edit Request Pending Admin Approval</button>
+                        `;
+                    }
+                }
+            } else {
+                // State 3: Edit Approved by Admin
+                allInputs.forEach(input => {
+                    input.disabled = false;
+                    input.style.backgroundColor = '';
+                    input.style.cursor = 'auto';
+                });
+
+                if (bannerContainer) {
+                    bannerContainer.innerHTML = `
+                        <div style="padding:12px 16px; background:#ecfdf5; border:1px solid #a7f3d0; border-radius:10px; font-size:13px; color:#065f46; font-weight:500; display:flex; align-items:center; gap:10px;">
+                            <i class="fa-solid fa-circle-check" style="color:#059669; font-size:18px;"></i>
+                            <div style="flex:1;">
+                                <strong>Edit Permission Approved!</strong> Admin has granted access to update your vendor profile. Make your changes and click 'Update Profile' below.
+                            </div>
+                        </div>
+                    `;
+                }
+                if (actionButtons) {
+                    actionButtons.innerHTML = `
+                        <button type="button" id="closeProfileBtn" style="padding:10px 18px; border:1px solid var(--border-color, #cbd5e1); background:var(--card-bg, #fff); border-radius:10px; cursor:pointer; color:var(--text-main, #101828); font-weight:600;" onclick="closeProfileModal()">Close</button>
+                        <button type="submit" id="saveProfileBtn" style="padding:10px 22px; border:none; background:#059669; color:#fff; border-radius:10px; cursor:pointer; font-weight:600; display:inline-flex; align-items:center; gap:8px;"><i class="fa-solid fa-pen-to-square"></i> Update Profile</button>
+                    `;
+                }
+            }
+        }
+    } catch (err) {
+        console.error("Profile load error:", err);
+    }
+}
+
+function closeProfileModal() {
+    const modal = document.getElementById("profileModalBox") || document.getElementById("profileModal");
+    if (modal) modal.style.display = "none";
+}
+
+document.getElementById('vendorProfileForm')?.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const form = event.target;
+    const formData = new FormData(form);
+    
+    const submitBtn = document.getElementById('saveProfileBtn');
+    const origText = submitBtn ? submitBtn.innerHTML : '';
+    if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Saving...';
+    }
+
+    try {
+        const response = await fetch('/api/user/profile', { 
+            method: 'PUT', 
+            body: formData,
+            credentials: 'include'
+        });
+        const result = await response.json();
+        if (result.success) {
+            alert('Ambulance Vendor Profile saved successfully!');
+            closeProfileModal();
+            await loadUserProfile();
+        } else {
+            alert(result.message || 'Profile save failed');
+        }
+    } catch (e) {
+        console.error(e);
+        alert('An error occurred while saving.');
+    } finally {
+        if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = origText || 'Save Profile';
+        }
+    }
+});
+
+// ===================================
+
+
+// ================= DRIVER CRUD =================
+window._allDriversList = [];
+
+function formatDriverWhatsAppMessage(driver) {
+    let cleanMobile = String(driver.mobile_number || '').replace(/[^0-9]/g, '');
+    if (cleanMobile.length === 10) {
+        cleanMobile = '91' + cleanMobile;
+    }
+    
+    let text = `🚨 *HospiKare Fleet - Driver & Vehicle Duty Details* 🚨\n\n`;
+    text += `Hello *${driver.driver_name || 'Driver'}*,\n`;
+    text += `Aapko HospiKare Emergency Ambulance Fleet me assign kiya gaya hai. Details neeche di gayi hain:\n\n`;
+    
+    text += `📋 *Driver Details:*\n`;
+    text += `• *Name:* ${driver.driver_name || 'N/A'}\n`;
+    text += `• *Driver / Emp ID:* ${driver.driver_id_str || 'N/A'}\n`;
+    text += `• *Contact:* ${driver.mobile_number || 'N/A'}\n`;
+    text += `• *Duty Status:* ${driver.status || 'Active'}\n\n`;
+    
+    const ambType = driver.ambulance_type || (driver.ambulance && driver.ambulance.ambulance_type);
+    const vehNo = driver.vehicle_number || (driver.ambulance && driver.ambulance.vehicle_number);
+    const baseFare = driver.base_chrge || (driver.ambulance && driver.ambulance.base_chrge);
+    const minFare = driver.min_chrge || (driver.ambulance && driver.ambulance.min_chrge);
+    const area = driver.area || (driver.ambulance && driver.ambulance.area);
+    const eta = driver.eta || (driver.ambulance && driver.ambulance.eta);
+    
+    if (ambType || vehNo) {
+        text += `🚑 *Assigned Ambulance Details:*\n`;
+        text += `• *Ambulance Type:* ${ambType || 'Emergency Ambulance'}\n`;
+        text += `• *Vehicle Reg No:* ${vehNo || 'N/A'}\n`;
+        if (baseFare) text += `• *Base Fare / KM:* ₹${baseFare}\n`;
+        if (minFare) text += `• *Minimum Fare:* ₹${minFare}\n`;
+        if (area) text += `• *Service Area:* ${area}\n`;
+        if (eta) text += `• *Response ETA:* ${eta}\n\n`;
+    } else {
+        text += `🚑 *Assigned Ambulance:* Currently Unassigned\n\n`;
+    }
+    
+    text += `⚠️ *Important Instructions:*\n`;
+    text += `1. Vehicle ki safety kit, oxygen cylinder aur medical supplies check karein.\n`;
+    text += `2. Duty ke dauran apna phone aur GPS location ON rakhein.\n`;
+    text += `3. Emergency dispatch request aane par turant response karein.\n\n`;
+    text += `— *HospiKare Fleet Management*`;
+    
+    return {
+        phone: cleanMobile,
+        message: text,
+        url: `https://wa.me/${cleanMobile}?text=${encodeURIComponent(text)}`
+    };
+}
+
+function shareDriverWhatsApp(driver) {
+    if (!driver || !driver.mobile_number) {
+        alert('Driver mobile number is not available!');
+        return;
+    }
+    const info = formatDriverWhatsAppMessage(driver);
+    window.open(info.url, '_blank');
+}
+
+async function loadDrivers() {
+    try {
+        const response = await fetch('/api/vendor/drivers');
+        const result = await response.json();
+        const tbody = document.getElementById("driversTableBody");
+        if(tbody) tbody.innerHTML = "";
+        
+        if (result.success) {
+            const drivers = result.data || [];
+            window._allDriversList = drivers;
+            let html = "";
+            drivers.forEach(driver => {
+                const photoSrc = driver.driver_photo ? '/uploads/' + driver.driver_photo : '/assets/default_avatar.png';
+                const statusColor = driver.status === 'Active' ? '#18B981' : (driver.status === 'Inactive' ? '#EF4B5F' : '#F59E0B');
+                
+                const assignedHtml = driver.ambulance_type 
+                    ? '<div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;"><span style="font-size: 13px; font-weight: 600; color: var(--text-dark);">' + driver.ambulance_type + '</span> <span style="background: rgba(59, 130, 246, 0.15); color: #3b82f6; border: 1px solid rgba(59, 130, 246, 0.35); padding: 2px 7px; border-radius: 6px; font-family: monospace; font-size: 12px; font-weight: 700;">' + (driver.vehicle_number || '-') + '</span></div>'
+                    : '<span style="color: #ef4444; font-size: 12px; font-weight: 600; background: rgba(239, 68, 68, 0.1); padding: 2px 8px; border-radius: 4px;">Unassigned</span>';
+
+                html += `
+                    <tr>
+                        <td style="text-align: center;"><img src="${photoSrc}" alt="Driver" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid var(--border-color);"></td>
+                        <td>
+                            <div style="font-weight: 700; color: var(--text-dark); font-size: 14px;">${driver.driver_name}</div>
+                            <div style="font-size: 12px; color: var(--text-muted);">ID: ${driver.driver_id_str || 'N/A'}</div>
+                        </td>
+                        <td style="font-weight: 500; font-size: 13px; color: var(--text-dark);">${driver.mobile_number}</td>
+                        <td><span style="background: ${statusColor}20; color: ${statusColor}; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 700; border: 1px solid ${statusColor}40;">${driver.status || 'Active'}</span></td>
+                        <td>${assignedHtml}</td>
+                        <td style="text-align: center;">
+                            <div style="display: inline-flex; align-items: center; gap: 10px;">
+                                <i class="fa-brands fa-whatsapp whatsapp-driver-btn" data-id="${driver.id}" title="Send Assignment Details on WhatsApp" style="color: #22c55e; font-size: 18px; cursor: pointer; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.25)'" onmouseout="this.style.transform='scale(1)'"></i>
+                                <i class="fa-solid fa-pen-to-square edit-driver-btn" data-id="${driver.id}" title="Edit Driver" style="color: #3b82f6; font-size: 16px; cursor: pointer; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.25)'" onmouseout="this.style.transform='scale(1)'"></i>
+                                <i class="fa-solid fa-trash delete-driver-btn" data-id="${driver.id}" title="Delete Driver" style="color: #ef4444; font-size: 16px; cursor: pointer; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.25)'" onmouseout="this.style.transform='scale(1)'"></i>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            });
+            if(tbody) {
+                tbody.innerHTML = html;
+                document.querySelectorAll('.whatsapp-driver-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const id = e.currentTarget.getAttribute('data-id');
+                        const driver = window._allDriversList?.find(d => String(d.id) === String(id));
+                        if (driver) {
+                            shareDriverWhatsApp(driver);
+                        }
+                    });
+                });
+                document.querySelectorAll('.edit-driver-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => openDriverModal(e.currentTarget.getAttribute('data-id')));
+                });
+                document.querySelectorAll('.delete-driver-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => deleteDriver(e.currentTarget.getAttribute('data-id')));
+                });
+            }
+        }
+    } catch(err) { console.error(err); }
+}
+
+async function loadAmbulanceDropdown(selectedId = null, currentDriverId = null) {
+    const select = document.getElementById('assigned_ambulance_id');
+    if(!select) return;
+    try {
+        const response = await fetch('/api/ambulances');
+        const result = await response.json();
+        select.innerHTML = '<option value="">No Ambulance Assigned</option>';
+        if (result.success && result.ambulances) {
+            result.ambulances.forEach(amb => {
+                const ambType = amb.ambulance_type || 'Ambulance';
+                const regNo = amb.vehicle_number ? amb.vehicle_number : `ID: #${amb.id}`;
+                const assignedDriverId = amb.assigned_driver_id;
+                const assignedDriverName = amb.driver_name;
+                
+                const isCurrentDriverAmb = (selectedId && String(amb.id) === String(selectedId)) || 
+                                           (currentDriverId && assignedDriverId && String(assignedDriverId) === String(currentDriverId));
+                const isAssignedToOther = assignedDriverId && !isCurrentDriverAmb;
+                
+                let label = `${ambType} (${regNo})`;
+                let disabledAttr = '';
+                let selectedAttr = '';
+                let optStyle = '';
+                
+                if (isCurrentDriverAmb) {
+                    selectedAttr = 'selected';
+                } else if (isAssignedToOther) {
+                    disabledAttr = 'disabled';
+                    const driverDisplay = assignedDriverName ? assignedDriverName : `Driver #${assignedDriverId}`;
+                    label += ` - (Assigned: ${driverDisplay})`;
+                    optStyle = 'color: var(--text-muted, #94a3b8); opacity: 0.55;';
+                }
+                
+                const styleAttr = optStyle ? `style="${optStyle}"` : '';
+                select.innerHTML += `<option value="${amb.id}" ${selectedAttr} ${disabledAttr} ${styleAttr}>${label}</option>`;
+            });
+            if (selectedId) {
+                select.value = String(selectedId);
+            }
+        }
+    } catch(err) { console.error('Error loading ambulances dropdown:', err); }
+}
+
+document.getElementById('addDriverSectionBtn')?.addEventListener('click', () => openDriverModal(null));
+document.getElementById('closeDriverModal')?.addEventListener('click', () => document.getElementById('driverModal').style.display = 'none');
+document.getElementById('cancelDriverBtn')?.addEventListener('click', () => document.getElementById('driverModal').style.display = 'none');
+
+async function openDriverModal(driverId) {
+    document.getElementById('driverCrudForm').reset();
+    document.getElementById('driver_id').value = '';
+    document.getElementById('driverModalTitle').innerText = 'Add New Driver';
+    
+    if (driverId) {
+        document.getElementById('driverModalTitle').innerText = 'Edit Driver';
+        try {
+            const res = await fetch('/api/vendor/driver/' + driverId);
+            const result = await res.json();
+            if (result.success && result.data) {
+                const driver = result.data;
+                document.getElementById('driver_id').value = driver.id;
+                document.getElementById('driver_name').value = driver.driver_name || '';
+                document.getElementById('driver_id_str').value = driver.driver_id_str || '';
+                document.getElementById('driver_mobile').value = driver.mobile_number || '';
+                document.getElementById('driver_status').value = driver.status || 'Active';
+                document.getElementById('driver_address').value = driver.address || '';
+                document.getElementById('driver_dl_number').value = driver.driving_license_number || '';
+                if(driver.license_expiry_date) {
+                    document.getElementById('driver_dl_expiry').value = driver.license_expiry_date.split('T')[0];
+                }
+                await loadAmbulanceDropdown(driver.assigned_ambulance_id, driver.id);
+            }
+        } catch(e) { 
+            console.error(e); 
+            await loadAmbulanceDropdown(null, null);
+        }
+    } else {
+        await loadAmbulanceDropdown(null, null);
+    }
+    document.getElementById('driverModal').style.display = 'flex';
+}
+
+document.getElementById('driverCrudForm')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const formData = new FormData();
+    const driverId = document.getElementById('driver_id').value;
+    
+    formData.append('driver_name', document.getElementById('driver_name').value);
+    formData.append('driver_id_str', document.getElementById('driver_id_str').value);
+    formData.append('mobile_number', document.getElementById('driver_mobile').value);
+    formData.append('status', document.getElementById('driver_status').value);
+    formData.append('address', document.getElementById('driver_address').value);
+    formData.append('driving_license_number', document.getElementById('driver_dl_number').value);
+    formData.append('license_expiry_date', document.getElementById('driver_dl_expiry').value);
+    formData.append('assigned_ambulance_id', document.getElementById('assigned_ambulance_id') ? document.getElementById('assigned_ambulance_id').value : '');
+    
+    const photo = document.getElementById('driver_photo_upload').files[0];
+    if (photo) formData.append('driver_photo', photo);
+    const doc = document.getElementById('driver_dl_doc_upload').files[0];
+    if (doc) formData.append('driving_license_doc', doc);
+
+    const url = driverId ? '/api/vendor/driver/update/' + driverId : '/api/vendor/driver/create';
+    try {
+        const res = await fetch(url, { method: 'POST', body: formData });
+        const result = await res.json();
+        if (result.success) {
+            document.getElementById('driverModal').style.display = 'none';
+            loadDrivers();
+            loadAmbulanceDropdown();
+            
+            if (result.driver && (result.driver.ambulance_type || (result.driver.ambulance && (result.driver.ambulance.ambulance_type || result.driver.ambulance.vehicle_number)))) {
+                const sharePrompt = confirm('Driver saved successfully! Do you want to share the assigned ambulance details with the driver on WhatsApp now?');
+                if (sharePrompt) {
+                    shareDriverWhatsApp({
+                        ...result.driver,
+                        ambulance_type: result.driver.ambulance?.ambulance_type || result.driver.ambulance_type,
+                        vehicle_number: result.driver.ambulance?.vehicle_number || result.driver.vehicle_number,
+                        base_chrge: result.driver.ambulance?.base_chrge || result.driver.base_chrge,
+                        min_chrge: result.driver.ambulance?.min_chrge || result.driver.min_chrge,
+                        area: result.driver.ambulance?.area || result.driver.area,
+                        eta: result.driver.ambulance?.eta || result.driver.eta
+                    });
+                }
+            } else {
+                alert('Driver saved successfully!');
+            }
+        } else {
+            alert(result.message || 'Failed to save driver');
+        }
+    } catch(err) {
+        alert('Server error');
+    }
+});
+
+async function deleteDriver(driverId) {
+    if (!confirm('Are you sure you want to delete this driver?')) return;
+    try {
+        const res = await fetch('/api/vendor/driver/delete/' + driverId, { method: 'POST' });
+        const result = await res.json();
+        if (result.success) {
+            loadDrivers();
+            loadAmbulanceDropdown();
+        } else {
+            alert(result.message || 'Failed to delete driver');
+        }
+    } catch(err) { alert('Server error'); }
+}

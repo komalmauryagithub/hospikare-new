@@ -1,4 +1,4 @@
-﻿require("dotenv").config();
+require("dotenv").config();
 const session = require("express-session");
 const express = require("express");
 const mysql = require("mysql2/promise");
@@ -75,6 +75,8 @@ const pool = mysql.createPool({
   waitForConnections: true,
   connectionLimit: 10,
 });
+
+require("./routes_vendor_profile")(app, pool, upload);
 
 const safeNumber = (val) => {
   const num = parseFloat(val);
@@ -1620,7 +1622,9 @@ app.get("/api/vendors", async (req, res) => {
                     users_id AS vendor_id,
                     hospital_name AS name,
                     CONCAT_WS(' - ', location, address) AS subtitle,
-                    rooms
+                    rooms,
+                    edit_requested,
+                    edit_allowed
                 FROM hospitals
                 ORDER BY hospital_name
             `),
@@ -1629,7 +1633,9 @@ app.get("/api/vendors", async (req, res) => {
                     id,
                     users_id AS vendor_id,
                     lab_name AS name,
-                    CONCAT_WS(' - ', location, address) AS subtitle
+                    CONCAT_WS(' - ', location, address) AS subtitle,
+                    edit_requested,
+                    edit_allowed
                 FROM labs
                 ORDER BY lab_name
             `),
@@ -1638,7 +1644,9 @@ app.get("/api/vendors", async (req, res) => {
                     id,
                     users_id AS vendor_id,
                     CONCAT(ambulance_type, ' Ambulance') AS name,
-                    CONCAT_WS(' - ', area, status, eta) AS subtitle
+                    CONCAT_WS(' - ', area, status, eta) AS subtitle,
+                    edit_requested,
+                    edit_allowed
                 FROM ambulances
                 ORDER BY ambulance_type
             `),
@@ -1647,7 +1655,9 @@ app.get("/api/vendors", async (req, res) => {
                     id,
                     users_id AS vendor_id,
                     comp_name AS name,
-                    CONCAT_WS(' - ', comp_type, claim_type) AS subtitle
+                    CONCAT_WS(' - ', comp_type, claim_type) AS subtitle,
+                    edit_requested,
+                    edit_allowed
                 FROM insurances
                 ORDER BY comp_name
             `),
@@ -1689,6 +1699,8 @@ app.get("/api/vendors", async (req, res) => {
           type,
           name: row.name || `${type} ${row.id}`,
           subtitle: row.subtitle || "",
+          edit_requested: row.edit_requested || 0,
+          edit_allowed: row.edit_allowed || 0,
         });
       });
     };
@@ -1739,6 +1751,7 @@ app.get("/api/vendors", async (req, res) => {
       let revenue = 0;
       vendor.listings = listingsByVendor.get(Number(vendor.id)) || [];
       vendor.listingCount = vendor.listings.length;
+      vendor.has_edit_request = vendor.listings.some(l => Boolean(l.edit_requested));
       vendor.bedAvailability =
         bedAvailabilityByVendor.get(Number(vendor.id)) || [];
       vendor.totalBeds = vendor.bedAvailability.reduce(
@@ -2051,6 +2064,7 @@ app.get("/api/vendor/details/:id", async (req, res) => {
     }
     const user = users[0];
     let details = null;
+    let entities = [];
     const userType = String(user.users_type || "").toLowerCase();
 
     if (userType === "hospital") {
@@ -2058,44 +2072,64 @@ app.get("/api/vendor/details/:id", async (req, res) => {
         "SELECT * FROM hospitals WHERE users_id = ?",
         [id],
       );
-      details = data[0];
+      entities = data;
+      details = data.find(d => d.edit_requested === 1) || data[0] || null;
     } else if (userType === "ambulance") {
       const [data] = await pool.query(
         "SELECT * FROM ambulances WHERE users_id = ?",
         [id],
       );
-      details = data[0];
+      entities = data;
+      details = data.find(d => d.edit_requested === 1) || data[0] || null;
     } else if (userType === "lab test" || userType === "lab") {
       const [data] = await pool.query("SELECT * FROM labs WHERE users_id = ?", [
         id,
       ]);
-      details = data[0];
+      entities = data;
+      details = data.find(d => d.edit_requested === 1) || data[0] || null;
     } else if (userType === "insurance") {
       const [data] = await pool.query(
         "SELECT * FROM insurances WHERE users_id = ?",
         [id],
       );
-      details = data[0];
-    } else if (userType === "medicines") {
-      const [data] = await pool.query(
-        "SELECT * FROM medicines WHERE users_id = ?",
+      entities = data;
+      details = data.find(d => d.edit_requested === 1) || data[0] || null;
+    } else if (userType === "medicines" || userType === "pharmacy") {
+      let [data] = await pool.query(
+        "SELECT * FROM pharmacies WHERE users_id = ?",
         [id],
       );
-      details = data[0];
+      if (!data || data.length === 0) {
+        [data] = await pool.query(
+          "SELECT * FROM medicines WHERE users_id = ?",
+          [id],
+        );
+      }
+      entities = data;
+      details = data.find(d => d.edit_requested === 1) || data[0] || null;
     } else if (
       userType === "medical equipments" ||
-      userType === "medical equipment"
+      userType === "medical equipment" ||
+      userType === "equipment"
     ) {
-      const [data] = await pool.query(
-        "SELECT * FROM med_equipments WHERE users_id = ?",
+      let [data] = await pool.query(
+        "SELECT * FROM equipment_sources WHERE users_id = ?",
         [id],
       );
-      details = data[0];
+      if (!data || data.length === 0) {
+        [data] = await pool.query(
+          "SELECT * FROM med_equipments WHERE users_id = ?",
+          [id],
+        );
+      }
+      entities = data;
+      details = data.find(d => d.edit_requested === 1) || data[0] || null;
     }
     res.json({
       success: true,
       user,
       details,
+      entities,
     });
   } catch (error) {
     console.log(error);
@@ -2140,7 +2174,7 @@ app.get("/api/user/profile", async (req, res) => {
       details = rows[0] || null;
     }
 
-    const [userRows] = await pool.query("SELECT id, name, users_type, emailorcontact, profile_photo, bank_account, ifsc, identity_proof, cheque FROM users WHERE id = ?", [userId]);
+    const [userRows] = await pool.query("SELECT * FROM users WHERE id = ?", [userId]);
     const fullUser = userRows[0] || req.session.user;
 
     res.json({
@@ -2160,28 +2194,7 @@ app.get("/api/user/profile", async (req, res) => {
 //10
 app.put(
   "/api/user/profile",
-  upload.fields([
-    { name: "identity_proof", maxCount: 1 },
-    { name: "profile_photo", maxCount: 1 },
-    { name: "cheque", maxCount: 1 },
-    { name: "hospital_reg_certificate", maxCount: 1 },
-    { name: "shop_license", maxCount: 1 },
-    { name: "medical_council_registration", maxCount: 1 },
-    { name: "electricity_bill", maxCount: 1 },
-    { name: "lic", maxCount: 1 },
-    { name: "rc", maxCount: 1 },
-    { name: "veh_ins", maxCount: 1 },
-    { name: "lab_reg", maxCount: 1 },
-    { name: "nabl", maxCount: 1 },
-    { name: "incorp_cert", maxCount: 1 },
-    { name: "add_proof", maxCount: 1 },
-    { name: "drug_lic", maxCount: 1 },
-    { name: "address_proof", maxCount: 1 },
-    { name: "gst_cer", maxCount: 1 },
-    { name: "pharm_cer", maxCount: 1 },
-    { name: "qual_cer", maxCount: 1 },
-    { name: "app_comp", maxCount: 1 },
-  ]),
+  upload.any(),
   async (req, res) => {
     try {
       if (!req.session.user) {
@@ -2196,6 +2209,15 @@ app.put(
       const updates = [];
       const values = [];
 
+      const getFile = (name) => {
+        if (!req.files) return null;
+        if (Array.isArray(req.files)) {
+          const f = req.files.find(item => item.fieldname === name);
+          return f ? f.filename : null;
+        }
+        return req.files[name]?.[0]?.filename || null;
+      };
+
       if (body.name && body.name.trim()) {
         updates.push("name = ?");
         values.push(body.name.trim());
@@ -2203,6 +2225,10 @@ app.put(
       if (body.email_or_contact && body.email_or_contact.trim()) {
         updates.push("emailorcontact = ?");
         values.push(body.email_or_contact.trim());
+      }
+      if (body.email && body.email.trim()) {
+        updates.push("email = ?");
+        values.push(body.email.trim());
       }
       if (body.user_type && body.user_type.trim()) {
         updates.push("users_type = ?");
@@ -2220,17 +2246,73 @@ app.put(
         updates.push("ifsc = ?");
         values.push(body.ifsc.trim());
       }
-      if (req.files["identity_proof"]?.[0]?.filename) {
+      if (body.company_name && body.company_name.trim()) {
+        updates.push("company_name = ?");
+        values.push(body.company_name.trim());
+      }
+      if (body.business_reg_number && body.business_reg_number.trim()) {
+        updates.push("business_reg_number = ?");
+        values.push(body.business_reg_number.trim());
+      }
+      if (body.contact_number && body.contact_number.trim()) {
+        updates.push("contact_number = ?");
+        values.push(body.contact_number.trim());
+      }
+      if (body.business_address && body.business_address.trim()) {
+        updates.push("business_address = ?");
+        values.push(body.business_address.trim());
+      }
+      if (body.service_area && body.service_area.trim()) {
+        updates.push("service_area = ?");
+        values.push(body.service_area.trim());
+      }
+      if (body.service_24x7 !== undefined && body.service_24x7 !== null && body.service_24x7 !== "") {
+        updates.push("service_24x7 = ?");
+        values.push(body.service_24x7);
+      }
+
+      const idProof = getFile("identity_proof") || getFile("auth_person_id") || getFile("authorized_person_id_proof");
+      if (idProof) {
         updates.push("identity_proof = ?");
-        values.push(req.files["identity_proof"][0].filename);
+        values.push(idProof);
+        updates.push("auth_person_id = ?");
+        values.push(idProof);
       }
-      if (req.files["profile_photo"]?.[0]?.filename) {
+      const profPhoto = getFile("profile_photo");
+      if (profPhoto) {
         updates.push("profile_photo = ?");
-        values.push(req.files["profile_photo"][0].filename);
+        values.push(profPhoto);
       }
-      if (req.files["cheque"]?.[0]?.filename) {
+      const chequeDoc = getFile("cheque");
+      if (chequeDoc) {
         updates.push("cheque = ?");
-        values.push(req.files["cheque"][0].filename);
+        values.push(chequeDoc);
+      }
+      const bizRegCert = getFile("business_reg_cert") || getFile("business_registration_proof");
+      if (bizRegCert) {
+        updates.push("business_reg_cert = ?");
+        values.push(bizRegCert);
+      }
+      const panCard = getFile("pan_card");
+      if (panCard) {
+        updates.push("pan_card = ?");
+        values.push(panCard);
+      }
+      const gstCert = getFile("gst_cert") || getFile("gst_certificate");
+      if (gstCert) {
+        updates.push("gst_cert = ?");
+        values.push(gstCert);
+      }
+      const vendorAddrProof = getFile("vendor_address_proof") || getFile("address_proof");
+      if (vendorAddrProof) {
+        updates.push("vendor_address_proof = ?");
+        values.push(vendorAddrProof);
+      }
+
+      if (body.is_vendor_profile || body.company_name || body.business_reg_number) {
+        updates.push("vendor_profile_completed = 1");
+        updates.push("edit_allowed = 0");
+        updates.push("edit_requested = 0");
       }
 
       const userType = String(req.session.user.type || body.user_type || "").toLowerCase();
@@ -2241,12 +2323,22 @@ app.put(
         if (body.address) detailPayload.address = body.address;
         if (body.location) detailPayload.location = body.location;
         if (body.facilities) detailPayload.facilities = body.facilities;
-        if (req.files["hospital_reg_certificate"]?.[0]?.filename) detailPayload.hospital_reg_certificate = req.files["hospital_reg_certificate"][0].filename;
-        if (req.files["shop_license"]?.[0]?.filename) detailPayload.shop_license = req.files["shop_license"][0].filename;
-        if (req.files["medical_council_registration"]?.[0]?.filename) detailPayload.medical_council_registration = req.files["medical_council_registration"][0].filename;
-        if (req.files["electricity_bill"]?.[0]?.filename) detailPayload.electricity_bill = req.files["electricity_bill"][0].filename;
+        const hospCert = getFile("hospital_reg_certificate");
+        if (hospCert) detailPayload.hospital_reg_certificate = hospCert;
+        const shopLic = getFile("shop_license");
+        if (shopLic) detailPayload.shop_license = shopLic;
+        const medReg = getFile("medical_council_registration");
+        if (medReg) detailPayload.medical_council_registration = medReg;
+        const elecBill = getFile("electricity_bill");
+        if (elecBill) detailPayload.electricity_bill = elecBill;
       } else if (userType === "ambulance") {
+        if (body.company_name || body.ambulance_service_name) detailPayload.ambulance_service_name = body.company_name || body.ambulance_service_name;
         if (body.ambulance_type) detailPayload.ambulance_type = body.ambulance_type;
+        if (body.registration_number || body.business_reg_number) detailPayload.registration_number = body.registration_number || body.business_reg_number;
+        if (body.contact_number) detailPayload.contact_number = body.contact_number;
+        if (body.service_area) detailPayload.service_area = body.service_area;
+        if (body.address || body.business_address) detailPayload.address = body.address || body.business_address;
+        if (body.vehicle_number) detailPayload.vehicle_number = body.vehicle_number;
         if (body.base_chrge) detailPayload.base_chrge = body.base_chrge;
         if (body.min_chrge) detailPayload.min_chrge = body.min_chrge;
         if (body.night_chrg) detailPayload.night_chrg = body.night_chrg;
@@ -2256,9 +2348,16 @@ app.put(
         if (body.driver_exp) detailPayload.driver_exp = body.driver_exp;
         if (body.status) detailPayload.status = body.status;
         if (body.eta) detailPayload.eta = body.eta;
-        if (req.files["lic"]?.[0]?.filename) detailPayload.lic = req.files["lic"][0].filename;
-        if (req.files["rc"]?.[0]?.filename) detailPayload.rc = req.files["rc"][0].filename;
-        if (req.files["veh_ins"]?.[0]?.filename) detailPayload.veh_ins = req.files["veh_ins"][0].filename;
+        const licFile = getFile("lic") || getFile("driver_license");
+        if (licFile) detailPayload.lic = licFile;
+        const rcFile = getFile("rc") || getFile("ambulance_registration_rc") || getFile("business_reg_cert");
+        if (rcFile) detailPayload.rc = rcFile;
+        const vehIns = getFile("veh_ins") || getFile("vehicle_insurance");
+        if (vehIns) detailPayload.veh_ins = vehIns;
+        const fitCert = getFile("vehicle_fitness_certificate");
+        if (fitCert) detailPayload.vehicle_fitness_certificate = fitCert;
+        const bizProof = getFile("business_registration_proof") || getFile("vendor_address_proof");
+        if (bizProof) detailPayload.business_registration_proof = bizProof;
       } else if (userType === "lab test" || userType === "lab") {
         if (body.lab_name) detailPayload.lab_name = body.lab_name;
         if (body.address) detailPayload.address = body.address;
@@ -2273,8 +2372,10 @@ app.put(
         if (body.test_price) detailPayload.test_price = body.test_price;
         if (body.emergency_test) detailPayload.emergency_test = body.emergency_test;
         if (body.adv_equipment) detailPayload.adv_equipment = body.adv_equipment;
-        if (req.files["lab_reg"]?.[0]?.filename) detailPayload.lab_reg = req.files["lab_reg"][0].filename;
-        if (req.files["nabl"]?.[0]?.filename) detailPayload.nabl = req.files["nabl"][0].filename;
+        const labReg = getFile("lab_reg") || getFile("hospital_reg_certificate");
+        if (labReg) detailPayload.lab_reg = labReg;
+        const nablDoc = getFile("nabl") || getFile("nabl_certificate");
+        if (nablDoc) detailPayload.nabl = nablDoc;
       } else if (userType === "insurance") {
         if (body.comp_name) detailPayload.comp_name = body.comp_name;
         if (body.comp_type) detailPayload.comp_type = body.comp_type;
@@ -2292,8 +2393,10 @@ app.put(
         if (body.website) detailPayload.website = body.website;
         if (body.ins_price) detailPayload.ins_price = body.ins_price;
         if (body.claim_price) detailPayload.claim_price = body.claim_price;
-        if (req.files["incorp_cert"]?.[0]?.filename) detailPayload.incorp_cert = req.files["incorp_cert"][0].filename;
-        if (req.files["add_proof"]?.[0]?.filename) detailPayload.add_proof = req.files["add_proof"][0].filename;
+        const incorpCert = getFile("incorp_cert") || getFile("company_registration_cert");
+        if (incorpCert) detailPayload.incorp_cert = incorpCert;
+        const addProof = getFile("add_proof");
+        if (addProof) detailPayload.add_proof = addProof;
       } else if (userType === "medicines") {
         if (body.pharm_name) detailPayload.pharm_name = body.pharm_name;
         if (body.owner_name) detailPayload.owner_name = body.owner_name;
@@ -2305,10 +2408,14 @@ app.put(
         if (body.phar_counc_reg) detailPayload.phar_counc_reg = body.phar_counc_reg;
         if (body.shop_hrs) detailPayload.shop_hrs = body.shop_hrs;
         if (body.avlblty) detailPayload.avlblty = body.avlblty;
-        if (req.files["drug_lic"]?.[0]?.filename) detailPayload.drug_lic = req.files["drug_lic"][0].filename;
-        if (req.files["address_proof"]?.[0]?.filename) detailPayload.address_proof = req.files["address_proof"][0].filename;
-        if (req.files["gst_cer"]?.[0]?.filename) detailPayload.gst_cer = req.files["gst_cer"][0].filename;
-        if (req.files["pharm_cer"]?.[0]?.filename) detailPayload.pharm_cer = req.files["pharm_cer"][0].filename;
+        const drugLic = getFile("drug_lic") || getFile("drug_license_doc");
+        if (drugLic) detailPayload.drug_lic = drugLic;
+        const addProof = getFile("address_proof");
+        if (addProof) detailPayload.address_proof = addProof;
+        const gstCer = getFile("gst_cer") || getFile("gst_certificate");
+        if (gstCer) detailPayload.gst_cer = gstCer;
+        const pharmCer = getFile("pharm_cer") || getFile("pharmacist_registration_cert");
+        if (pharmCer) detailPayload.pharm_cer = pharmCer;
       } else if (userType === "medical equipments" || userType === "medical equipment") {
         if (body.ven_bus_name) detailPayload.ven_bus_name = body.ven_bus_name;
         if (body.owner_name) detailPayload.owner_name = body.owner_name;
@@ -2316,9 +2423,12 @@ app.put(
         if (body.description) detailPayload.description = body.description;
         if (body.address) detailPayload.address = body.address;
         if (body.location) detailPayload.location = body.location;
-        if (req.files["address_proof"]?.[0]?.filename) detailPayload.address_proof = req.files["address_proof"][0].filename;
-        if (req.files["qual_cer"]?.[0]?.filename) detailPayload.qual_cer = req.files["qual_cer"][0].filename;
-        if (req.files["app_comp"]?.[0]?.filename) detailPayload.app_comp = req.files["app_comp"][0].filename;
+        const addProof = getFile("address_proof");
+        if (addProof) detailPayload.address_proof = addProof;
+        const qualCer = getFile("qual_cer");
+        if (qualCer) detailPayload.qual_cer = qualCer;
+        const appComp = getFile("app_comp") || getFile("manufacturer_authorization");
+        if (appComp) detailPayload.app_comp = appComp;
       }
 
       if (Object.keys(detailPayload).length > 0) {
@@ -2383,13 +2493,7 @@ app.put(
       res.json({
         success: true,
         message: "Profile updated successfully",
-        user: {
-          id: user.id,
-          name: user.name,
-          users_type: user.users_type,
-          emailorcontact: user.emailorcontact,
-          profile_photo: user.profile_photo,
-        },
+        user: user,
         details: detailsRows[0] || null,
       });
     } catch (error) {
@@ -2793,11 +2897,15 @@ app.get("/api/ambulances", async (req, res) => {
     const userId = req.session.user.id;
     const [ambulances] = await pool.query(
       `
-                    SELECT *
-                    FROM ambulances
-                    WHERE users_id = ?
-                    ORDER BY id DESC
-                    `,
+      SELECT ambulances.*,
+             COALESCE(d.driver_name, d2.driver_name) AS driver_name,
+             COALESCE(ambulances.assigned_driver_id, d2.id) AS assigned_driver_id
+      FROM ambulances
+      LEFT JOIN ambulance_drivers d ON ambulances.assigned_driver_id = d.id
+      LEFT JOIN ambulance_drivers d2 ON d2.assigned_ambulance_id = ambulances.id
+      WHERE ambulances.users_id = ?
+      ORDER BY ambulances.id DESC
+      `,
       [userId],
     );
     res.json({

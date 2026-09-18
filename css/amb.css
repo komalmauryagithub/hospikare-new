@@ -928,19 +928,128 @@ select{
     
 }
 
+#ambulanceTableContainer,
+.availabilityTableContainer,
+.bookingsTableContainer,
+.paymentsTableContainer,
+.dashboardTableBox{
+    overflow-x:auto;
+    -webkit-overflow-scrolling:touch;
+}
+
+#ambulanceTable,
+.availabilityTable,
+.bookingsTable,
+.paymentsTable,
+.dashboardTable{
+    min-width:900px;
+}
+
+/* =========================================
+   RESPONSIVE NAVBAR (320px → 4K)
+========================================= */
+
+
+
+
+
+#centerNavbar::-webkit-scrollbar{
+    display:none;
+}
+
+
+
+/* =========================================
+   LARGE DESKTOP (1920px+)
+========================================= */
+
+@media (min-width:1921px){
+
+    
+
+    
+
+    
+
+    
+}
+
+/* =========================================
+   LAPTOP (1024px - 1440px)
+========================================= */
+
+@media (max-width:1440px){
+
+    
+
+    
+
+    
+}
+
+/* =========================================
+   TABLET (768px - 1023px)
+========================================= */
+
+@media (max-width:1023px){
+
+    
+
+    
+
+    
+
+    
+
+    
+}
+
+/* =========================================
+   MOBILE (480px - 767px)
+========================================= */
+
+@media (max-width:767px){
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+}
+
+/* =========================================
+   SMALL MOBILE (380px - 479px)
+========================================= */
+
+@media (max-width:479px){
+
+    
+
+    
+
+    
+
+    
+
+    
+}
+
 /* =========================================
    EXTRA SMALL (320px - 379px)
 ========================================= */
 
-@media (max-width:379px){
-
-    
-
-    
-
-    
-
-    
-
-    
+#assigned_ambulance_id option:disabled {
+    color: var(--text-muted, #94a3b8) !important;
+    opacity: 0.55 !important;
+    cursor: not-allowed !important;
 }

@@ -58,15 +58,9 @@ async function fillProfileForm(profile, details = {}) {
         }
     }
 }
-function openProfileModal() {
-    const modal = document.getElementById("profileModal");
-    if (modal) modal.style.display = "flex";
-}
 
-function closeProfileModal() {
-    const modal = document.getElementById("profileModal");
-    if (modal) modal.style.display = "none";
-}
+
+
 
 let currentVendorName = "Vendor";
 
@@ -1402,3 +1396,102 @@ window.addEventListener("hk-theme-change", () => {
         loadDashboard();
     }
 });
+
+
+// ====== NEW PROFILE FLOW LOGIC ======
+function openProfileModal() {
+    const modal = document.getElementById("profileModalBox") || document.getElementById("profileModal");
+    if (modal) modal.style.display = "flex";
+    
+    // Fetch entities to populate the dropdown
+    const entityType = document.getElementById('profileEntityType')?.value;
+    if (entityType) {
+        fetch('/api/vendor/my-entities/' + entityType)
+            .then(res => res.json())
+            .then(data => {
+                if (data.success && data.data) {
+                    const select = document.getElementById('entitySelect');
+                    if (select) {
+                        select.innerHTML = '<option value="">Select Insurance Company...</option>';
+                        data.data.forEach(ent => {
+                            if (!ent.profile_completed) {
+                                select.innerHTML += '<option value="' + ent.id + '">' + ent.name + '</option>';
+                            }
+                        });
+                        
+                          if (select.options.length === 1) {
+                              select.innerHTML = '<option value="">All profiles completed or no entities added.</option>';
+                          }
+                          
+                          // Auto-fill form when entity is selected
+                          select.addEventListener('change', async (e) => {
+                              const entityId = e.target.value;
+                              if (!entityId) return;
+                              try {
+                                  const res = await fetch('/api/vendor/entity-details/' + entityType + '/' + entityId);
+                                  const result = await res.json();
+                                  if (result.success && result.data) {
+                                      const form = document.getElementById('vendorProfileForm');
+                                      for (const key in result.data) {
+                                          const input = form.querySelector('[name="' + key + '"]');
+                                          if (input && result.data[key]) {
+                                              input.value = result.data[key];
+                                          }
+                                      }
+                                  }
+                              } catch(err) { console.error(err); }
+                          });
+
+                    }
+                }
+            });
+    }
+}
+
+function closeProfileModal() {
+    const modal = document.getElementById("profileModalBox") || document.getElementById("profileModal");
+    if (modal) modal.style.display = "none";
+}
+
+document.getElementById('vendorProfileForm')?.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const form = event.target;
+    const entityId = document.getElementById('entitySelect')?.value;
+    const entityType = document.getElementById('profileEntityType')?.value;
+    
+    if (!entityId) {
+        alert('Please select an entity first.');
+        return;
+    }
+    
+    const formData = new FormData(form);
+    
+    const submitBtn = document.getElementById('saveProfileBtn');
+    if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerText = 'Saving...';
+    }
+
+    try {
+        const response = await fetch('/api/vendor/complete-profile/' + entityType + '/' + entityId, { 
+            method: 'POST', 
+            body: formData 
+        });
+        const result = await response.json();
+        if (result.success) {
+            alert('Profile completed successfully!');
+            closeProfileModal();
+            form.reset();
+        } else {
+            alert(result.message || 'Profile completion failed');
+        }
+    } catch (e) {
+        alert('An error occurred.');
+    } finally {
+        if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.innerText = 'Save Profile';
+        }
+    }
+});
+// ===================================

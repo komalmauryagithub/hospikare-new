@@ -20,12 +20,12 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" type="text/css" href="/css/admin.css?v=20260917-fix1">
-    <link rel="stylesheet" type="text/css" href="/css/modern-ui.css?v=20260917-fix4">
-    <link rel="stylesheet" type="text/css" href="/css/theme-system.css?v=20260821-v6">
-    <link rel="stylesheet" type="text/css" href="/css/enhancements.css?v=20260821-v6">
+    <link rel="stylesheet" type="text/css" href="/css/admin.css?v=20260917-fix3">
+    <link rel="stylesheet" type="text/css" href="/css/modern-ui.css?v=20260917-fix3">
+    <link rel="stylesheet" type="text/css" href="/css/theme-system.css?v=20260917-fix3">
+    <link rel="stylesheet" type="text/css" href="/css/enhancements.css?v=20260917-fix3">
     <link rel="stylesheet" type="text/css" href="/css/mobile-ui.css?v=20260917-fix3">
-    <link rel="stylesheet" type="text/css" href="/css/mdeq.css?v=20260821-v6">
+    <link rel="stylesheet" type="text/css" href="/css/mdeq.css?v=20260917-fix3">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
@@ -328,42 +328,53 @@
         <button type="button" id="closeProfileModal" style="border:none; background:transparent; font-size:24px; cursor:pointer; color:var(--hk-text-muted, #475569); line-height:1;">×</button>
       </div>
       <form id="vendorProfileForm" enctype="multipart/form-data" style="padding:24px 26px; display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:18px; overflow-y:auto; max-height:calc(90vh - 92px);">
-        <div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Name</label><input type="text" id="profileName" name="name" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px; background:var(--hk-surface, #fff); color:var(--hk-text-main, #101828);" required></div>
-        <div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Email / Contact</label><input type="text" id="profileEmail" name="email_or_contact" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px; background:var(--hk-surface, #fff); color:var(--hk-text-main, #101828);" required></div>
-        <div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">User Type</label><input type="text" readonly id="profileUserType" name="user_type" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px; background:#f1f5f9; color:var(--hk-text-main, #101828); cursor:not-allowed;"></div>
-        <div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Profile Photo</label><input type="file" id="profilePhoto" name="profile_photo" accept="image/*" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px;"></div>
-        <div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Identity Proof</label><input type="file" id="profileIdentity" name="identity_proof" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px;"></div>
-        <div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Bank Account</label><input type="text" id="profileBank" name="bank_account" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px; background:var(--hk-surface, #fff); color:var(--hk-text-main, #101828);"></div>
-        <div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">IFSC Code</label><input type="text" id="profileIfsc" name="ifsc" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px; background:var(--hk-surface, #fff); color:var(--hk-text-main, #101828);"></div>
-        <div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Cancelled Cheque</label><input type="file" id="profileCheque" name="cheque" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px;"></div>
-        <div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Vendor Business Name</label><input type="text" id="profileEquipmentBusiness" name="ven_bus_name" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px; background:var(--hk-surface, #fff); color:var(--hk-text-main, #101828);"></div>
-        <div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Owner Name</label><input type="text" id="profileEquipmentOwner" name="owner_name" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px; background:var(--hk-surface, #fff); color:var(--hk-text-main, #101828);"></div>
-        <div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Business Type</label><input type="text" id="profileEquipmentType" name="business_type" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px; background:var(--hk-surface, #fff); color:var(--hk-text-main, #101828);"></div>
-        <div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Description</label><input type="text" id="profileEquipmentDescription" name="description" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px; background:var(--hk-surface, #fff); color:var(--hk-text-main, #101828);"></div>
-        <div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Address</label><input type="text" id="profileEquipmentAddress" name="address" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px; background:var(--hk-surface, #fff); color:var(--hk-text-main, #101828);"></div>
-        <div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Location</label><input type="text" id="profileEquipmentLocation" name="location" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px; background:var(--hk-surface, #fff); color:var(--hk-text-main, #101828);"></div>
-        <div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Address Proof</label><input type="file" id="profileEquipmentAddressProof" name="address_proof" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px;"></div>
-        <div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Qualification Certificate</label><input type="file" id="profileEquipmentQualCert" name="qual_cer" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px;"></div>
-        <div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Approval Compliance</label><input type="file" id="profileEquipmentApproval" name="app_comp" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px;"></div>
-        
-        
-        <div style="grid-column:1 / -1; display:flex; justify-content:flex-end; gap:12px; margin-top:8px;" id="profileModalActionButtons">
-          <button type="button" id="closeProfileBtn" style="padding:10px 18px; border:1px solid var(--hk-border, #cbd5e1); background:var(--hk-surface, #fff); border-radius:10px; cursor:pointer; color:var(--hk-text-main, #101828); font-weight:600;">Close</button>
-          <button type="button" id="enableProfileEditBtn" style="padding:10px 18px; border:none; background:var(--hk-primary-blue, #3b82f6); color:#fff; border-radius:10px; cursor:pointer; font-weight:600;"><i class="fa-solid fa-pen"></i> Edit</button>
-          <button type="button" id="cancelProfileEdit" style="display:none; padding:10px 18px; border:1px solid var(--hk-border, #cbd5e1); background:var(--hk-surface, #fff); border-radius:10px; cursor:pointer; color:var(--hk-text-main, #101828); font-weight:600;">Cancel</button>
-          <button type="submit" id="saveProfileBtn" style="display:none; padding:10px 18px; border:none; background:var(--hk-primary-blue, #2563eb); color:#fff; border-radius:10px; cursor:pointer; font-weight:600;">Save Profile</button>
-        </div>
-      </form>
+        <input type="hidden" id="profileEntityType" value="equipment_source">
+        <div style="grid-column:1/-1; display:flex; flex-direction:column; gap:8px;">
+            <label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Select Medical Equipment Source to Complete Profile</label>
+            <select id="entitySelect" name="entity_id" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px; background:var(--hk-surface, #fff); color:var(--hk-text-main, #101828);" required>
+                <option value="">Select Medical Equipment Source...</option>
+            </select>
+        </div><div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Business Registration Number</label><input type="text" name="business_registration_number" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px; background:var(--hk-surface, #fff); color:var(--hk-text-main, #101828);" required></div><div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Address</label><input type="text" name="address" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px; background:var(--hk-surface, #fff); color:var(--hk-text-main, #101828);" required></div><div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Contact Number</label><input type="text" name="contact_number" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px; background:var(--hk-surface, #fff); color:var(--hk-text-main, #101828);" required></div><div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Equipment Category</label><input type="text" name="equipment_category" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px; background:var(--hk-surface, #fff); color:var(--hk-text-main, #101828);" required></div><div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Sale / Rental</label><input type="text" name="sale_rental" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px; background:var(--hk-surface, #fff); color:var(--hk-text-main, #101828);" required></div><div style="grid-column:1/-1; margin-top:10px;"><h4 style="margin:0; font-size:15px; color:var(--hk-text-main, #101828);">Documents (Upload)</h4></div><div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Business Registration Certificate</label><input type="file" name="business_registration_proof" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px; background:var(--hk-surface, #fff); color:var(--hk-text-main, #101828);" required></div><div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">GST Certificate (if applicable)</label><input type="file" name="gst_certificate" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px; background:var(--hk-surface, #fff); color:var(--hk-text-main, #101828);" required></div><div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">PAN Card</label><input type="file" name="pan_card" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px; background:var(--hk-surface, #fff); color:var(--hk-text-main, #101828);" required></div><div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Authorized Person ID Proof</label><input type="file" name="authorized_person_id_proof" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px; background:var(--hk-surface, #fff); color:var(--hk-text-main, #101828);" required></div><div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Manufacturer/Distributor Authorization (if applicable)</label><input type="file" name="manufacturer_authorization" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px; background:var(--hk-surface, #fff); color:var(--hk-text-main, #101828);" required></div><div style="grid-column:1 / -1; display:flex; justify-content:flex-end; gap:12px; margin-top:8px;" id="profileModalActionButtons">
+        <button type="button" id="closeProfileBtn" style="padding:10px 18px; border:1px solid var(--hk-border, #cbd5e1); background:var(--hk-surface, #fff); border-radius:10px; cursor:pointer; color:var(--hk-text-main, #101828); font-weight:600;" onclick="document.getElementById('profileModalBox').style.display='none'">Close</button>
+        <button type="submit" id="saveProfileBtn" style="padding:10px 18px; border:none; background:var(--hk-primary-blue, #2563eb); color:#fff; border-radius:10px; cursor:pointer; font-weight:600;">Save Profile</button>
+    </div>
+    </form>
     </div>
   </div>
 
-<script src="/js/vendor-dashboard-ui.js?v=20260821-v6"></script>
-<script src="/js/vendor-panel-controls.js?v=20260821-v6"></script>
-<script src="/js/mdeq.js?v=20260821-v6"></script>
-<script src="/js/sidebar-toggle.js?v=20260821-v6"></script>
-  <script src="/js/ui-interactions.js?v=20260821-v6"></script>
+<script src="/js/vendor-dashboard-ui.js?v=20260917-fix3"></script>
+<script src="/js/vendor-panel-controls.js?v=20260917-fix3"></script>
+<script src="/js/mdeq.js?v=20260917-fix3"></script>
+<script src="/js/sidebar-toggle.js?v=20260917-fix3"></script>
+  <script src="/js/ui-interactions.js?v=20260917-fix3"></script>
+<div id="sourceModalBox" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:9999; justify-content:center; align-items:center;">
+        <div style="background:var(--hk-surface, white); padding:24px; border-radius:12px; width:400px; max-width:90%; color:var(--hk-text-main, black);">
+            <h3 style="margin-top:0;">Add Equipment Source</h3>
+            <form id="sourceForm" onsubmit="event.preventDefault(); fetch('/api/vendor/add-equipment-source-basic', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({business_name:this.business_name.value, source_type:this.source_type.value})}).then(()=>location.reload())">
+                <input type="text" name="business_name" placeholder="Business Name" style="width:100%; margin-bottom:10px; padding:8px;" required>
+                <select name="source_type" style="width:100%; margin-bottom:10px; padding:8px;" required>
+                    <option value="">Select Type</option>
+                    <option value="Manufacturer">Manufacturer</option>
+                    <option value="Distributor">Distributor</option>
+                    <option value="Hospital">Hospital/Clinic</option>
+                    <option value="Government">Government Agency</option>
+                    <option value="Dealer">Dealer</option>
+                </select>
+                <button type="submit" style="padding:10px; width:100%; background:#2563eb; color:white; border:none; border-radius:8px;">Add</button>
+                <button type="button" onclick="document.getElementById('sourceModalBox').style.display='none'" style="padding:10px; width:100%; margin-top:10px;">Cancel</button>
+            </form>
+        </div>
+    </div>
+    <script>document.getElementById('addSourceBtn')?.addEventListener('click', () => document.getElementById('sourceModalBox').style.display='flex');</script>
 </body>
 </html>
+
+
+
+
+
+
+
 
 
 

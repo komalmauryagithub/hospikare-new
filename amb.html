@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -20,12 +20,12 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" type="text/css" href="/css/admin.css?v=20260917-fix1">
-    <link rel="stylesheet" type="text/css" href="/css/modern-ui.css?v=20260917-fix4">
-    <link rel="stylesheet" type="text/css" href="/css/theme-system.css?v=20260821-v6">
-    <link rel="stylesheet" type="text/css" href="/css/enhancements.css?v=20260821-v6">
-    <link rel="stylesheet" type="text/css" href="/css/mobile-ui.css?v=20260917-fix3">
-    <link rel="stylesheet" type="text/css" href="/css/amb.css?v=20260821-v6">
+    <link rel="stylesheet" type="text/css" href="/css/admin.css?v=20260918-fix26">
+    <link rel="stylesheet" type="text/css" href="/css/modern-ui.css?v=20260918-fix26">
+    <link rel="stylesheet" type="text/css" href="/css/theme-system.css?v=20260918-fix26">
+    <link rel="stylesheet" type="text/css" href="/css/enhancements.css?v=20260918-fix26">
+    <link rel="stylesheet" type="text/css" href="/css/mobile-ui.css?v=20260918-fix26">
+    <link rel="stylesheet" type="text/css" href="/css/amb.css?v=20260918-fix26">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
@@ -46,6 +46,11 @@
           </div>
 
           <div class="menu-category">AMBULANCE MANAGEMENT</div>
+          
+          <div class="menuItem" id="driversBtn" data-section="drivers">
+              <i class="fa-solid fa-id-card"></i>
+              <span>Drivers</span>
+          </div>
           <div class="menuItem" id="ambulancesBtn" data-section="ambulances">
               <i class="fa-solid fa-truck-medical"></i>
               <span>Ambulances</span>
@@ -188,6 +193,42 @@
       </nav>
 
       <main id="mainContent">
+
+        
+        <!-- ================= DRIVERS ================= -->
+        <div id="driversSection" style="display: none;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+                <h2 style="font-size: 20px; font-weight: 700; color: var(--text-dark);">Manage Drivers</h2>
+                <div style="display: flex; gap: 12px;">
+                    <button id="addDriverSectionBtn" style="background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); color: #ffffff !important; padding: 10px 18px; border-radius: 8px; border: none; font-weight: 600; font-size: 13.5px; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.28);">
+                        <i class="fa-solid fa-plus"></i> Add Driver
+                    </button>
+                </div>
+            </div>
+            
+            <div class="modern-card">
+                <div style="padding: 16px 20px; border-bottom: 1px solid var(--border-light); display: flex; justify-content: space-between; align-items: center;">
+                    <h3 style="font-size: 15px; font-weight: 600; color: var(--text-dark); margin: 0;">Driver Directory</h3>
+                </div>
+                <div class="table-responsive">
+                    <table class="adminTable">
+                        <thead>
+                            <tr>
+                                <th style="width: 60px;">Photo</th>
+                                <th>Name & ID</th>
+                                <th>Contact</th>
+                                <th>Status</th>
+                                <th>Assigned Ambulance</th>
+                                <th style="text-align: center; width: 120px;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="driversTableBody">
+                            <!-- Populated dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
 
         <!-- ================= DASHBOARD ================= -->
         <div id="dashboardSection">
@@ -336,8 +377,8 @@
         <div id="ambulanceSection" style="display:none;">
             <div class="table-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; flex-wrap:wrap; gap:16px;">
                 <div>
-                    <h2 style="font-family:var(--font-heading); font-size:24px; font-weight:800; color:var(--hk-text-main); margin:0 0 4px;">Emergency Ambulances Fleet</h2>
-                    <p style="margin:0; font-size:13px; color:var(--hk-text-muted);">Manage your active ambulance fleet vehicles, emergency tiers, and regional base locations</p>
+                    <h2 style="font-family:var(--font-heading); font-size:24px; font-weight:800; color:var(--hk-text-main); margin:0 0 4px;">Manage Ambulances</h2>
+                    <p style="margin:0; font-size:13px; color:var(--hk-text-muted);">Manage your ambulance fleet - add, edit and track all vehicles</p>
                 </div>
                 <button id="addAmbulanceBtn" class="add-btn">
                     <i class="fa-solid fa-plus"></i> Add Ambulance
@@ -348,8 +389,9 @@
                     <thead>
                         <tr>
                             <th>ID</th>
-                            <th>Type</th>
-                            <th>Base Charge</th>
+                              <th>Type</th>
+                              <th>Reg. No</th>
+                              <th>Base Charge</th>
                             <th>Per KM</th>
                             <th>Night Charge</th>
                             <th>Status</th>
@@ -491,12 +533,25 @@
                       
                       <div style="display: flex; flex-direction: column; gap: 8px;">
                           <label style="font-size: 13px; font-weight: 600; color: var(--text-muted);">Ambulance Type</label>
-                          <select id="ambulance_type" class="top-search" style="border-radius: var(--rounded-sm);">
-                              <option>Basic</option>
-                              <option>ICU</option>
-                              <option>Oxygen Supported</option>
-                          </select>
-                      </div>
+                          
+                            <select id="ambulance_type" class="top-search" style="border-radius: var(--rounded-sm);" required>
+                                <option value="">Select Ambulance Type...</option>
+                                <option value="Basic Life Support (BLS)">Basic Life Support (BLS)</option>
+                                <option value="Advanced Life Support (ALS)">Advanced Life Support (ALS)</option>
+                                <option value="ICU Ambulance">ICU Ambulance</option>
+                                <option value="Patient Transport Ambulance">Patient Transport Ambulance</option>
+                                <option value="Neonatal Ambulance">Neonatal Ambulance</option>
+                                <option value="Mortuary Ambulance">Mortuary Ambulance</option>
+                                <option value="Other">Other</option>
+</select>
+                        </div>
+                        
+                        <div style="display: flex; flex-direction: column; gap: 8px;">
+                            <label style="font-size: 13px; font-weight: 600; color: var(--text-muted);">Vehicle Registration No.</label>
+                            <input type="text" id="vehicle_number" class="top-search" style="border-radius: var(--rounded-sm);" placeholder="e.g. MH 01 AB 1234">
+                          </div>
+                          
+                          
                       
                       <div style="display: flex; flex-direction: column; gap: 8px;">
                           <label style="font-size: 13px; font-weight: 600; color: var(--text-muted);">Base Charge per KM</label>
@@ -556,15 +611,9 @@
                           <input type="file" id="rc" style="font-size: 13px;">
                       </div>
                       
-                      <div style="display: flex; flex-direction: column; gap: 8px;">
-                          <label style="font-size: 13px; font-weight: 600; color: var(--text-muted);">Driver Experience</label>
-                          <input type="text" id="driver_exp" class="top-search" style="border-radius: var(--rounded-sm);">
-                      </div>
                       
-                      <div style="display: flex; flex-direction: column; gap: 8px;">
-                          <label style="font-size: 13px; font-weight: 600; color: var(--text-muted);">Vehicle Insurance</label>
-                          <input type="file" id="veh_ins" style="font-size: 13px;">
-                      </div>
+                      
+                      
                   </div>
                   
                   <button type="submit" id="saveAmbulanceBtn" class="btn-base" style="width: 100%; background-color: var(--sidebar-active-bg); color: white; justify-content: center; padding: 12px; font-size: 15px;">
@@ -654,54 +703,212 @@
 
   <!-- VENDOR PROFILE MODAL -->
   <div id="profileModal" style="display:none; position:fixed; inset:0; background:rgba(7,26,61,0.75); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); z-index:999999; align-items:center; justify-content:center; padding:20px; overflow-y:auto;">
-    <div style="width:min(720px, 100%); max-height:90vh; background:var(--hk-card-bg, #fff); border-radius:20px; box-shadow:0 24px 60px rgba(7,26,61,0.3); overflow:hidden; display:flex; flex-direction:column; border:1px solid var(--hk-border, #e2e8f0);">
-      <div style="display:flex; justify-content:space-between; align-items:center; padding:20px 26px; border-bottom:1px solid var(--hk-divider, #e2e8f0); flex-shrink:0; background:var(--hk-surface-soft, #f8faff);">
+    <div style="width:min(720px, 100%); max-height:90vh; background:var(--card-bg, #fff); border-radius:20px; box-shadow:0 24px 60px rgba(7,26,61,0.3); overflow:hidden; display:flex; flex-direction:column; border:1px solid var(--border-color, #e2e8f0);">
+      <div style="display:flex; justify-content:space-between; align-items:center; padding:20px 26px; border-bottom:1px solid var(--border-color, #e2e8f0); flex-shrink:0; background:var(--card-bg, #f8faff);">
         <div>
-          <h3 style="margin:0; font-size:20px; font-weight:800; font-family:var(--font-heading); color:var(--hk-text-main, #0f172a);">Profile Details</h3>
-          <p style="margin:2px 0 0; font-size:12.5px; color:var(--hk-text-muted, #64748b);">Manage your ambulance fleet credentials, licenses, and charges</p>
+          <h3 id="profileModalTitle" style="margin:0; font-size:20px; font-weight:800; font-family:var(--font-heading); color:var(--text-main, #0f172a);">Ambulance Vendor Profile</h3>
+          <p id="profileModalSubtitle" style="margin:2px 0 0; font-size:12.5px; color:var(--text-muted, #64748b);">Manage your agency business credentials and verification documents</p>
         </div>
-        <button type="button" id="closeProfileModal" style="border:none; background:transparent; font-size:24px; cursor:pointer; color:var(--hk-text-muted, #475569); line-height:1;">×</button>
+        <button type="button" id="closeProfileModal" style="border:none; background:transparent; font-size:24px; cursor:pointer; color:var(--text-muted, #475569); line-height:1;" onclick="closeProfileModal()">×</button>
       </div>
       <form id="vendorProfileForm" enctype="multipart/form-data" style="padding:24px 26px; display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:18px; overflow-y:auto; max-height:calc(90vh - 92px);">
-        <div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Name</label><input type="text" id="profileName" name="name" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px; background:var(--hk-surface, #fff); color:var(--hk-text-main, #101828);" required></div>
-        <div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Email / Contact</label><input type="text" id="profileEmail" name="email_or_contact" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px; background:var(--hk-surface, #fff); color:var(--hk-text-main, #101828);" required></div>
-        <div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">User Type</label><input type="text" readonly id="profileUserType" name="user_type" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px; background:#f1f5f9; color:var(--hk-text-main, #101828); cursor:not-allowed;"></div>
-        <div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Profile Photo</label><input type="file" id="profilePhoto" name="profile_photo" accept="image/*" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px;"></div>
-        <div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Identity Proof</label><input type="file" id="profileIdentity" name="identity_proof" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px;"></div>
-        <div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Bank Account</label><input type="text" id="profileBank" name="bank_account" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px; background:var(--hk-surface, #fff); color:var(--hk-text-main, #101828);"></div>
-        <div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">IFSC Code</label><input type="text" id="profileIfsc" name="ifsc" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px; background:var(--hk-surface, #fff); color:var(--hk-text-main, #101828);"></div>
-        <div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Cancelled Cheque</label><input type="file" id="profileCheque" name="cheque" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px;"></div>
+        <input type="hidden" name="is_vendor_profile" value="1">
+        <div id="profileStatusBannerContainer" style="grid-column:1/-1;"></div>
         
+        <div style="display:flex; flex-direction:column; gap:8px;">
+            <label style="font-size:13px; font-weight:600; color:var(--text-muted, #334155);">Ambulance Agency / Company Name *</label>
+            <input type="text" name="company_name" style="padding:10px 12px; border:1px solid var(--border-color, #cbd5e1); border-radius:10px; background:var(--card-bg, #fff); color:var(--text-main, #101828);" required>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:8px;">
+            <label style="font-size:13px; font-weight:600; color:var(--text-muted, #334155);">Owner / Contact Person Name *</label>
+            <input type="text" name="name" style="padding:10px 12px; border:1px solid var(--border-color, #cbd5e1); border-radius:10px; background:var(--card-bg, #fff); color:var(--text-main, #101828);" required>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:8px;">
+            <label style="font-size:13px; font-weight:600; color:var(--text-muted, #334155);">Business Registration / Trade License No *</label>
+            <input type="text" name="business_reg_number" style="padding:10px 12px; border:1px solid var(--border-color, #cbd5e1); border-radius:10px; background:var(--card-bg, #fff); color:var(--text-main, #101828);" required>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:8px;">
+            <label style="font-size:13px; font-weight:600; color:var(--text-muted, #334155);">Emergency Contact Number *</label>
+            <input type="text" name="contact_number" style="padding:10px 12px; border:1px solid var(--border-color, #cbd5e1); border-radius:10px; background:var(--card-bg, #fff); color:var(--text-main, #101828);" required>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:8px;">
+            <label style="font-size:13px; font-weight:600; color:var(--text-muted, #334155);">Official Email Address *</label>
+            <input type="email" name="email" style="padding:10px 12px; border:1px solid var(--border-color, #cbd5e1); border-radius:10px; background:var(--card-bg, #fff); color:var(--text-main, #101828);" required>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:8px;">
+            <label style="font-size:13px; font-weight:600; color:var(--text-muted, #334155);">Service Coverage Area / Cities *</label>
+            <input type="text" name="service_area" style="padding:10px 12px; border:1px solid var(--border-color, #cbd5e1); border-radius:10px; background:var(--card-bg, #fff); color:var(--text-main, #101828);" required>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:8px;">
+            <label style="font-size:13px; font-weight:600; color:var(--text-muted, #334155);">24x7 Emergency Service Availability *</label>
+            <select name="service_24x7" style="padding:10px 12px; border:1px solid var(--border-color, #cbd5e1); border-radius:10px; background:var(--card-bg, #fff); color:var(--text-main, #101828);" required>
+                <option value="Yes">Yes (24 Hours Available)</option>
+                <option value="No">No (Specific Operating Hours)</option>
+            </select>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:8px;">
+            <label style="font-size:13px; font-weight:600; color:var(--text-muted, #334155);">Business / Garage Address *</label>
+            <input type="text" name="business_address" style="padding:10px 12px; border:1px solid var(--border-color, #cbd5e1); border-radius:10px; background:var(--card-bg, #fff); color:var(--text-main, #101828);" required>
+        </div>
         
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
+        <div style="grid-column:1/-1; margin-top:10px; border-top:1px solid var(--border-color, #e2e8f0); padding-top:14px;">
+            <h4 style="margin:0 0 4px 0; font-size:15px; color:var(--text-main, #101828); font-weight:700;"><i class="fa-solid fa-file-shield" style="color:var(--primary, #2563eb); margin-right:6px;"></i> Verification Documents (Upload)</h4>
+            <p style="margin:0; font-size:12px; color:var(--text-muted, #64748b);">Upload documents for vendor account verification.</p>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:8px;">
+            <label style="font-size:13px; font-weight:600; color:var(--text-muted, #334155);">Business Registration / Trade Proof</label>
+            <input type="file" name="business_reg_cert" style="padding:10px 12px; border:1px solid var(--border-color, #cbd5e1); border-radius:10px; background:var(--card-bg, #fff); color:var(--text-main, #101828);">
+        </div>
+        <div style="display:flex; flex-direction:column; gap:8px;">
+            <label style="font-size:13px; font-weight:600; color:var(--text-muted, #334155);">Vendor PAN Card</label>
+            <input type="file" name="pan_card" style="padding:10px 12px; border:1px solid var(--border-color, #cbd5e1); border-radius:10px; background:var(--card-bg, #fff); color:var(--text-main, #101828);">
+        </div>
+        <div style="display:flex; flex-direction:column; gap:8px;">
+            <label style="font-size:13px; font-weight:600; color:var(--text-muted, #334155);">GST Certificate (if applicable)</label>
+            <input type="file" name="gst_cert" style="padding:10px 12px; border:1px solid var(--border-color, #cbd5e1); border-radius:10px; background:var(--card-bg, #fff); color:var(--text-main, #101828);">
+        </div>
+        <div style="display:flex; flex-direction:column; gap:8px;">
+            <label style="font-size:13px; font-weight:600; color:var(--text-muted, #334155);">Authorized Person ID Proof (Aadhaar/Passport)</label>
+            <input type="file" name="auth_person_id" style="padding:10px 12px; border:1px solid var(--border-color, #cbd5e1); border-radius:10px; background:var(--card-bg, #fff); color:var(--text-main, #101828);">
+        </div>
+        <div style="display:flex; flex-direction:column; gap:8px; grid-column:span 2;">
+            <label style="font-size:13px; font-weight:600; color:var(--text-muted, #334155);">Garage / Business Address Proof (Electricity Bill / Lease)</label>
+            <input type="file" name="vendor_address_proof" style="padding:10px 12px; border:1px solid var(--border-color, #cbd5e1); border-radius:10px; background:var(--card-bg, #fff); color:var(--text-main, #101828);">
+        </div>
         <div style="grid-column:1 / -1; display:flex; justify-content:flex-end; gap:12px; margin-top:8px;" id="profileModalActionButtons">
-          <button type="button" id="closeProfileBtn" style="padding:10px 18px; border:1px solid var(--hk-border, #cbd5e1); background:var(--hk-surface, #fff); border-radius:10px; cursor:pointer; color:var(--hk-text-main, #101828); font-weight:600;">Close</button>
-          <button type="button" id="enableProfileEditBtn" style="padding:10px 18px; border:none; background:var(--hk-primary-blue, #3b82f6); color:#fff; border-radius:10px; cursor:pointer; font-weight:600;"><i class="fa-solid fa-pen"></i> Edit</button>
-          <button type="button" id="cancelProfileEdit" style="display:none; padding:10px 18px; border:1px solid var(--hk-border, #cbd5e1); background:var(--hk-surface, #fff); border-radius:10px; cursor:pointer; color:var(--hk-text-main, #101828); font-weight:600;">Cancel</button>
-          <button type="submit" id="saveProfileBtn" style="display:none; padding:10px 18px; border:none; background:var(--hk-primary-blue, #2563eb); color:#fff; border-radius:10px; cursor:pointer; font-weight:600;">Save Profile</button>
+            <button type="button" id="closeProfileBtn" style="padding:10px 18px; border:1px solid var(--border-color, #cbd5e1); background:var(--card-bg, #fff); border-radius:10px; cursor:pointer; color:var(--text-main, #101828); font-weight:600;" onclick="closeProfileModal()">Close</button>
+            <button type="submit" id="saveProfileBtn" style="padding:10px 18px; border:none; background:var(--primary, #2563eb); color:#fff; border-radius:10px; cursor:pointer; font-weight:600;">Save Profile</button>
         </div>
       </form>
     </div>
   </div>
 
-  <script src="/js/vendor-panel-controls.js?v=20260821-v6"></script>
-  <script src="/js/amb.js?v=20260821-v6"></script>
-  <script src="/js/sidebar-toggle.js?v=20260821-v6"></script>
-  <script src="/js/ui-interactions.js?v=20260821-v6"></script>
+  <!-- DRIVER MODAL -->
+    <div id="driverModal" style="position: fixed; inset: 0; background: rgba(15, 23, 42, 0.6); display: none; justify-content: center; align-items: center; z-index: 1000; padding: 24px; backdrop-filter: blur(4px);">
+        <div style="background: var(--card-bg); border-radius: var(--rounded-lg); width: 100%; max-width: 500px; max-height: 90vh; display: flex; flex-direction: column; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);">
+            <div class="modal-header" style="padding: 20px 24px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;">
+                <h3 style="margin: 0; font-size: 16px; font-weight: 600; font-family: var(--font-heading); color: var(--text-main);" id="driverModalTitle">Add New Driver</h3>
+                <button type="button" class="close-modal" id="closeDriverModal" style="background: transparent; border: none; font-size: 20px; color: var(--text-muted); cursor: pointer;">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <div style="padding: 24px; overflow-y: auto;">
+                <form id="driverCrudForm">
+                    <input type="hidden" id="driver_id">
+                    <div style="display: flex; flex-direction: column; gap: 16px;">
+                        
+                        <div style="display: flex; gap: 16px;">
+                            <div style="flex: 1; display: flex; flex-direction: column; gap: 8px;">
+                                <label style="font-size: 13px; font-weight: 600; color: var(--text-muted);">Driver Name *</label>
+                                <input type="text" id="driver_name" required class="top-search" style="border-radius: var(--rounded-sm); width: 100%;">
+                            </div>
+                            <div style="flex: 1; display: flex; flex-direction: column; gap: 8px;">
+                                <label style="font-size: 13px; font-weight: 600; color: var(--text-muted);">Driver ID / Emp ID</label>
+                                <input type="text" id="driver_id_str" class="top-search" style="border-radius: var(--rounded-sm); width: 100%;">
+                            </div>
+                        </div>
+
+                        <div style="display: flex; gap: 16px;">
+                            <div style="flex: 1; display: flex; flex-direction: column; gap: 8px;">
+                                <label style="font-size: 13px; font-weight: 600; color: var(--text-muted);">Mobile Number *</label>
+                                <input type="text" id="driver_mobile" required class="top-search" style="border-radius: var(--rounded-sm); width: 100%;">
+                            </div>
+                            <div style="flex: 1; display: flex; flex-direction: column; gap: 8px;">
+                                <label style="font-size: 13px; font-weight: 600; color: var(--text-muted);">Status</label>
+                                <select id="driver_status" class="top-search" style="border-radius: var(--rounded-sm); width: 100%;">
+                                    <option value="Active">Active</option>
+                                    <option value="Inactive">Inactive</option>
+                                    <option value="On Leave">On Leave</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div style="display: flex; flex-direction: column; gap: 8px;">
+                            <label style="font-size: 13px; font-weight: 600; color: var(--text-muted);">Address</label>
+                            <input type="text" id="driver_address" class="top-search" style="border-radius: var(--rounded-sm); width: 100%;">
+                        </div>
+                        
+                        <div style="display: flex; flex-direction: column; gap: 8px;">
+                              <label style="font-size: 13px; font-weight: 600; color: var(--text-muted);">Assign Ambulance (Type & Reg No.)</label>
+                              <div style="font-size: 11.5px; color: var(--text-muted); margin-top: -4px;">Assigned ambulances are shown in muted text and cannot be reselected.</div>
+                              <select id="assigned_ambulance_id" class="top-search" style="border-radius: var(--rounded-sm); width: 100%;">
+                                  <option value="">No Ambulance Assigned</option>
+                              </select>
+                          </div>
+                          
+                          <div style="display: flex; gap: 16px;">
+                              <div style="flex: 1; display: flex; flex-direction: column; gap: 8px;">
+                                  <label style="font-size: 13px; font-weight: 600; color: var(--text-muted);">DL Number</label>
+                                <input type="text" id="driver_dl_number" class="top-search" style="border-radius: var(--rounded-sm); width: 100%;">
+                            </div>
+                            <div style="flex: 1; display: flex; flex-direction: column; gap: 8px;">
+                                <label style="font-size: 13px; font-weight: 600; color: var(--text-muted);">DL Expiry</label>
+                                <input type="date" id="driver_dl_expiry" class="top-search" style="border-radius: var(--rounded-sm); width: 100%; color: var(--text-main);">
+                            </div>
+                        </div>
+                        
+                        <div style="display: flex; flex-direction: column; gap: 16px;">
+                            <div style="display: flex; flex-direction: column; gap: 8px;">
+                                <label style="font-size: 13px; font-weight: 600; color: var(--text-muted);">Profile Photo</label>
+                                <input type="file" id="driver_photo_upload" style="font-size: 13px; color: var(--text-main);">
+                            </div>
+                            <div style="display: flex; flex-direction: column; gap: 8px;">
+                                <label style="font-size: 13px; font-weight: 600; color: var(--text-muted);">DL Document</label>
+                                <input type="file" id="driver_dl_doc_upload" style="font-size: 13px; color: var(--text-main);">
+                            </div>
+                        </div>
+
+                        <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 20px;">
+                            <button type="button" id="cancelDriverBtn" style="padding: 10px 18px; border: 1px solid var(--border-color, #cbd5e1); background: var(--card-bg, #f8fafc); color: var(--text-main, #1e293b); font-weight: 600; font-size: 13.5px; border-radius: 8px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; min-width: 90px; transition: all 0.2s;">Cancel</button>
+                            <button type="submit" id="saveDriverBtn" style="padding: 10px 22px; border: none; background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); color: #ffffff !important; font-weight: 600; font-size: 13.5px; border-radius: 8px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; min-width: 120px; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.28); transition: all 0.2s;">Save Driver</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+  <script src="/js/vendor-panel-controls.js?v=20260918-fix28"></script>
+  <script src="/js/amb.js?v=20260918-fix28"></script>
+  <script src="/js/sidebar-toggle.js?v=20260918-fix28"></script>
+  <script src="/js/ui-interactions.js?v=20260918-fix28"></script>
+
+    
+
+    
+    
+
+
 </body>
 </html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <link rel="icon" type="image/png" href="/assets/logo.png">
@@ -20,12 +20,12 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" type="text/css" href="/css/admin.css?v=20260917-fix1">
-    <link rel="stylesheet" type="text/css" href="/css/modern-ui.css?v=20260917-fix4">
-    <link rel="stylesheet" type="text/css" href="/css/theme-system.css?v=20260821-v6">
-    <link rel="stylesheet" type="text/css" href="/css/enhancements.css?v=20260821-v6">
-    <link rel="stylesheet" type="text/css" href="/css/mobile-ui.css?v=20260917-fix3">
-    <link rel="stylesheet" type="text/css" href="/css/hsp.css?v=20260821-v7">
+    <link rel="stylesheet" type="text/css" href="/css/admin.css?v=20260917-fix8">
+    <link rel="stylesheet" type="text/css" href="/css/modern-ui.css?v=20260917-fix8">
+    <link rel="stylesheet" type="text/css" href="/css/theme-system.css?v=20260917-fix8">
+    <link rel="stylesheet" type="text/css" href="/css/enhancements.css?v=20260917-fix8">
+    <link rel="stylesheet" type="text/css" href="/css/mobile-ui.css?v=20260917-fix8">
+    <link rel="stylesheet" type="text/css" href="/css/hsp.css?v=20260917-fix8">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
@@ -215,7 +215,35 @@
                     <label style="font-size: 13px; font-weight: 600; color: var(--text-muted);">Hospital Name</label>
                     <input type="text" id="hospital_name" placeholder="Enter hospital name" class="top-search" style="border-radius: var(--rounded-sm);">
                 </div>
+                
                 <div style="display: flex; flex-direction: column; gap: 8px;">
+                    <label style="font-size: 13px; font-weight: 600; color: var(--text-muted);">Hospital Type</label>
+                    <select id="add_hospital_type" class="top-search" style="border-radius: var(--rounded-sm);" required>
+                        <option value="">Select Hospital Type...</option>
+                        <option value="General Hospital">General Hospital</option>
+                        <option value="Multi-Specialty Hospital">Multi-Specialty Hospital</option>
+                        <option value="Super-Specialty Hospital">Super-Specialty Hospital</option>
+                        <option value="Specialty Hospital">Specialty Hospital</option>
+                        <option value="Teaching Hospital">Teaching Hospital</option>
+                        <option value="Psychiatric Hospital">Psychiatric Hospital</option>
+                        <option value="Maternity Hospital">Maternity Hospital</option>
+                        <option value="Children's Hospital">Children's Hospital</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 8px;">
+                    <label style="font-size: 13px; font-weight: 600; color: var(--text-muted);">Hospital Ownership</label>
+                    <select id="add_hospital_ownership" class="top-search" style="border-radius: var(--rounded-sm);" required>
+                        <option value="">Select Ownership...</option>
+                        <option value="Government">Government</option>
+                        <option value="Private">Private</option>
+                        <option value="Trust / NGO">Trust / NGO</option>
+                        <option value="Public-Private Partnership (PPP)">Public-Private Partnership (PPP)</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+
+<div style="display: flex; flex-direction: column; gap: 8px;">
                     <label style="font-size: 13px; font-weight: 600; color: var(--text-muted);">Address</label>
                     <input type="text" id="hospital_address" placeholder="Enter full address" class="top-search" style="border-radius: var(--rounded-sm);">
                 </div>
@@ -273,22 +301,10 @@
                     </div>
                 </div>
 
-                <div style="display: flex; flex-direction: column; gap: 8px;">
-                    <label style="font-size: 13px; font-weight: 600; color: var(--text-muted);">Hospital Registration</label>
-                    <input type="file" id="hospital_reg_certificate" style="font-size: 13px;">
-                </div>
-                <div style="display: flex; flex-direction: column; gap: 8px;">
-                    <label style="font-size: 13px; font-weight: 600; color: var(--text-muted);">Shop License</label>
-                    <input type="file" id="shop_license" style="font-size: 13px;">
-                </div>
-                <div style="display: flex; flex-direction: column; gap: 8px;">
-                    <label style="font-size: 13px; font-weight: 600; color: var(--text-muted);">Medical Council Registration</label>
-                    <input type="file" id="medical_council_registration" style="font-size: 13px;">
-                </div>
-                <div style="display: flex; flex-direction: column; gap: 8px;">
-                    <label style="font-size: 13px; font-weight: 600; color: var(--text-muted);">Electricity Bill</label>
-                    <input type="file" id="electricity_bill" style="font-size: 13px;">
-                </div>
+                
+                
+                
+                
             </div>
             <button type="submit" id="saveHospitalBtn" class="btn-base" style="width: 100%; background-color: var(--sidebar-active-bg); color: white; justify-content: center; padding: 12px; font-size: 15px;">
                 Save Hospital
@@ -362,42 +378,41 @@
         <button type="button" id="closeProfileModal" style="border:none; background:transparent; font-size:24px; cursor:pointer; color:var(--hk-text-muted, #475569); line-height:1;">×</button>
       </div>
       <form id="vendorProfileForm" enctype="multipart/form-data" style="padding:24px 26px; display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:18px; overflow-y:auto; max-height:calc(90vh - 92px);">
-        <div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Name</label><input type="text" id="profileName" name="name" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px; background:var(--hk-surface, #fff); color:var(--hk-text-main, #101828);" required></div>
-        <div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Email / Contact</label><input type="text" id="profileEmail" name="email_or_contact" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px; background:var(--hk-surface, #fff); color:var(--hk-text-main, #101828);" required></div>
-        <div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">User Type</label><input type="text" readonly id="profileUserType" name="user_type" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px; background:#f1f5f9; color:var(--hk-text-main, #101828); cursor:not-allowed;"></div>
-        <div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Profile Photo</label><input type="file" id="profilePhoto" name="profile_photo" accept="image/*" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px;"></div>
-        <div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Identity Proof</label><input type="file" id="profileIdentity" name="identity_proof" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px;"></div>
-        <div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Bank Account</label><input type="text" id="profileBank" name="bank_account" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px; background:var(--hk-surface, #fff); color:var(--hk-text-main, #101828);"></div>
-        <div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">IFSC Code</label><input type="text" id="profileIfsc" name="ifsc" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px; background:var(--hk-surface, #fff); color:var(--hk-text-main, #101828);"></div>
-        <div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Cancelled Cheque</label><input type="file" id="profileCheque" name="cheque" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px;"></div>
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        <div style="grid-column:1 / -1; display:flex; justify-content:flex-end; gap:12px; margin-top:8px;" id="profileModalActionButtons">
-          <button type="button" id="closeProfileBtn" style="padding:10px 18px; border:1px solid var(--hk-border, #cbd5e1); background:var(--hk-surface, #fff); border-radius:10px; cursor:pointer; color:var(--hk-text-main, #101828); font-weight:600;">Close</button>
-          <button type="button" id="enableProfileEditBtn" style="padding:10px 18px; border:none; background:var(--hk-primary-blue, #3b82f6); color:#fff; border-radius:10px; cursor:pointer; font-weight:600;"><i class="fa-solid fa-pen"></i> Edit</button>
-          <button type="button" id="cancelProfileEdit" style="display:none; padding:10px 18px; border:1px solid var(--hk-border, #cbd5e1); background:var(--hk-surface, #fff); border-radius:10px; cursor:pointer; color:var(--hk-text-main, #101828); font-weight:600;">Cancel</button>
-          <button type="submit" id="saveProfileBtn" style="display:none; padding:10px 18px; border:none; background:var(--hk-primary-blue, #2563eb); color:#fff; border-radius:10px; cursor:pointer; font-weight:600;">Save Profile</button>
-        </div>
-      </form>
+        <input type="hidden" id="profileEntityType" value="hospital">
+        <div id="profileStatusBannerContainer" style="grid-column:1/-1;"></div>
+        <div style="grid-column:1/-1; display:flex; flex-direction:column; gap:8px;">
+            <label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Select Hospital to Complete Profile</label>
+            <select id="entitySelect" name="entity_id" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px; background:var(--hk-surface, #fff); color:var(--hk-text-main, #101828);" required>
+                <option value="">Select Hospital...</option>
+            </select>
+        </div><div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Hospital Registration Number</label><input type="text" name="hospital_registration_number" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px; background:var(--hk-surface, #fff); color:var(--hk-text-main, #101828);" required></div><div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Hospital Type</label><select name="hospital_type" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px; background:var(--hk-surface, #fff); color:var(--hk-text-main, #101828);" required><option value="">Select Hospital Type...</option><option value="General Hospital">General Hospital</option><option value="Multi-Specialty Hospital">Multi-Specialty Hospital</option><option value="Super-Specialty Hospital">Super-Specialty Hospital</option><option value="Specialty Hospital">Specialty Hospital</option><option value="Teaching Hospital">Teaching Hospital</option><option value="Psychiatric Hospital">Psychiatric Hospital</option><option value="Maternity Hospital">Maternity Hospital</option><option value="Children's Hospital">Children's Hospital</option><option value="Other">Other</option></select></div><div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Hospital Ownership</label><select name="hospital_ownership" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px; background:var(--hk-surface, #fff); color:var(--hk-text-main, #101828);" required><option value="">Select Ownership...</option><option value="Government">Government</option><option value="Private">Private</option><option value="Trust / NGO">Trust / NGO</option><option value="Public-Private Partnership (PPP)">Public-Private Partnership (PPP)</option><option value="Other">Other</option></select></div><div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Address</label><input type="text" name="address" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px; background:var(--hk-surface, #fff); color:var(--hk-text-main, #101828);" required></div><div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Contact Number</label><input type="text" name="contact_number" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px; background:var(--hk-surface, #fff); color:var(--hk-text-main, #101828);" required></div><div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Number of Beds</label><input type="number" name="number_of_beds" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px; background:var(--hk-surface, #fff); color:var(--hk-text-main, #101828);" required></div><div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Available Services/Departments</label><input type="text" name="facilities" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px; background:var(--hk-surface, #fff); color:var(--hk-text-main, #101828);" required></div><div style="grid-column:1/-1; margin-top:10px;"><h4 style="margin:0; font-size:15px; color:var(--hk-text-main, #101828);">Documents (Upload)</h4></div><div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Hospital Registration Certificate</label><input type="file" name="hospital_reg_certificate" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px; background:var(--hk-surface, #fff); color:var(--hk-text-main, #101828);" required></div><div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">PAN Card</label><input type="file" name="pan_card" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px; background:var(--hk-surface, #fff); color:var(--hk-text-main, #101828);" required></div><div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">GST Certificate (if applicable)</label><input type="file" name="gst_certificate" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px; background:var(--hk-surface, #fff); color:var(--hk-text-main, #101828);" required></div><div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Authorized Person ID Proof</label><input type="file" name="authorized_person_id_proof" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px; background:var(--hk-surface, #fff); color:var(--hk-text-main, #101828);" required></div><div style="grid-column:1 / -1; display:flex; justify-content:flex-end; gap:12px; margin-top:8px;" id="profileModalActionButtons">
+        <button type="button" id="closeProfileBtn" style="padding:10px 18px; border:1px solid var(--hk-border, #cbd5e1); background:var(--hk-surface, #fff); border-radius:10px; cursor:pointer; color:var(--hk-text-main, #101828); font-weight:600;" onclick="closeProfileModal()">Close</button>
+        <button type="submit" id="saveProfileBtn" style="padding:10px 18px; border:none; background:var(--hk-primary-blue, #2563eb); color:#fff; border-radius:10px; cursor:pointer; font-weight:600;">Save Profile</button>
+    </div>
+    </form>
     </div>
   </div>
 
-  <script src="/js/vendor-panel-controls.js?v=20260821-v6"></script>
-  <script src="/js/hsp.js?v=20260912-buttonfix"></script>
-  <script src="/js/sidebar-toggle.js?v=20260821-v6"></script>
-  <script src="/js/ui-interactions.js?v=20260821-v6"></script>
+  <script src="/js/vendor-panel-controls.js?v=20260917-fix9"></script>
+  <script src="/js/hsp.js?v=20260917-fix9"></script>
+  <script src="/js/sidebar-toggle.js?v=20260917-fix9"></script>
+  <script src="/js/ui-interactions.js?v=20260917-fix9"></script>
 </body>
 </html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

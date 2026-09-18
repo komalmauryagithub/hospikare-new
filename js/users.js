@@ -433,7 +433,7 @@
 
     async function logoutUser() {
         try {
-            await apiPost('/api/user/logout', {});
+            await fetch('/api/user/logout', { method: 'POST', credentials: 'include' });
         } catch(e) {
             console.error('Logout API failed:', e);
         }
@@ -492,7 +492,11 @@
                                 <i class="fa-solid fa-location-dot"></i>
                                 <span>${escapeHtml(hospital.location || hospital.address || "Location not available")}</span>
                             </div>
-                            <div class="facilityTags">
+                            <div class="hospitalTypes" style="margin-bottom: 8px; font-size: 12px; color: var(--hk-text-main, #334155); display: flex; gap: 8px; flex-wrap: wrap;">
+                                    ${hospital.hospital_type ? '<span style="background: #e0e7ff; color: #4f46e5; padding: 2px 6px; border-radius: 4px;">' + escapeHtml(hospital.hospital_type) + '</span>' : ''}
+                                    ${hospital.hospital_ownership ? '<span style="background: #dcfce7; color: #16a34a; padding: 2px 6px; border-radius: 4px;">' + escapeHtml(hospital.hospital_ownership) + '</span>' : ''}
+                                </div>
+                                <div class="facilityTags">
                                 ${facilities.map(facility => `<span>${escapeHtml(facility)}</span>`).join("")}
                             </div>
                             <div class="hospitalBottom">
@@ -1657,6 +1661,7 @@
         }, 2800);
     }
 })();
+
 
 
 

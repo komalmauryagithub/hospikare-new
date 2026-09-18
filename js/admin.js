@@ -1,4 +1,4 @@
-﻿    let revenueChart;
+    let revenueChart;
     let vendorChart;
     let userTypeRevenueChart;
     let bookingChart;
@@ -668,6 +668,39 @@
         filter = activeVendorFilter
     ) {
         try {
+            // Load pending profile edit requests banner
+            const banner = document.getElementById('adminPendingEditsBanner');
+            if (banner) {
+                fetch('/api/admin/pending-profile-edits')
+                    .then(r => r.json())
+                    .then(res => {
+                            if (res.success && res.count > 0) {
+                            banner.style.display = 'flex';
+                            banner.className = 'admin-edit-request-banner';
+                            banner.innerHTML = `
+                                <div style="display: flex; align-items: center; gap: 12px;">
+                                    <div class="admin-edit-request-icon-box" style="width: 38px; height: 38px; font-size: 17px;">
+                                        <i class="fa-solid fa-bell"></i>
+                                    </div>
+                                    <div>
+                                        <h4 class="admin-edit-request-title">${res.count} Vendor Profile Edit Request${res.count > 1 ? 's' : ''} Pending Review</h4>
+                                        <p class="admin-edit-request-desc">Vendors have submitted requests to unlock and modify their details/documents.</p>
+                                    </div>
+                                </div>
+                                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                                    ${res.data.map(p => `
+                                        <button type="button" class="viewBtn" style="font-size: 12px; padding: 6px 14px; background: #D97706; color: #fff; border: none; border-radius: 8px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; font-weight: 700; box-shadow: 0 2px 6px rgba(217,119,6,0.3);" onclick="viewVendorDetails(${p.users_id})">
+                                            <i class="fa-solid fa-eye"></i> Review ${escapeHtml(p.name)} (${escapeHtml(p.vendor_name)})
+                                        </button>
+                                    `).join('')}
+                                </div>
+                            `;
+                        } else {
+                            banner.style.display = 'none';
+                        }
+                    }).catch(() => {});
+            }
+
             const response = await fetch('/api/vendors');
             const result = await response.json();
             if (result.success) {
@@ -722,6 +755,11 @@
                                 <span class="vendorName">
                                     ${vendor.name}
                                 </span>
+                                ${vendor.has_edit_request ? `
+                                    <span style="background: rgba(245, 158, 11, 0.15); color: #d97706; border: 1px solid rgba(245, 158, 11, 0.4); padding: 2px 7px; border-radius: 6px; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; gap: 4px; margin-top: 4px; width: fit-content;">
+                                        <i class="fa-solid fa-bell"></i> Edit Requested
+                                    </span>
+                                ` : ''}
                             </div>
                         </td>
                         <td data-label="Name" >
@@ -1037,7 +1075,57 @@
                             !isEmptyDetailValue(value)
                         );
 
+                let normalizedEntityType = 'hospital';
+                const rawType = String(user.users_type || '').toLowerCase();
+                if (rawType.includes('hospital')) normalizedEntityType = 'hospital';
+                else if (rawType.includes('ambulance')) normalizedEntityType = 'ambulance';
+                else if (rawType.includes('lab')) normalizedEntityType = 'lab';
+                else if (rawType.includes('insurance')) normalizedEntityType = 'insurance';
+                else if (rawType.includes('medicine') || rawType.includes('pharmacy')) normalizedEntityType = 'pharmacy';
+                else if (rawType.includes('equipment')) normalizedEntityType = 'equipment_source';
+
+                let editRequestHtml = '';
+                if (details && details.edit_requested) {
+                    editRequestHtml = `
+                        <div class="admin-edit-request-card">
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                <div class="admin-edit-request-icon-box">
+                                    <i class="fa-solid fa-file-pen"></i>
+                                </div>
+                                <div>
+                                    <h4 class="admin-edit-request-title">Profile Edit Permission Requested</h4>
+                                    <p class="admin-edit-request-desc">Vendor has requested permission to modify and update their profile details & documents.</p>
+                                </div>
+                            </div>
+                            <div style="display: flex; gap: 8px;">
+                                <button type="button" style="padding: 9px 18px; font-size: 13px; font-weight: 700; cursor: pointer; background: #059669; color: #fff; border: none; border-radius: 8px; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 2px 6px rgba(5,150,105,0.25);" onclick="approveVendorProfileEdit('${normalizedEntityType}', ${details.id}, ${user.id})">
+                                    <i class="fa-solid fa-check"></i> Approve Edit
+                                </button>
+                                <button type="button" style="padding: 9px 18px; font-size: 13px; font-weight: 700; cursor: pointer; background: #DC2626; color: #fff; border: none; border-radius: 8px; display: inline-flex; align-items: center; gap: 6px;" onclick="rejectVendorProfileEdit('${normalizedEntityType}', ${details.id}, ${user.id})">
+                                    <i class="fa-solid fa-xmark"></i> Reject Request
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                } else if (details && details.edit_allowed) {
+                    editRequestHtml = `
+                        <div class="admin-edit-allowed-card">
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <i class="fa-solid fa-circle-check" style="color: #059669; font-size: 22px;"></i>
+                                <div>
+                                    <h4 class="admin-edit-allowed-title" style="margin: 0;">Edit Permission Currently Active</h4>
+                                    <p class="admin-edit-allowed-desc">Vendor is granted access to modify profile details.</p>
+                                </div>
+                            </div>
+                            <button type="button" style="padding: 7px 16px; font-size: 12.5px; font-weight: 600; cursor: pointer; background: #E11D48; color: #fff; border: none; border-radius: 6px;" onclick="revokeVendorProfileEdit('${normalizedEntityType}', ${details.id}, ${user.id})">
+                                Revoke Edit Access
+                            </button>
+                        </div>
+                    `;
+                }
+
                 const html = `
+                    ${editRequestHtml}
                     <div class="vendorDetailHero">
                         <img
                             src="${resolveUploadImageUrl(user.profile_photo)}"
@@ -3551,13 +3639,64 @@
         if (vendorModal && e.target === vendorModal) {
             vendorModal.style.display = "none";
         }
-        const invoiceModal = document.getElementById("vendorInvoiceModal");
+            const invoiceModal = document.getElementById("vendorInvoiceModal");
         if (invoiceModal && e.target === invoiceModal) {
             closeVendorInvoiceModal();
         }
     });
 
     let currentEditingVendor = null;
+
+    window.approveVendorProfileEdit = async function(entityType, entityId, vendorId) {
+        if (!confirm('Are you sure you want to approve profile edit access for this vendor?')) return;
+        try {
+            const res = await fetch(`/api/admin/approve-profile-edit/${entityType}/${entityId}`, { method: 'POST' });
+            const data = await res.json();
+            if (data.success) {
+                alert('Edit permission approved successfully! The vendor can now update their profile details.');
+                viewVendorDetails(vendorId);
+                loadVendors();
+            } else {
+                alert(data.message || 'Failed to approve edit permission');
+            }
+        } catch(err) {
+            alert('Network error while approving edit permission.');
+        }
+    };
+
+    window.rejectVendorProfileEdit = async function(entityType, entityId, vendorId) {
+        if (!confirm('Are you sure you want to reject this profile edit request?')) return;
+        try {
+            const res = await fetch(`/api/admin/reject-profile-edit/${entityType}/${entityId}`, { method: 'POST' });
+            const data = await res.json();
+            if (data.success) {
+                alert('Edit request rejected.');
+                viewVendorDetails(vendorId);
+                loadVendors();
+            } else {
+                alert(data.message || 'Failed to reject edit request');
+            }
+        } catch(err) {
+            alert('Network error while rejecting edit request.');
+        }
+    };
+
+    window.revokeVendorProfileEdit = async function(entityType, entityId, vendorId) {
+        if (!confirm('Are you sure you want to revoke profile edit access from this vendor?')) return;
+        try {
+            const res = await fetch(`/api/admin/revoke-profile-edit/${entityType}/${entityId}`, { method: 'POST' });
+            const data = await res.json();
+            if (data.success) {
+                alert('Edit permission revoked.');
+                viewVendorDetails(vendorId);
+                loadVendors();
+            } else {
+                alert(data.message || 'Failed to revoke edit permission');
+            }
+        } catch(err) {
+            alert('Network error while revoking edit permission.');
+        }
+    };
 
     // Expose all action handlers globally for inline HTML attributes
     window.openVendors = openVendors;

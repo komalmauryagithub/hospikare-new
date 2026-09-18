@@ -237,11 +237,11 @@ window.setProfileMode = function(mode) {
     const saveBtn = document.getElementById('saveProfileBtn');
 
     if (mode === 'view') {
-        inputs.forEach(input => input.disabled = true);
+        // inputs.forEach(input => input.disabled = true);
         if(closeBtn) closeBtn.style.display = 'block';
         if(editBtn) editBtn.style.display = 'block';
         if(cancelBtn) cancelBtn.style.display = 'none';
-        if(saveBtn) saveBtn.style.display = 'none';
+        // if(saveBtn) saveBtn.style.display = 'none';
     } else {
         inputs.forEach(input => input.disabled = false);
         if(closeBtn) closeBtn.style.display = 'none';

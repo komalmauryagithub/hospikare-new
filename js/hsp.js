@@ -1,4 +1,4 @@
-﻿let appliedDashboardDateFrom = "";
+let appliedDashboardDateFrom = "";
 let appliedDashboardDateTo = "";
 let appliedDashboardRangeLabel = "All Time";
 let hospitalPanelSearchTerm = "";
@@ -538,15 +538,9 @@ async function fillProfileForm(profile, details = {}) {
         }
     }
 }
-function openProfileModal() {
-    const modal = document.getElementById("profileModal");
-    if (modal) modal.style.display = "flex";
-}
 
-function closeProfileModal() {
-    const modal = document.getElementById("profileModal");
-    if (modal) modal.style.display = "none";
-}
+
+
 
 let currentVendorName = "Vendor";
 
@@ -573,10 +567,26 @@ async function loadUserProfile(){
                 el.textContent = vendorName;
             });
             fillProfileForm(result.user, result.details || {});
-            const isComplete = result.user.bank_account && result.user.ifsc;
-            if(window.setProfileMode) {
-                window.setProfileMode(isComplete ? 'view' : 'edit');
-            }
+            
+            // Check if ALL hospitals of this user have completed their profiles
+            try {
+                const resEnt = await fetch('/api/vendor/my-entities/hospital');
+                const entData = await resEnt.json();
+                const triggerText = document.getElementById('profileTriggerText');
+                const triggerIcon = document.getElementById('profileSectionTrigger')?.querySelector('i');
+                if (entData.success && entData.data && entData.data.length > 0) {
+                    const allCompleted = entData.data.every(h => Boolean(h.profile_completed));
+                    if (triggerText) {
+                        triggerText.innerText = allCompleted ? 'Show Profile' : 'Complete Profile';
+                    }
+                    if (triggerIcon) {
+                        triggerIcon.className = allCompleted ? 'fa-solid fa-id-card' : 'fa-solid fa-user-pen';
+                        triggerIcon.style.color = allCompleted ? '#10b981' : '#3b82f6';
+                    }
+                } else if (triggerText) {
+                    triggerText.innerText = 'Complete Profile';
+                }
+            } catch(e) {}
         }
     } catch(err) {
         console.error("Error loading profile:", err);
@@ -856,9 +866,10 @@ async function loadHospitals(){
                 <table class="adminTable">
                     <thead>
                         <tr>
-                            <th>ID</th>
+                            <th style="width:60px;">ID</th>
                             <th>Hospital Name</th>
-                            <th>City</th>
+                            <th>Type</th>
+                            <th>Ownership</th>
                             <th>Address</th>
                             <th>Rooms</th>
                             <th>Status</th>
@@ -887,8 +898,9 @@ async function loadHospitals(){
             tbody.innerHTML += `
             <tr>
                 <td>${hospital.id}</td>
-                <td><span style="font-weight:600; color:var(--text-main, #1e293b);">${hospital.hospital_name || ''}</span></td>
-                <td>${hospital.city || '-'}</td>
+                <td><span style="font-weight:700; color:var(--text-main, #1e293b); font-size:14px;">${hospital.hospital_name || ''}</span></td>
+                <td><span style="background: rgba(37, 99, 235, 0.1); color: #2563eb; padding: 4px 8px; border-radius: 6px; font-size: 12px; font-weight: 600;">${hospital.hospital_type || 'General Hospital'}</span></td>
+                <td><span style="background: rgba(16, 185, 129, 0.1); color: #059669; padding: 4px 8px; border-radius: 6px; font-size: 12px; font-weight: 600;">${hospital.hospital_ownership || 'Private'}</span></td>
                 <td>${hospital.address || '-'}</td>
                 <td>${roomCount} rooms</td>
                 <td><span style="padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 700; display: inline-block; background:#dcfce7; color:#16a34a;">${hospital.status || 'Active'}</span></td>
@@ -1738,28 +1750,291 @@ document.getElementById("closeProfileModal")?.addEventListener("click", closePro
 // Load user profile on page load
 loadUserProfile();
 
+
+    
+
+
+
+
+
+
+// ====== NEW PROFILE FLOW LOGIC ======
+function openProfileModal() {
+    const modal = document.getElementById("profileModal") || document.getElementById("profileModalBox");
+    if (modal) modal.style.display = "flex";
+    
+    // Fetch entities to populate the dropdown
+    const entityType = document.getElementById('profileEntityType')?.value || 'hospital';
+    if (entityType) {
+        fetch('/api/vendor/my-entities/' + entityType)
+            .then(res => res.json())
+            .then(data => {
+                if (data.success && data.data) {
+                    const select = document.getElementById('entitySelect');
+                    if (select) {
+                        select.innerHTML = '<option value="">Select Hospital Name...</option>';
+                        data.data.forEach(ent => {
+                            select.innerHTML += '<option value="' + ent.id + '">' + ent.name + (ent.profile_completed ? ' (Profile Completed)' : '') + '</option>';
+                        });
+                        
+                        if (data.data.length === 0) {
+                            select.innerHTML = '<option value="">No hospitals added yet.</option>';
+                        }
+                        
+                        // Handler when entity is selected
+                        select.onchange = async (e) => {
+                            const entityId = select.value;
+                            const bannerContainer = document.getElementById('profileStatusBannerContainer');
+                            const actionButtons = document.getElementById('profileModalActionButtons');
+                            const form = document.getElementById('vendorProfileForm');
+                            
+                            if (!entityId) {
+                                if (bannerContainer) bannerContainer.innerHTML = '';
+                                if (actionButtons) {
+                                    actionButtons.innerHTML = `
+                                        <button type="button" id="closeProfileBtn" style="padding:10px 18px; border:1px solid var(--hk-border, #cbd5e1); background:var(--hk-surface, #fff); border-radius:10px; cursor:pointer; color:var(--hk-text-main, #101828); font-weight:600;" onclick="closeProfileModal()">Close</button>
+                                        <button type="submit" id="saveProfileBtn" style="padding:10px 18px; border:none; background:var(--hk-primary-blue, #2563eb); color:#fff; border-radius:10px; cursor:pointer; font-weight:600;">Save Profile</button>
+                                    `;
+                                }
+                                return;
+                            }
+                            
+                            try {
+                                const res = await fetch('/api/vendor/entity-details/' + entityType + '/' + entityId);
+                                const result = await res.json();
+                                if (result.success && result.data) {
+                                    const entityData = result.data;
+                                    
+                                    // Populate all text & number fields
+                                    if (form.elements['hospital_registration_number']) {
+                                        form.elements['hospital_registration_number'].value = entityData.hospital_registration_number || '';
+                                    }
+                                    if (form.elements['address']) {
+                                        form.elements['address'].value = entityData.address || '';
+                                    }
+                                    if (form.elements['contact_number']) {
+                                        form.elements['contact_number'].value = entityData.contact_number || '';
+                                    }
+                                    if (form.elements['number_of_beds']) {
+                                        form.elements['number_of_beds'].value = entityData.number_of_beds || '';
+                                    }
+                                    if (form.elements['facilities']) {
+                                        form.elements['facilities'].value = entityData.facilities || '';
+                                    }
+                                    
+                                    // Explicit matching for hospital_type dropdown
+                                    if (entityData.hospital_type) {
+                                        const typeSelect = form.querySelector('select[name="hospital_type"]');
+                                        if (typeSelect) {
+                                            for (let i = 0; i < typeSelect.options.length; i++) {
+                                                if (typeSelect.options[i].value.toLowerCase() === entityData.hospital_type.toLowerCase() || typeSelect.options[i].text.toLowerCase() === entityData.hospital_type.toLowerCase()) {
+                                                    typeSelect.selectedIndex = i;
+                                                    break;
+                                                }
+                                            }
+                                        }
+                                    }
+                                    
+                                    // Explicit matching for hospital_ownership dropdown
+                                    if (entityData.hospital_ownership) {
+                                        const ownSelect = form.querySelector('select[name="hospital_ownership"]');
+                                        if (ownSelect) {
+                                            for (let i = 0; i < ownSelect.options.length; i++) {
+                                                if (ownSelect.options[i].value.toLowerCase() === entityData.hospital_ownership.toLowerCase() || ownSelect.options[i].text.toLowerCase() === entityData.hospital_ownership.toLowerCase()) {
+                                                    ownSelect.selectedIndex = i;
+                                                    break;
+                                                }
+                                            }
+                                        }
+                                    }
+                                    
+                                    const fileInputs = form.querySelectorAll('input[type="file"]');
+                                    const allInputs = form.querySelectorAll('input, select, textarea');
+
+                                    if (!entityData.profile_completed) {
+                                        // 1. Initial State: Profile NOT completed yet
+                                        allInputs.forEach(input => {
+                                            if (input.id !== 'profileEntityType') {
+                                                input.disabled = false;
+                                                input.style.backgroundColor = '#fff';
+                                                input.style.cursor = 'auto';
+                                            }
+                                        });
+                                        fileInputs.forEach(input => input.setAttribute('required', 'required'));
+                                        
+                                        if (bannerContainer) {
+                                            bannerContainer.innerHTML = `
+                                                <div style="padding:12px 16px; background:rgba(37,99,235,0.08); border:1px solid rgba(37,99,235,0.2); border-radius:10px; font-size:13px; color:#1d4ed8; font-weight:500; display:flex; align-items:center; gap:8px;">
+                                                    <i class="fa-solid fa-circle-info" style="font-size:16px;"></i>
+                                                    <div>Please complete the required details and upload your hospital registration documents below to verify your hospital.</div>
+                                                </div>
+                                            `;
+                                        }
+                                        if (actionButtons) {
+                                            actionButtons.innerHTML = `
+                                                <button type="button" id="closeProfileBtn" style="padding:10px 18px; border:1px solid var(--hk-border, #cbd5e1); background:var(--hk-surface, #fff); border-radius:10px; cursor:pointer; color:var(--hk-text-main, #101828); font-weight:600;" onclick="closeProfileModal()">Close</button>
+                                                <button type="submit" id="saveProfileBtn" style="padding:10px 22px; border:none; background:var(--hk-primary-blue, #2563eb); color:#fff; border-radius:10px; cursor:pointer; font-weight:600; display:inline-flex; align-items:center; gap:8px;"><i class="fa-solid fa-floppy-disk"></i> Save Profile</button>
+                                            `;
+                                        }
+                                    } else if (!entityData.edit_allowed) {
+                                        // 2. Profile Completed & Locked (Needs Admin Permission)
+                                        allInputs.forEach(input => {
+                                            if (input.id !== 'entitySelect' && input.id !== 'profileEntityType') {
+                                                input.disabled = true;
+                                                input.style.backgroundColor = '#f8fafc';
+                                                input.style.cursor = 'not-allowed';
+                                            }
+                                        });
+                                        fileInputs.forEach(input => input.removeAttribute('required'));
+
+                                        if (!entityData.edit_requested) {
+                                            if (bannerContainer) {
+                                                bannerContainer.innerHTML = `
+                                                    <div style="padding:12px 16px; background:#fffbeb; border:1px solid #fde68a; border-radius:10px; font-size:13px; color:#92400e; font-weight:500; display:flex; align-items:center; gap:10px;">
+                                                        <i class="fa-solid fa-shield-halved" style="color:#d97706; font-size:18px;"></i>
+                                                        <div style="flex:1;">
+                                                            <strong>Profile is Verified & Locked.</strong> Direct updates are restricted. If you need to update any hospital information or documents, please request permission from the Admin.
+                                                        </div>
+                                                    </div>
+                                                `;
+                                            }
+                                            if (actionButtons) {
+                                                actionButtons.innerHTML = `
+                                                    <button type="button" id="closeProfileBtn" style="padding:10px 18px; border:1px solid var(--hk-border, #cbd5e1); background:var(--hk-surface, #fff); border-radius:10px; cursor:pointer; color:var(--hk-text-main, #101828); font-weight:600;" onclick="closeProfileModal()">Close</button>
+                                                    <button type="button" id="requestAdminEditBtn" style="padding:10px 22px; border:none; background:#d97706; color:#fff; border-radius:10px; cursor:pointer; font-weight:700; display:inline-flex; align-items:center; gap:8px; box-shadow:0 2px 8px rgba(217,119,6,0.25);"><i class="fa-solid fa-lock"></i> Request Admin for Edit</button>
+                                                `;
+                                                const reqBtn = document.getElementById('requestAdminEditBtn');
+                                                if (reqBtn) {
+                                                    reqBtn.onclick = async () => {
+                                                        reqBtn.disabled = true;
+                                                        reqBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Requesting...';
+                                                        try {
+                                                            const reqRes = await fetch('/api/vendor/request-profile-edit/' + entityType + '/' + entityId, { method: 'POST' });
+                                                            const reqData = await reqRes.json();
+                                                            if (reqData.success) {
+                                                                alert('Edit request sent to Admin successfully! Once Admin approves, you can update your profile details.');
+                                                                select.dispatchEvent(new Event('change'));
+                                                            } else {
+                                                                alert(reqData.message || 'Failed to submit request.');
+                                                                reqBtn.disabled = false;
+                                                                reqBtn.innerHTML = '<i class="fa-solid fa-lock"></i> Request Admin for Edit';
+                                                            }
+                                                        } catch(err) {
+                                                            alert('Network error while requesting edit.');
+                                                            reqBtn.disabled = false;
+                                                            reqBtn.innerHTML = '<i class="fa-solid fa-lock"></i> Request Admin for Edit';
+                                                        }
+                                                    };
+                                                }
+                                            }
+                                        } else {
+                                            // Edit requested & pending approval
+                                            if (bannerContainer) {
+                                                bannerContainer.innerHTML = `
+                                                    <div style="padding:12px 16px; background:#fef3c7; border:1px solid #fcd34d; border-radius:10px; font-size:13px; color:#78350f; font-weight:500; display:flex; align-items:center; gap:10px;">
+                                                        <i class="fa-solid fa-hourglass-half" style="color:#d97706; font-size:18px;"></i>
+                                                        <div style="flex:1;">
+                                                            <strong>Edit Request Pending Admin Approval.</strong> You have requested to update this profile. Once Admin approves the request, the form will become editable.
+                                                        </div>
+                                                    </div>
+                                                `;
+                                            }
+                                            if (actionButtons) {
+                                                actionButtons.innerHTML = `
+                                                    <button type="button" id="closeProfileBtn" style="padding:10px 18px; border:1px solid var(--hk-border, #cbd5e1); background:var(--hk-surface, #fff); border-radius:10px; cursor:pointer; color:var(--hk-text-main, #101828); font-weight:600;" onclick="closeProfileModal()">Close</button>
+                                                    <button type="button" disabled style="padding:10px 20px; border:none; background:#94a3b8; color:#fff; border-radius:10px; cursor:not-allowed; font-weight:600; display:inline-flex; align-items:center; gap:8px;"><i class="fa-solid fa-clock"></i> Edit Request Pending Admin Approval</button>
+                                                `;
+                                            }
+                                        }
+                                    } else {
+                                        // 3. Edit Approved by Admin
+                                        allInputs.forEach(input => {
+                                            if (input.id !== 'profileEntityType') {
+                                                input.disabled = false;
+                                                input.style.backgroundColor = '#fff';
+                                                input.style.cursor = 'auto';
+                                            }
+                                        });
+                                        fileInputs.forEach(input => input.removeAttribute('required'));
+
+                                        if (bannerContainer) {
+                                            bannerContainer.innerHTML = `
+                                                <div style="padding:12px 16px; background:#ecfdf5; border:1px solid #a7f3d0; border-radius:10px; font-size:13px; color:#065f46; font-weight:500; display:flex; align-items:center; gap:10px;">
+                                                    <i class="fa-solid fa-circle-check" style="color:#059669; font-size:18px;"></i>
+                                                    <div style="flex:1;">
+                                                        <strong>Edit Permission Approved!</strong> Admin has granted access to update your hospital profile. Make your changes and click 'Update Profile' below.
+                                                    </div>
+                                                </div>
+                                            `;
+                                        }
+                                        if (actionButtons) {
+                                            actionButtons.innerHTML = `
+                                                <button type="button" id="closeProfileBtn" style="padding:10px 18px; border:1px solid var(--hk-border, #cbd5e1); background:var(--hk-surface, #fff); border-radius:10px; cursor:pointer; color:var(--hk-text-main, #101828); font-weight:600;" onclick="closeProfileModal()">Close</button>
+                                                <button type="submit" id="saveProfileBtn" style="padding:10px 22px; border:none; background:#059669; color:#fff; border-radius:10px; cursor:pointer; font-weight:600; display:inline-flex; align-items:center; gap:8px;"><i class="fa-solid fa-pen-to-square"></i> Update Profile</button>
+                                            `;
+                                        }
+                                    }
+                                }
+                            } catch(err) { console.error(err); }
+                        };
+
+                        // Auto-select first hospital if available
+                        if (data.data.length > 0) {
+                            select.value = data.data[0].id;
+                            select.dispatchEvent(new Event('change'));
+                        }
+                    }
+                }
+            });
+    }
+}
+
+function closeProfileModal() {
+    const modal = document.getElementById("profileModalBox") || document.getElementById("profileModal");
+    if (modal) modal.style.display = "none";
+}
+
 document.getElementById('vendorProfileForm')?.addEventListener('submit', async (event) => {
     event.preventDefault();
     const form = event.target;
-    const password = document.getElementById('profilePassword')?.value || '';
-    const confirmPassword = document.getElementById('profileConfirmPassword')?.value || '';
-    if (password && password !== confirmPassword) {
-        alert('Passwords do not match');
+    const entityId = document.getElementById('entitySelect')?.value;
+    const entityType = document.getElementById('profileEntityType')?.value || 'hospital';
+    
+    if (!entityId) {
+        alert('Please select a hospital first.');
         return;
     }
+    
     const formData = new FormData(form);
-    if (!password) formData.delete('password');
-    const response = await fetch('/api/user/profile', { method: 'PUT', credentials: 'include', body: formData });
-    const result = await response.json();
-    if (result.success) {
-        alert('Profile updated successfully');
-        closeProfileModal();
-        await loadUserProfile();
-    } else {
-        alert(result.message || 'Profile update failed');
+    
+    const submitBtn = document.getElementById('saveProfileBtn');
+    const origText = submitBtn ? submitBtn.innerHTML : '';
+    if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Saving...';
+    }
+
+    try {
+        const response = await fetch('/api/vendor/complete-profile/' + entityType + '/' + entityId, { 
+            method: 'POST', 
+            body: formData 
+        });
+        const result = await response.json();
+        if (result.success) {
+            alert('Hospital profile updated successfully!');
+            closeProfileModal();
+            await loadUserProfile();
+        } else {
+            alert(result.message || 'Profile save failed');
+        }
+    } catch (e) {
+        alert('An error occurred while saving.');
+    } finally {
+        if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = origText || 'Save Profile';
+        }
     }
 });
-
-
-
+// ===================================
 
