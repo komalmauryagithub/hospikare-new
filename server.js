@@ -77,6 +77,7 @@ const pool = mysql.createPool({
 });
 
 require("./routes_vendor_profile")(app, pool, upload);
+require("./routes_tracking")(app, pool);
 
 const safeNumber = (val) => {
   const num = parseFloat(val);
@@ -2072,6 +2073,12 @@ app.get("/api/vendor/details/:id", async (req, res) => {
         "SELECT * FROM hospitals WHERE users_id = ?",
         [id],
       );
+      for (let hosp of data) {
+        const [docs] = await pool.query(`SELECT * FROM hospital_doctors WHERE hospital_id = ?`, [hosp.id]);
+        if (docs.length > 0) {
+          hosp.doctors = JSON.stringify(docs);
+        }
+      }
       entities = data;
       details = data.find(d => d.edit_requested === 1) || data[0] || null;
     } else if (userType === "ambulance") {
@@ -2156,7 +2163,16 @@ app.get("/api/user/profile", async (req, res) => {
 
     if (userType === "hospital") {
       const [rows] = await pool.query("SELECT * FROM hospitals WHERE users_id = ?", [userId]);
-      details = rows[0] || null;
+      if (rows.length > 0) {
+        const hosp = rows[0];
+        const [docs] = await pool.query(`SELECT * FROM hospital_doctors WHERE hospital_id = ?`, [hosp.id]);
+        if (docs.length > 0) {
+          hosp.doctors = JSON.stringify(docs);
+        }
+        details = hosp;
+      } else {
+        details = null;
+      }
     } else if (userType === "ambulance") {
       const [rows] = await pool.query("SELECT * FROM ambulances WHERE users_id = ?", [userId]);
       details = rows[0] || null;
@@ -2534,6 +2550,12 @@ app.get("/api/hospitals", async (req, res) => {
                 `,
       [userId],
     );
+    for (let hosp of hospitals) {
+      const [docs] = await pool.query(`SELECT * FROM hospital_doctors WHERE hospital_id = ?`, [hosp.id]);
+      if (docs.length > 0) {
+        hosp.doctors = JSON.stringify(docs);
+      }
+    }
     res.json({
       success: true,
       hospitals,
@@ -2653,7 +2675,7 @@ app.post(
       });
       const finalRoomsJson = JSON.stringify(parsedRooms);
 
-      await pool.query(
+      const [result] = await pool.query(
         `
                 INSERT INTO hospitals
                 (
@@ -2667,10 +2689,13 @@ app.post(
                     hospital_reg_certificate,
                     shop_license,
                     medical_council_registration,
-                    electricity_bill
+                    electricity_bill,
+                    hospital_type,
+                    hospital_ownership,
+                    hospital_registration_number
                 )
                 VALUES
-                (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 `,
         [
           userId,
@@ -2679,13 +2704,43 @@ app.post(
           body.address,
           body.facilities,
           finalRoomsJson,
-          body.doctors,
+          body.doctors, // keep this for backward compatibility during migration
           req.files["hospital_reg_certificate"]?.[0]?.filename || null,
           req.files["shop_license"]?.[0]?.filename || null,
           req.files["medical_council_registration"]?.[0]?.filename || null,
           req.files["electricity_bill"]?.[0]?.filename || null,
+          body.hospital_type || null,
+          body.hospital_ownership || null,
+          body.hospital_registration_number || null
         ],
       );
+      const hospitalId = result.insertId;
+
+      let doctorsArray = [];
+      try {
+        doctorsArray = JSON.parse(body.doctors || "[]");
+      } catch(e) {}
+      
+      if (doctorsArray.length > 0) {
+        for (const doc of doctorsArray) {
+          await pool.query(
+            `INSERT INTO hospital_doctors (hospital_id, hospital_name, name, speciality, experience, qualification, available_days, fees, status, gender, dob_age) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [
+              hospitalId,
+              body.hospital_name,
+              doc.name || "",
+              doc.speciality || "",
+              doc.experience || "",
+              doc.qualification || "",
+              doc.available_days || "",
+              doc.fees || "",
+              doc.status || "",
+              doc.gender || "",
+              doc.dob_age || ""
+            ]
+          );
+        }
+      }
       res.json({
         success: true,
       });
@@ -2732,6 +2787,7 @@ app.post("/api/add/room", upload.array("room_images", 4), async (req, res) => {
       details,
       pricing,
       room_type,
+      bed_type,
       total_beds,
       availability,
     } = req.body;
@@ -2756,6 +2812,7 @@ app.post("/api/add/room", upload.array("room_images", 4), async (req, res) => {
       details,
       pricing,
       room_type,
+      bed_type,
       total_beds,
       availability,
       images: roomImages,
@@ -2817,6 +2874,7 @@ app.get("/api/availability", async (req, res) => {
           details: room.details,
           pricing: room.pricing,
           room_type: room.room_type,
+          bed_type: room.bed_type,
           total_beds: room.total_beds,
           availability: room.availability,
           images: formatUploadPaths(room.images),
@@ -2887,6 +2945,22 @@ app.put("/api/update/room", async (req, res) => {
 });
 
 //17
+app.get("/api/ambulance/availability-counts", async (req, res) => {
+  try {
+    const [counts] = await pool.query(
+      `SELECT a.ambulance_type as type, COUNT(a.id) as count 
+       FROM ambulances a
+       LEFT JOIN ambulance_drivers ad ON (a.assigned_driver_id = ad.id OR ad.assigned_ambulance_id = a.id)
+       WHERE a.status = 'Available' AND ad.id IS NOT NULL 
+       GROUP BY a.ambulance_type`
+    );
+    res.json({ success: true, counts });
+  } catch (error) {
+    console.error("Error fetching availability:", error);
+    res.json({ success: false, counts: [] });
+  }
+});
+
 app.get("/api/ambulances", async (req, res) => {
   try {
     if (!req.session.user) {
@@ -2997,10 +3071,46 @@ app.post(
   },
 );
 
+app.post(
+  "/api/update/ambulance/:id",
+  upload.fields([
+    { name: "lic", maxCount: 1 },
+    { name: "rc", maxCount: 1 },
+    { name: "veh_ins", maxCount: 1 },
+  ]),
+  async (req, res) => {
+    try {
+      if (!req.session || !req.session.user) {
+        return res.status(401).json({ success: false, message: "Login Required" });
+      }
+      const body = req.body;
+      const ambId = req.params.id;
+      const userId = req.session.user.id;
+
+      let query = `UPDATE ambulances SET ambulance_type = ?, base_chrge = ?, min_chrge = ?, night_chrg = ?, wait_chrg = ?, status = ?, eta = ?, book_time_slot = ?, area = ?, description = ?, driver_exp = ?`;
+      const params = [body.ambulance_type, body.base_chrge, body.min_chrge, body.night_chrg, body.wait_chrg, body.status, body.eta, body.book_time_slot, body.area, body.description, body.driver_exp];
+
+      if (req.files["lic"]) { query += `, lic = ?`; params.push(req.files["lic"][0].filename); }
+      if (req.files["rc"]) { query += `, rc = ?`; params.push(req.files["rc"][0].filename); }
+      if (req.files["veh_ins"]) { query += `, veh_ins = ?`; params.push(req.files["veh_ins"][0].filename); }
+
+      query += ` WHERE id = ? AND users_id = ?`;
+      params.push(ambId, userId);
+
+      await pool.query(query, params);
+      res.json({ success: true });
+    } catch (error) {
+      console.log(error);
+      res.json({ success: false });
+    }
+  }
+);
+
 //19
 app.get("/api/ambulance/availability", async (req, res) => {
   try {
-    if (!req.session.user) {
+    const sessionUser = req.session.user || req.session.vendor;
+    if (!sessionUser) {
       return res.status(401).json({
         success: false,
         message: "Login Required",
@@ -3009,7 +3119,7 @@ app.get("/api/ambulance/availability", async (req, res) => {
       });
     }
 
-    const userId = req.session.user.id;
+    const userId = sessionUser.id;
     const [ambulances] = await pool.query(
       `
                     SELECT *
@@ -3989,6 +4099,27 @@ app.post("/api/product-login", async (req, res) => {
   }
 });
 
+app.get("/api/product-user/profile", async (req, res) => {
+  try {
+    if (req.session && req.session.productUser) {
+      return res.json({
+        success: true,
+        user: req.session.productUser
+      });
+    }
+    return res.json({
+      success: false,
+      message: "Not logged in"
+    });
+  } catch (error) {
+    console.log(error);
+    res.json({
+      success: false,
+      message: "Server Error"
+    });
+  }
+});
+
 //31
 app.get("/api/all-featured-hospitals", async (req, res) => {
   try {
@@ -4332,9 +4463,15 @@ app.get("/api/hospital/:id", async (req, res) => {
     if (typeof hospital.rooms === "string") {
       hospital.rooms = JSON.parse(hospital.rooms);
     }
-    if (typeof hospital.doctors === "string") {
+    
+    // Fetch doctors from the new table
+    const [docs] = await pool.query(`SELECT * FROM hospital_doctors WHERE hospital_id = ?`, [hospitalId]);
+    if (docs.length > 0) {
+      hospital.doctors = docs;
+    } else if (typeof hospital.doctors === "string") {
       hospital.doctors = JSON.parse(hospital.doctors);
     }
+    
     res.json({
       success: true,
       hospital,
@@ -4359,9 +4496,9 @@ app.post("/api/book-hospital", async (req, res) => {
       patient_gender,
       room_type,
       bed_type,
-      admission_date,
-      discharge_date,
       total_amount,
+      payment_type,
+      paid_amount,
       razorpay_order_id,
       razorpay_payment_id,
       razorpay_signature,
@@ -4372,9 +4509,7 @@ app.post("/api/book-hospital", async (req, res) => {
       !patient_name ||
       !patient_age ||
       !patient_gender ||
-      !room_type ||
-      !admission_date ||
-      !discharge_date
+      !room_type
     ) {
       return res.json({
         success: false,
@@ -4411,11 +4546,13 @@ app.post("/api/book-hospital", async (req, res) => {
                 admission_date,
                 discharge_date,
                 total_amount,
+                payment_type,
+                paid_amount,
                 razorpay_order_id,
                 razorpay_payment_id,
                 payment_status
             )
-            VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+            VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
       [
         user_id,
         hospital_id,
@@ -4424,9 +4561,11 @@ app.post("/api/book-hospital", async (req, res) => {
         patient_gender,
         room_type,
         bed_type,
-        admission_date,
-        discharge_date,
+        null,
+        null,
         total_amount,
+        payment_type || 'Full',
+        paid_amount || null,
         razorpay_order_id,
         razorpay_payment_id,
         paymentStatus,
@@ -4451,7 +4590,7 @@ app.post("/api/book-ambulance", async (req, res) => {
   try {
     const {
       user_id,
-      ambulance_id,
+      ambulance_type,
       patient_name,
       patient_condition,
       pickup_address,
@@ -4464,7 +4603,6 @@ app.post("/api/book-ambulance", async (req, res) => {
     } = req.body;
     if (
       !user_id ||
-      !ambulance_id ||
       !patient_name ||
       !pickup_address ||
       !destination_address ||
@@ -4485,6 +4623,36 @@ app.post("/api/book-ambulance", async (req, res) => {
         message: "Payment verification failed",
       });
     }
+
+    const typeToSearch = ambulance_type || 'Emergency Ambulance';
+    const [ambs] = await pool.query(
+      `SELECT a.id as ambulance_id 
+       FROM ambulances a
+       LEFT JOIN ambulance_drivers ad ON (a.assigned_driver_id = ad.id OR ad.assigned_ambulance_id = a.id)
+       WHERE a.status = 'Available' AND a.ambulance_type = ? AND ad.id IS NOT NULL
+       LIMIT 1`,
+       [typeToSearch]
+    );
+
+    if (ambs.length === 0) {
+      return res.json({
+        success: false,
+        message: "No driver currently available for this type."
+      });
+    }
+
+    const real_ambulance_id = ambs[0].ambulance_id;
+    const tracking_token = crypto.randomBytes(16).toString("hex");
+
+    // Format the date for MySQL
+    let formattedDate = booking_date;
+    if (booking_date) {
+        const d = new Date(booking_date);
+        if (!isNaN(d.getTime())) {
+            formattedDate = d.toISOString().slice(0, 19).replace('T', ' ');
+        }
+    }
+
     const [result] = await pool.execute(
       `INSERT INTO
             user_ambulance_bookings(
@@ -4498,21 +4666,23 @@ app.post("/api/book-ambulance", async (req, res) => {
                 total_amount,
                 razorpay_order_id,
                 razorpay_payment_id,
-                payment_status
+                payment_status,
+                tracking_token
             )
-            VALUES(?,?,?,?,?,?,?,?,?,?,?)`,
+            VALUES(?,?,?,?,?,?,?,?,?,?,?,?)`,
       [
         user_id,
-        ambulance_id,
+        real_ambulance_id,
         patient_name,
         patient_condition,
         pickup_address,
         destination_address,
-        booking_date,
+        formattedDate,
         total_amount,
         razorpay_order_id,
         razorpay_payment_id,
-        paymentStatus,
+        "paid",
+        tracking_token,
       ],
     );
     await pool.execute(
@@ -4521,12 +4691,21 @@ app.post("/api/book-ambulance", async (req, res) => {
             SET status = ?
             WHERE id = ?
             `,
-      ["Busy / On trip", ambulance_id],
+      ["Busy / On trip", real_ambulance_id],
     );
+    
+    const trip_id = result.insertId;
+    console.log("=========================================");
+    console.log("🚑 AMBULANCE BOOKED (USER PANEL) 🚑");
+    console.log("SENDING SMS TO DRIVER...");
+    console.log(`LINK: http://${req.get('host')}/driver-trip.html?trip_id=${trip_id}&token=${tracking_token}`);
+    console.log("=========================================");
+
     res.json({
       success: true,
-      message: "Ambulance booking successful",
-      booking_id: result.insertId,
+      message: "Ambulance booked successfully",
+      tracking_token,
+      booking_id: trip_id
     });
   } catch (error) {
     console.log(error);
@@ -4548,8 +4727,6 @@ app.get("/api/ambulance/bookings", async (req, res) => {
                 FROM user_ambulance_bookings
                 LEFT JOIN ambulances
                 ON user_ambulance_bookings.ambulance_id=ambulances.id
-                WHERE user_ambulance_bookings.booking_status
-                NOT LIKE '%completed%'
                 ORDER BY
                 user_ambulance_bookings.id
                 DESC
@@ -4744,6 +4921,8 @@ app.post("/api/book-lab-test", async (req, res) => {
       sample_collection_type,
       booking_date,
       total_amount,
+      payment_type,
+      paid_amount,
       razorpay_order_id,
       razorpay_payment_id,
       razorpay_signature,
@@ -4759,10 +4938,12 @@ app.post("/api/book-lab-test", async (req, res) => {
                     sample_collection_type,
                     booking_date,
                     total_amount,
+                    payment_type,
+                    paid_amount,
                     payment_status
                 )
                 VALUES
-                (?, ?, ?, ?, ?, ?, ?, ?)
+                (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             `;
     pool.query(
       sql,
@@ -4774,6 +4955,8 @@ app.post("/api/book-lab-test", async (req, res) => {
         sample_collection_type,
         booking_date,
         total_amount,
+        payment_type || 'Full',
+        paid_amount || null,
         "paid",
       ],
       (error, result) => {
@@ -5178,11 +5361,12 @@ app.post("/api/checkout", upload.single("prescription"), async (req, res) => {
     const conn = await pool.getConnection();
     await conn.beginTransaction();
     try {
-        if (!req.session.productUser) {
+        const sessionUser = req.session.user || req.session.productUser;
+        if (!sessionUser) {
             return res.json({ success: false, message: "Unauthorized. Please login." });
         }
         
-        const userId = req.session.productUser.id;
+        const userId = sessionUser.id;
         const cart = JSON.parse(req.body.cart || '[]');
         const deliveryAddress = req.body.delivery_address || 'No address provided';
         const prescriptionFile = req.file ? req.file.filename : null;
@@ -6742,6 +6926,8 @@ app.get("/api/admin/bookings", async (req, res) => {
             id,
             patient_name AS user_name,
             total_amount,
+            payment_type,
+            paid_amount,
             booking_status AS status,
             created_at,
             'Hospital' AS type
@@ -6753,6 +6939,8 @@ app.get("/api/admin/bookings", async (req, res) => {
             id,
             patient_name AS user_name,
             total_amount,
+            payment_type,
+            paid_amount,
             booking_status AS status,
             created_at,
             'Lab' AS type
@@ -6773,6 +6961,8 @@ app.get("/api/admin/bookings", async (req, res) => {
   bookings.push(...hospital);
   bookings.push(...lab);
   bookings.push(...ambulance);
+
+  bookings.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 
   res.json({
     success: true,
@@ -6806,13 +6996,13 @@ app.get("/api/admin/orders", async (req, res) => {
          WHERE ueoi.equipment_order_id = ueo.id) AS products
         FROM user_equipment_orders ueo LEFT JOIN product_users pu ON ueo.user_id = pu.id`);
     // 3. Hospital Bookings
-    const [hospital] = await pool.query(`SELECT hb.id, pu.full_name AS user_name, hb.total_amount, hb.booking_status AS payment_status, hb.booking_status AS order_status, 'Hospital Booking' AS type, hb.created_at FROM user_hospital_bookings hb LEFT JOIN product_users pu ON hb.user_id = pu.id`);
+    const [hospital] = await pool.query(`SELECT hb.id, pu.full_name AS user_name, hb.total_amount, hb.payment_type, hb.paid_amount, hb.booking_status AS payment_status, hb.booking_status AS order_status, 'Hospital Booking' AS type, hb.created_at FROM user_hospital_bookings hb LEFT JOIN product_users pu ON hb.user_id = pu.id`);
     // 4. Ambulance Bookings
     const [ambulance] = await pool.query(`SELECT ab.id, pu.full_name AS user_name, ab.total_amount, ab.booking_status AS payment_status, ab.booking_status AS order_status, 'Ambulance Booking' AS type, ab.created_at FROM user_ambulance_bookings ab LEFT JOIN product_users pu ON ab.user_id = pu.id`);
     // 5. Insurance
     const [insurance] = await pool.query(`SELECT ip.id, pu.full_name AS user_name, ip.premium_amount AS total_amount, ip.payment_status AS payment_status, ip.insurance_status AS order_status, 'Insurance' AS type, ip.created_at FROM user_insurance_purchases ip LEFT JOIN product_users pu ON ip.user_id = pu.id`);
     // 6. Lab Tests
-    const [labs] = await pool.query(`SELECT lb.id, pu.full_name AS user_name, lb.total_amount, lb.payment_status AS payment_status, lb.booking_status AS order_status, 'Lab Booking' AS type, lb.created_at FROM user_lab_test_bookings lb LEFT JOIN product_users pu ON lb.user_id = pu.id`);
+    const [labs] = await pool.query(`SELECT lb.id, pu.full_name AS user_name, lb.total_amount, lb.payment_type, lb.paid_amount, lb.payment_status AS payment_status, lb.booking_status AS order_status, 'Lab Booking' AS type, lb.created_at FROM user_lab_test_bookings lb LEFT JOIN product_users pu ON lb.user_id = pu.id`);
 
     orders.push(...medicine, ...equipment, ...hospital, ...ambulance, ...insurance, ...labs);
 

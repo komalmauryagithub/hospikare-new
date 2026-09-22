@@ -45,8 +45,8 @@ function getUserIdQuery() {
 async function loadOrders(){
     try{
         const [resOrders, resHistory] = await Promise.all([
-            fetch('/api/user/orders' + getUserIdQuery()),
-            fetch('/api/user/history' + getUserIdQuery())
+            fetch('/api/user/orders' + getUserIdQuery(), { credentials: 'same-origin' }),
+            fetch('/api/user/history' + getUserIdQuery(), { credentials: 'same-origin' })
         ]);
         
         const result = await resOrders.json();
@@ -62,6 +62,7 @@ async function loadOrders(){
                     total_amount: h.total_amount,
                     payment_status: (h.booking_status === 'paid' || h.booking_status === 'completed' || h.booking_status === 'approved') ? 'paid' : (h.booking_status || 'pending'),
                     order_status: h.booking_status || 'pending',
+                    tracking_token: h.tracking_token,
                     created_at: h.created_at || new Date().toISOString()
                 });
             });
@@ -100,6 +101,11 @@ async function loadOrders(){
                     invoiceBtnHtml = `<button class="invoice-btn" onclick="viewCustomerInvoice(${order.id}, '${order.type}', ${order.total_amount})"><i class="fa-solid fa-file-invoice"></i> View Invoice</button>`;
                 } else {
                     invoiceBtnHtml = `<span style="color: #94a3b8; font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 6px;"><i class="fa-regular fa-clock"></i> Pending Payment</span>`;
+                }
+                
+                // Add Track Button if applicable
+                if (order.tracking_token && order.order_status.toLowerCase() !== 'completed' && order.order_status.toLowerCase() !== 'cancelled') {
+                    invoiceBtnHtml += `<button onclick="window.open('/user-tracking.html?token=${order.tracking_token}', '_blank')" style="margin-top: 8px; width: 100%; background: #3b82f6; color: white; border: none; padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; box-shadow: 0 2px 4px rgba(59,130,246,0.3);"><i class="fa-solid fa-location-dot fa-bounce"></i> Track</button>`;
                 }
 
                 const pStat = (order.payment_status || "Pending").toLowerCase();
@@ -156,7 +162,7 @@ async function loadOrders(){
 
 async function loadHistory(){
     try{
-        const response = await fetch('/api/user/history' + getUserIdQuery());
+        const response = await fetch('/api/user/history' + getUserIdQuery(), { credentials: 'same-origin' });
         const result = await response.json();
         
         let html = `
@@ -228,7 +234,7 @@ async function loadHistory(){
 
 async function loadPayments(){
     try{
-        const response = await fetch('/api/user/payments' + getUserIdQuery());
+        const response = await fetch('/api/user/payments' + getUserIdQuery(), { credentials: 'same-origin' });
         const result = await response.json();
 
         let html = `

@@ -4089,3 +4089,12 @@ tr:hover td { background-color: #f8fafc; }
 
 
 
+
+
+/* Table Columns Fix */
+.adminTable th, .adminTable td { white-space: nowrap; }
+.adminTable td[style*='white-space: normal'] { white-space: normal !important; }
+
+/* Forced Table Fixes */
+.adminTable th, .adminTable td { white-space: nowrap !important; }
+.adminTable td[style*='white-space: normal'], .adminTable td.wrap-text { white-space: normal !important; }

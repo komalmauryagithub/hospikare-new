@@ -1,4 +1,4 @@
-﻿html {
+html {
     scroll-behavior: smooth;
 }
 
@@ -583,8 +583,7 @@ section[id] {
     box-shadow: 0 4px 16px rgba(239, 68, 68, 0.35) !important;
 }
 
-.rvbtn,
-.addEquipmentBtn {
+.rvbtn {
     width: 44px;
     flex: 0 0 44px;
     background: #F1F5F9;
@@ -593,8 +592,7 @@ section[id] {
     border: 1px solid #CBD5E1;
 }
 
-.rvbtn:hover,
-.addEquipmentBtn:hover {
+.rvbtn:hover {
     background: #1F3A9A;
     color: #FFFFFF;
     border-color: #1F3A9A;
@@ -605,7 +603,9 @@ section[id] {
 .bookLabBtn,
 .buyPlanBtn,
 .medicineBuyBtn,
-.equipmentBuyBtn {
+.equipmentBuyBtn,
+.addMedicineBtn,
+.addEquipmentBtn {
     flex: 1;
     padding: 0 1rem;
 }
@@ -972,6 +972,7 @@ section[id] {
 }
 
 .medicineBottom button {
+    grid-column: 1 / -1;
     width: 100%;
     min-width: 0;
     padding: 0 0.65rem;
@@ -1015,7 +1016,7 @@ section[id] {
 .modal {
     position: fixed;
     inset: 0;
-    z-index: 5000;
+    z-index: 10500;
     display: none;
     align-items: center;
     justify-content: center;
@@ -1064,13 +1065,15 @@ section[id] {
 }
 
 #authOverlay .modal-content {
+    width: min(90vw, 460px) !important;
     max-width: 460px !important;
-    max-height: min(88vh, 720px);
+    max-height: 90vh !important;
     display: flex;
     flex-direction: column;
     border: 0;
-    border-radius: 8px;
+    border-radius: 12px;
     overflow: hidden;
+    overflow-y: auto !important;
     box-shadow: 0 24px 70px rgba(12, 18, 38, 0.28);
 }
 
@@ -1608,9 +1611,9 @@ section[id] {
         align-items: flex-end;
     }
 
-    .modal-content {
-        width: 100%;
-        max-height: 90vh;
+    .modal-content, #authOverlay .modal-content {
+        width: 100% !important;
+        max-height: 90vh !important;
         border-bottom-left-radius: 0 !important;
         border-bottom-right-radius: 0 !important;
         border-top-left-radius: 16px !important;

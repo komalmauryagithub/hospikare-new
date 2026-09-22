@@ -209,6 +209,9 @@ function reloadCurrentHospitalPanel() {
     if (activeId === "hospitalsBtn") {
         loadHospitals();
     }
+    else if (activeId === "hospitalDetailsBtn") {
+        if (typeof loadHospitalProfiles === 'function') loadHospitalProfiles();
+    }
     else if (activeId === "availabilityBtn") {
         loadAvailability();
     }
@@ -524,15 +527,37 @@ async function fillProfileForm(profile, details = {}) {
     const ifscField = document.getElementById("profileIfsc");
 
     if (nameField) nameField.value = profile.name || "";
-    if (emailField) emailField.value = profile.emailorcontact || "";
+    if (emailField) emailField.value = profile.email || profile.emailorcontact || "";
     if (userTypeField && profile.users_type) userTypeField.value = profile.users_type;
     if (bankField) bankField.value = profile.bank_account || "";
     if (ifscField) ifscField.value = profile.ifsc || "";
 
+    // Fill the vendor profile modal form
+    const form = document.getElementById('vendorProfileForm');
+    if (form) {
+        // Map top-level profile fields to form inputs
+        const profileMap = {
+            'company_name': profile.company_name,
+            'name': profile.name,
+            'contact_number': profile.contact_number,
+            'email': profile.email || profile.emailorcontact,
+            'business_address': profile.business_address,
+            'bank_account': profile.bank_account,
+            'ifsc': profile.ifsc
+        };
+        for (const [key, val] of Object.entries(profileMap)) {
+            const input = form.querySelector('[name="' + key + '"]');
+            if (input && input.type !== 'file') {
+                input.value = val || "";
+            }
+        }
+    }
+
+    // Additional entity details mapping if needed
     if (details) {
         for (const [key, value] of Object.entries(details)) {
             const input = document.querySelector('#vendorProfileForm [name="' + key + '"]');
-            if (input && input.type !== 'file') {
+            if (input && input.type !== 'file' && !input.value) { // only if not already filled
                 input.value = value || "";
             }
         }
@@ -568,25 +593,16 @@ async function loadUserProfile(){
             });
             fillProfileForm(result.user, result.details || {});
             
-            // Check if ALL hospitals of this user have completed their profiles
-            try {
-                const resEnt = await fetch('/api/vendor/my-entities/hospital');
-                const entData = await resEnt.json();
-                const triggerText = document.getElementById('profileTriggerText');
-                const triggerIcon = document.getElementById('profileSectionTrigger')?.querySelector('i');
-                if (entData.success && entData.data && entData.data.length > 0) {
-                    const allCompleted = entData.data.every(h => Boolean(h.profile_completed));
-                    if (triggerText) {
-                        triggerText.innerText = allCompleted ? 'Show Profile' : 'Complete Profile';
-                    }
-                    if (triggerIcon) {
-                        triggerIcon.className = allCompleted ? 'fa-solid fa-id-card' : 'fa-solid fa-user-pen';
-                        triggerIcon.style.color = allCompleted ? '#10b981' : '#3b82f6';
-                    }
-                } else if (triggerText) {
-                    triggerText.innerText = 'Complete Profile';
-                }
-            } catch(e) {}
+            const isCompleted = Boolean(result.user?.vendor_profile_completed);
+            const triggerText = document.getElementById('profileTriggerText');
+            const triggerIcon = document.getElementById('profileSectionTrigger')?.querySelector('i');
+            if (triggerText) {
+                triggerText.innerText = isCompleted ? 'Show Profile' : 'Complete Profile';
+            }
+            if (triggerIcon) {
+                triggerIcon.className = isCompleted ? 'fa-solid fa-id-card' : 'fa-solid fa-user-pen';
+                triggerIcon.style.color = isCompleted ? '#10b981' : '#3b82f6';
+            }
         }
     } catch(err) {
         console.error("Error loading profile:", err);
@@ -611,14 +627,14 @@ document.getElementById("hospitalForm")
             "facilities",
             document.getElementById("hospital_facilities").value
         );
+        formData.append("hospital_type", document.getElementById("add_hospital_type")?.value || "");
+        formData.append("hospital_ownership", document.getElementById("add_hospital_ownership")?.value || "");
+        formData.append("hospital_registration_number", document.getElementById("add_hospital_registration_number")?.value || "");
         formData.append(
             "live_api_url",
             document.getElementById("hospital_live_api_url").value
         );
-        formData.append(
-            "live_api_key",
-            document.getElementById("hospital_live_api_key").value
-        );
+
         const hospitalImages = document.getElementById("hospital_images");
         const maxHospitalImages = hospitalImages && hospitalImages.files ? Math.min(hospitalImages.files.length, 4) : 0;
         for(let i = 0; i < maxHospitalImages; i++){
@@ -626,13 +642,15 @@ document.getElementById("hospitalForm")
         }
         const rooms = [];
         document.querySelectorAll(".roomBox").forEach(room => {
-            const roomImgs = room.querySelector(".room_images").files;
+            const roomImgInput = room.querySelector(".room_images");
+            const roomImgs = roomImgInput ? roomImgInput.files : [];
             const maxRoomImages = roomImgs ? Math.min(roomImgs.length, 4) : 0;
             for(let j=0; j < maxRoomImages; j++){
                 formData.append("room_images", roomImgs[j]);
             }
             rooms.push({
                 room_type: room.querySelector(".room_type").value,
+                bed_type: room.querySelector(".room_bed_type").value,
                 pricing: room.querySelector(".room_pricing").value,
                 total_beds: room.querySelector(".room_total_beds").value,
                 details: room.querySelector(".room_details").value,
@@ -645,67 +663,50 @@ document.getElementById("hospitalForm")
             JSON.stringify(rooms)
         );
         const doctors = [];
-        document.querySelectorAll(
-            ".doctorBox"
-        ).forEach(doc => {
+        document.querySelectorAll(".doctorBox").forEach((doc, idx) => {
+            const specSelect = doc.querySelector(".doctor_specialization");
+            const specializations = Array.from(specSelect.selectedOptions).map(opt => opt.value);
+            
             doctors.push({
-                doctor_name:
-                    doc.querySelector(
-                        ".doctor_name"
-                    ).value,
-                qualification:
-                    doc.querySelector(
-                        ".doctor_qualification"
-                    ).value,
-                experience:
-                    doc.querySelector(
-                        ".doctor_experience"
-                    ).value
+                doctor_name: doc.querySelector(".doctor_name")?.value,
+                gender: doc.querySelector(".doctor_gender")?.value,
+                dob_age: doc.querySelector(".doctor_dob_age")?.value,
+                mobile: doc.querySelector(".doctor_mobile")?.value,
+                email: doc.querySelector(".doctor_email")?.value,
+                specialization: specializations,
+                qualification: doc.querySelector(".doctor_qualification")?.value,
+                medical_reg_no: doc.querySelector(".doctor_reg_no")?.value,
+                experience: doc.querySelector(".doctor_experience")?.value,
+                department: doc.querySelector(".doctor_department")?.value,
+                consultation_fee: doc.querySelector(".doctor_fee")?.value,
+                available_days: doc.querySelector(".doctor_days")?.value,
+                available_time: doc.querySelector(".doctor_time")?.value,
+                status: doc.querySelector(".doctor_status")?.value
             });
         });
         formData.append(
             "doctors",
             JSON.stringify(doctors)
         );
-        const hospitalReg =
-            document.getElementById(
-                "hospital_reg_certificate"
-            );
-        if(hospitalReg.files[0]){
-            formData.append(
-                "hospital_reg_certificate",
-                hospitalReg.files[0]
-            );
+        const hospitalReg = document.getElementById("hospital_reg_certificate");
+        if(hospitalReg && hospitalReg.files[0]){
+            formData.append("hospital_reg_certificate", hospitalReg.files[0]);
         }
-        const shopLicense =
-            document.getElementById(
-                "shop_license"
-            );
-        if(shopLicense.files[0]){
-            formData.append(
-                "shop_license",
-                shopLicense.files[0]
-            );
+        const shopLicense = document.getElementById("shop_license");
+        if(shopLicense && shopLicense.files[0]){
+            formData.append("shop_license", shopLicense.files[0]);
         }
-        const medicalCouncil =
-            document.getElementById(
-                "medical_council_registration"
-            );
-        if(medicalCouncil.files[0]){
-            formData.append(
-                "medical_council_registration",
-                medicalCouncil.files[0]
-            );
+        const medicalCouncil = document.getElementById("medical_council_registration");
+        if(medicalCouncil && medicalCouncil.files[0]){
+            formData.append("medical_council_registration", medicalCouncil.files[0]);
         }
-        const electricityBill =
-            document.getElementById(
-                "electricity_bill"
-            );
-        if(electricityBill.files[0]){
-            formData.append(
-                "electricity_bill",
-                electricityBill.files[0]
-            );
+        const electricityBill = document.getElementById("electricity_bill");
+        if(electricityBill && electricityBill.files[0]){
+            formData.append("electricity_bill", electricityBill.files[0]);
+        }
+        const bankCheque = document.getElementById("bank_cancelled_cheque");
+        if(bankCheque && bankCheque.files[0]){
+            formData.append("bank_cancelled_cheque", bankCheque.files[0]);
         }
         try{
             const response =
@@ -783,6 +784,7 @@ document.getElementById("roomForm")
             formData.append("details", document.getElementById("room_details").value);
             formData.append("pricing", document.getElementById("room_pricing").value);
             formData.append("room_type", document.getElementById("room_type").value);
+            formData.append("bed_type", document.getElementById("room_bed_type").value);
             formData.append("total_beds", document.getElementById("room_total_beds").value);
             formData.append("availability", document.getElementById("room_availability").value);
             
@@ -929,8 +931,11 @@ async function loadAvailability(){
 
         const mainContent = document.getElementById("mainContent");
         mainContent.innerHTML = `
-            <div style="margin-bottom: 25px;">
+            <div style="margin-bottom: 25px; display:flex; justify-content:space-between; align-items:center;">
                 <h2 style="font-size: 24px; color: var(--text-main, #1e293b); font-weight: 700;">Room Availability</h2>
+                <button id="openAddRoomModalBtn" style="padding:10px 20px; border-radius:10px; font-weight:600; cursor:pointer; background-color: var(--sidebar-active-bg, #2563eb); color: white; border: none; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);">
+                    <i class="fa-solid fa-plus"></i> Add Room
+                </button>
             </div>
             <div class="table-container">
                 <table class="adminTable">
@@ -971,7 +976,7 @@ async function loadAvailability(){
                 tbody.innerHTML += `
                 <tr>
                     <td><span style="font-weight:600; color:var(--text-main, #1e293b);">${hospital.hospital_name || ''}</span></td>
-                    <td>${room.room_type || '-'}</td>
+                    <td>${room.room_type || '-'} <br><small style="color:#64748b;">${room.bed_type || '-'}</small></td>
                     <td>${room.total_beds || '-'}</td>
                     <td style="font-weight:600; color:#16a34a;">₹${room.pricing || '0'}</td>
                     <td><span style="padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 700; display: inline-block; ${badgeStyle}">${room.availability || 'N/A'}</span></td>
@@ -979,6 +984,15 @@ async function loadAvailability(){
                 `;
             });
         });
+        
+        const openAddRoomBtn = document.getElementById("openAddRoomModalBtn");
+        if (openAddRoomBtn) {
+            openAddRoomBtn.addEventListener("click", async () => {
+                await loadHospitalDropdown();
+                document.getElementById("roomModal").style.display = "flex";
+            });
+        }
+        
         applyHospitalPanelSearch();
     }
     catch(error){
@@ -1005,9 +1019,7 @@ async function loadBookings(){
                             <th>Age/Gender</th>
                             <th>Hospital</th>
                             <th>Room/Bed</th>
-                            <th>Admission</th>
-                            <th>Discharge</th>
-                            <th>Total</th>
+                            <th>Payment Info</th>
                         </tr>
                     </thead>
                     <tbody id="bookingsTableBody">
@@ -1029,11 +1041,37 @@ async function loadBookings(){
             );
 
         if(bookings.length === 0){
-            tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding: 20px;">No Bookings Found</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding: 20px;">No Bookings Found</td></tr>`;
             return;
         }
 
         bookings.forEach(booking => {
+            let paymentBadge = '';
+            let paymentDetails = '';
+            
+            const totalAmt = parseFloat(booking.total_amount || 0);
+            const paidAmt = parseFloat(booking.paid_amount || totalAmt); // fallback if null
+            const isPart = booking.payment_type === 'Part';
+            const balance = isPart ? Math.max(0, totalAmt - paidAmt) : 0;
+            
+            if (isPart) {
+                paymentBadge = `<span style="padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 700; background:#fff7ed; color:#ea580c;">Part Payment</span>`;
+                paymentDetails = `
+                    <div style="font-size: 12px; margin-top: 4px;">
+                        <div style="color: #64748b;">Total: <span style="color:#0f172a; font-weight:600;">₹${totalAmt}</span></div>
+                        <div style="color: #64748b;">Paid: <span style="color:#16a34a; font-weight:600;">₹${paidAmt}</span></div>
+                        <div style="color: #64748b;">Balance: <span style="color:#dc2626; font-weight:600;">₹${balance}</span></div>
+                    </div>
+                `;
+            } else {
+                paymentBadge = `<span style="padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 700; background:#f0fdf4; color:#16a34a;">Full Payment</span>`;
+                paymentDetails = `
+                    <div style="font-size: 12px; margin-top: 4px;">
+                        <div style="color: #64748b;">Total Paid: <span style="color:#16a34a; font-weight:600;">₹${totalAmt}</span></div>
+                    </div>
+                `;
+            }
+
             tbody.innerHTML += `
             <tr>
                 <td>${booking.id}</td>
@@ -1044,9 +1082,10 @@ async function loadBookings(){
                     <span style="padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 700; display: inline-block; background:#e0e7ff; color:#4338ca; display:block; margin-bottom:4px;">${booking.room_type}</span>
                     <span style="font-size:12px; color:var(--text-muted, #64748b);">${booking.bed_type}</span>
                 </td>
-                <td>${booking.admission_date}</td>
-                <td>${booking.discharge_date}</td>
-                <td style="font-weight:600; color:#16a34a;">₹${booking.total_amount}</td>
+                <td>
+                    ${paymentBadge}
+                    ${paymentDetails}
+                </td>
             </tr>
             `;
         });
@@ -1546,6 +1585,9 @@ document.querySelectorAll('.menuItem').forEach(item => {
         document.querySelectorAll('.menuItem').forEach(i => i.classList.remove('active'));
         item.classList.add('active');
         if (item.id === 'hospitalsBtn') loadHospitals();
+        else if (item.id === 'hospitalDetailsBtn') {
+            if (typeof loadHospitalProfiles === 'function') loadHospitalProfiles();
+        }
         else if (item.id === 'availabilityBtn') loadAvailability();
         else if (item.id === 'bookingsBtn') loadBookings();
         else if (item.id === 'paymentsBtn') loadPayments();
@@ -1597,11 +1639,24 @@ if(addRoomBtn) {
                 <input type="number" class="top-search room_pricing" placeholder="Price per night" required>
             </div>
             <div style="display: flex; flex-direction: column; gap: 6px;">
-                <label style="font-size: 12px; font-weight: 600;">Type</label>
+                <label style="font-size: 12px; font-weight: 600;">Room Type</label>
                 <select class="top-search room_type">
-                    <option value="General">General</option>
+                    <option value="General Ward">General Ward</option>
+                    <option value="Semi-Private Room">Semi-Private Room</option>
+                    <option value="Private Room">Private Room</option>
+                    <option value="Deluxe Room">Deluxe Room</option>
                     <option value="ICU">ICU</option>
-                    <option value="Deluxe">Deluxe</option>
+                    <option value="Emergency Room">Emergency Room</option>
+                </select>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 6px;">
+                <label style="font-size: 12px; font-weight: 600;">Bed Type</label>
+                <select class="top-search room_bed_type">
+                    <option value="Single Bed">Single Bed</option>
+                    <option value="Twin Bed">Twin Bed</option>
+                    <option value="Double Bed">Double Bed</option>
+                    <option value="Electric/Hospital Bed">Electric/Hospital Bed</option>
+                    <option value="ICU Bed">ICU Bed</option>
                 </select>
             </div>
             <div style="display: flex; flex-direction: column; gap: 6px;">
@@ -1632,24 +1687,105 @@ if(addDoctorBtn) {
         const doctorBox = document.createElement('div');
         doctorBox.className = 'doctorBox';
         doctorBox.style = 'border: 1px solid var(--border-color); padding: 16px; border-radius: 8px; margin-bottom: 12px; display: grid; grid-template-columns: 1fr; gap: 12px; position: relative;';
-        doctorBox.innerHTML = `
-            <button type="button" class="removeDoctorBtn" style="position: absolute; top: 8px; right: 8px; background: transparent; border: none; color: red; cursor: pointer;"><i class="fa-solid fa-trash"></i></button>
-            <div style="display: flex; flex-direction: column; gap: 6px;">
-                <label style="font-size: 12px; font-weight: 600;">Doctor Name</label>
-                <input type="text" class="top-search doctor_name" placeholder="Dr. John Doe" required>
-            </div>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-                <div style="display: flex; flex-direction: column; gap: 6px;">
-                    <label style="font-size: 12px; font-weight: 600;">Qualification</label>
-                    <input type="text" class="top-search doctor_qualification" placeholder="MBBS, MD" required>
-                </div>
-                <div style="display: flex; flex-direction: column; gap: 6px;">
-                    <label style="font-size: 12px; font-weight: 600;">Experience</label>
-                    <input type="text" class="top-search doctor_experience" placeholder="10 Years" required>
-                </div>
-            </div>
-        `;
-        doctorBox.querySelector('.removeDoctorBtn').addEventListener('click', () => { doctorBox.remove(); });
+                        doctorBox.innerHTML = `
+                    <button type="button" class="removeDoctorBtn" style="position: absolute; top: 8px; right: 8px; background: transparent; border: none; color: red; cursor: pointer; font-size:16px;" title="Remove Doctor"><i class="fa-solid fa-trash"></i></button>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom:12px;">
+                        <div style="display: flex; flex-direction: column; gap: 6px;">
+                            <label style="font-size: 12px; font-weight: 600;">Doctor Name <span style="color:red;">*</span></label>
+                            <input type="text" class="doctor_name" value="" style="border: 1px solid #d1d5db; border-radius: 6px; padding: 8px; width: 100%; font-size:14px;" required>
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 6px;">
+                            <label style="font-size: 12px; font-weight: 600;">Profile Photo</label>
+                            <input type="file" class="doctor_photo" accept="image/*" style="border: 1px solid #d1d5db; border-radius: 6px; padding: 6px; width: 100%; font-size:13px; background:#fff;">
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 6px;">
+                            <label style="font-size: 12px; font-weight: 600;">Gender <span style="color:red;">*</span></label>
+                            <select class="doctor_gender" style="border: 1px solid #d1d5db; border-radius: 6px; padding: 8px; width: 100%; font-size:14px; background:#fff;" required>
+                                <option value="">Select...</option>
+                                <option value="Male" >Male</option>
+                                <option value="Female" >Female</option>
+                                <option value="Other" >Other</option>
+                            </select>
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 6px;">
+                            <label style="font-size: 12px; font-weight: 600;">Date of Birth / Age</label>
+                            <input type="text" class="doctor_dob_age" value="" style="border: 1px solid #d1d5db; border-radius: 6px; padding: 8px; width: 100%; font-size:14px;">
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 6px;">
+                            <label style="font-size: 12px; font-weight: 600;">Mobile Number <span style="color:red;">*</span></label>
+                            <input type="tel" class="doctor_mobile" value="" style="border: 1px solid #d1d5db; border-radius: 6px; padding: 8px; width: 100%; font-size:14px;" required>
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 6px;">
+                            <label style="font-size: 12px; font-weight: 600;">Email</label>
+                            <input type="email" class="doctor_email" value="" style="border: 1px solid #d1d5db; border-radius: 6px; padding: 8px; width: 100%; font-size:14px;">
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 6px; grid-column: span 2;">
+                            <label style="font-size: 12px; font-weight: 600;">Specialization (Multi-select) <span style="color:red;">*</span></label>
+                            <select class="doctor_specialization" multiple style="border: 1px solid #d1d5db; border-radius: 6px; padding: 8px; width: 100%; font-size:14px; background:#fff; min-height: 120px;" required>
+                                ${['General Physician','Cardiologist','Neurologist','Neurosurgeon','Orthopedic','Gynecologist','Obstetrician','Pediatrician','Dermatologist','Ophthalmologist','ENT Specialist','Dentist','Psychiatrist','Pulmonologist','Gastroenterologist','Nephrologist','Urologist','Oncologist','Endocrinologist','General Surgeon','Anesthesiologist','Radiologist','Pathologist','Physiotherapist','Emergency Medicine Specialist'].map(spec => 
+                                    `<option value="${spec}" >${spec}</option>`
+                                ).join('')}
+                            </select>
+                            <small style="color:var(--text-muted); font-size:11px; margin-top:-2px;">Hold Ctrl (Windows) or Cmd (Mac) to select multiple</small>
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 6px;">
+                            <label style="font-size: 12px; font-weight: 600;">Qualification <span style="color:red;">*</span></label>
+                            <input type="text" class="doctor_qualification" value="" style="border: 1px solid #d1d5db; border-radius: 6px; padding: 8px; width: 100%; font-size:14px;" required>
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 6px;">
+                            <label style="font-size: 12px; font-weight: 600;">Medical Reg Number <span style="color:red;">*</span></label>
+                            <input type="text" class="doctor_reg_no" value="" style="border: 1px solid #d1d5db; border-radius: 6px; padding: 8px; width: 100%; font-size:14px;" required>
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 6px;">
+                            <label style="font-size: 12px; font-weight: 600;">Years of Experience <span style="color:red;">*</span></label>
+                            <input type="text" class="doctor_experience" value="" style="border: 1px solid #d1d5db; border-radius: 6px; padding: 8px; width: 100%; font-size:14px;" required>
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 6px;">
+                            <label style="font-size: 12px; font-weight: 600;">Department</label>
+                            <input type="text" class="doctor_department" value="" style="border: 1px solid #d1d5db; border-radius: 6px; padding: 8px; width: 100%; font-size:14px;">
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 6px;">
+                            <label style="font-size: 12px; font-weight: 600;">Consultation Fee</label>
+                            <input type="number" class="doctor_fee" value="" style="border: 1px solid #d1d5db; border-radius: 6px; padding: 8px; width: 100%; font-size:14px;">
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 6px;">
+                            <label style="font-size: 12px; font-weight: 600;">Available Days</label>
+                            <input type="text" class="doctor_days" value="" placeholder="e.g. Mon-Fri" style="border: 1px solid #d1d5db; border-radius: 6px; padding: 8px; width: 100%; font-size:14px;">
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 6px;">
+                            <label style="font-size: 12px; font-weight: 600;">Available Time / Shift</label>
+                            <input type="text" class="doctor_time" value="" placeholder="e.g. 10 AM - 4 PM" style="border: 1px solid #d1d5db; border-radius: 6px; padding: 8px; width: 100%; font-size:14px;">
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 6px;">
+                            <label style="font-size: 12px; font-weight: 600;">Doctor Status <span style="color:red;">*</span></label>
+                            <select class="doctor_status" style="border: 1px solid #d1d5db; border-radius: 6px; padding: 8px; width: 100%; font-size:14px; background:#fff;" required>
+                                <option value="Active" >Active</option>
+                                <option value="Inactive" >Inactive</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div style="border-top: 1px solid var(--border-color); padding-top:16px; margin-top:8px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                        <div style="display: flex; flex-direction: column; gap: 6px;">
+                            <label style="font-size: 12px; font-weight: 600;">Medical Reg Certificate <span style="color:red;">*</span></label>
+                            <input type="file" class="doctor_doc_reg" accept=".pdf,image/*" style="border: 1px solid #d1d5db; border-radius: 6px; padding: 6px; width: 100%; font-size:13px; background:#fff;">
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 6px;">
+                            <label style="font-size: 12px; font-weight: 600;">Medical Degree Certificate <span style="color:red;">*</span></label>
+                            <input type="file" class="doctor_doc_degree" accept=".pdf,image/*" style="border: 1px solid #d1d5db; border-radius: 6px; padding: 6px; width: 100%; font-size:13px; background:#fff;">
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 6px;">
+                            <label style="font-size: 12px; font-weight: 600;">Specialization Certificate</label>
+                            <input type="file" class="doctor_doc_spec" accept=".pdf,image/*" style="border: 1px solid #d1d5db; border-radius: 6px; padding: 6px; width: 100%; font-size:13px; background:#fff;">
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 6px;">
+                            <label style="font-size: 12px; font-weight: 600;">Government ID Proof <span style="color:red;">*</span></label>
+                            <input type="file" class="doctor_doc_id" accept=".pdf,image/*" style="border: 1px solid #d1d5db; border-radius: 6px; padding: 6px; width: 100%; font-size:13px; background:#fff;">
+                        </div>
+                    </div>
+                `;
+                doctorBox.querySelector('.removeDoctorBtn').addEventListener('click', () => { doctorBox.remove(); });
         container.appendChild(doctorBox);
     });
 }
@@ -1694,8 +1830,19 @@ if(processCSVBtn) {
             let headers = lines[0].split(',').map(h => h.trim().toLowerCase());
             
             const nameIdx = headers.indexOf('doctor_name');
+            const genderIdx = headers.indexOf('gender');
+            const dobIdx = headers.indexOf('dob_age');
+            const mobileIdx = headers.indexOf('mobile');
+            const emailIdx = headers.indexOf('email');
+            const specIdx = headers.indexOf('specialization');
             const qualIdx = headers.indexOf('qualification');
+            const regNoIdx = headers.indexOf('medical_reg_no');
             const expIdx = headers.indexOf('experience');
+            const deptIdx = headers.indexOf('department');
+            const feeIdx = headers.indexOf('consultation_fee');
+            const daysIdx = headers.indexOf('available_days');
+            const timeIdx = headers.indexOf('available_time');
+            const statusIdx = headers.indexOf('status');
             
             if (nameIdx === -1) { alert('CSV must contain a column named doctor_name'); return; }
             
@@ -1708,20 +1855,102 @@ if(processCSVBtn) {
                 const doctorBox = document.createElement('div');
                 doctorBox.className = 'doctorBox';
                 doctorBox.style = 'border: 1px solid var(--border-color); padding: 16px; border-radius: 8px; margin-bottom: 12px; display: grid; grid-template-columns: 1fr; gap: 12px; position: relative;';
+                const parseMulti = (val) => val ? val.split('|').map(s=>s.trim()) : [];
                 doctorBox.innerHTML = `
                     <button type="button" class="removeDoctorBtn" style="position: absolute; top: 8px; right: 8px; background: transparent; border: none; color: red; cursor: pointer;"><i class="fa-solid fa-trash"></i></button>
-                    <div style="display: flex; flex-direction: column; gap: 6px;">
-                        <label style="font-size: 12px; font-weight: 600;">Doctor Name</label>
-                        <input type="text" class="top-search doctor_name" value="${cols[nameIdx] || ''}" required>
-                    </div>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom:12px;">
+                        <div style="display: flex; flex-direction: column; gap: 6px;">
+                            <label style="font-size: 12px; font-weight: 600;">Doctor Name</label>
+                            <input type="text" class="top-search doctor_name" value="${nameIdx !== -1 ? cols[nameIdx] : ''}" required>
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 6px;">
+                            <label style="font-size: 12px; font-weight: 600;">Profile Photo</label>
+                            <input type="file" class="top-search doctor_photo" accept="image/*">
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 6px;">
+                            <label style="font-size: 12px; font-weight: 600;">Gender</label>
+                            <select class="top-search doctor_gender" required>
+                                <option value="">Select...</option>
+                                <option value="Male" ${(genderIdx!==-1 && cols[genderIdx]==='Male')?'selected':''}>Male</option>
+                                <option value="Female" ${(genderIdx!==-1 && cols[genderIdx]==='Female')?'selected':''}>Female</option>
+                                <option value="Other" ${(genderIdx!==-1 && cols[genderIdx]==='Other')?'selected':''}>Other</option>
+                            </select>
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 6px;">
+                            <label style="font-size: 12px; font-weight: 600;">Date of Birth / Age</label>
+                            <input type="text" class="top-search doctor_dob_age" value="${dobIdx !== -1 ? cols[dobIdx] : ''}" required>
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 6px;">
+                            <label style="font-size: 12px; font-weight: 600;">Mobile Number</label>
+                            <input type="tel" class="top-search doctor_mobile" value="${mobileIdx !== -1 ? cols[mobileIdx] : ''}" required>
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 6px;">
+                            <label style="font-size: 12px; font-weight: 600;">Email</label>
+                            <input type="email" class="top-search doctor_email" value="${emailIdx !== -1 ? cols[emailIdx] : ''}">
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 6px; grid-column: span 2;">
+                            <label style="font-size: 12px; font-weight: 600;">Specialization (Multi-select, separated by |)</label>
+                            <select class="top-search doctor_specialization" multiple style="height: auto; min-height: 100px; padding:8px;" required>
+                                ${['General Physician','Cardiologist','Neurologist','Neurosurgeon','Orthopedic','Gynecologist','Obstetrician','Pediatrician','Dermatologist','Ophthalmologist','ENT Specialist','Dentist','Psychiatrist','Pulmonologist','Gastroenterologist','Nephrologist','Urologist','Oncologist','Endocrinologist','General Surgeon','Anesthesiologist','Radiologist','Pathologist','Physiotherapist','Emergency Medicine Specialist'].map(spec => 
+                                    `<option value="${spec}" ${(specIdx!==-1 && parseMulti(cols[specIdx]).includes(spec))?'selected':''}>${spec}</option>`
+                                ).join('')}
+                            </select>
+                            <small style="color:var(--text-muted); font-size:10px;">Hold Ctrl (Windows) or Cmd (Mac) to select multiple</small>
+                        </div>
                         <div style="display: flex; flex-direction: column; gap: 6px;">
                             <label style="font-size: 12px; font-weight: 600;">Qualification</label>
                             <input type="text" class="top-search doctor_qualification" value="${qualIdx !== -1 ? cols[qualIdx] : ''}" required>
                         </div>
                         <div style="display: flex; flex-direction: column; gap: 6px;">
-                            <label style="font-size: 12px; font-weight: 600;">Experience</label>
+                            <label style="font-size: 12px; font-weight: 600;">Medical Reg Number</label>
+                            <input type="text" class="top-search doctor_reg_no" value="${regNoIdx !== -1 ? cols[regNoIdx] : ''}" required>
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 6px;">
+                            <label style="font-size: 12px; font-weight: 600;">Years of Experience</label>
                             <input type="text" class="top-search doctor_experience" value="${expIdx !== -1 ? cols[expIdx] : ''}" required>
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 6px;">
+                            <label style="font-size: 12px; font-weight: 600;">Department</label>
+                            <input type="text" class="top-search doctor_department" value="${deptIdx !== -1 ? cols[deptIdx] : ''}">
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 6px;">
+                            <label style="font-size: 12px; font-weight: 600;">Consultation Fee</label>
+                            <input type="number" class="top-search doctor_fee" value="${feeIdx !== -1 ? cols[feeIdx] : ''}">
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 6px;">
+                            <label style="font-size: 12px; font-weight: 600;">Available Days</label>
+                            <input type="text" class="top-search doctor_days" value="${daysIdx !== -1 ? cols[daysIdx] : ''}">
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 6px;">
+                            <label style="font-size: 12px; font-weight: 600;">Available Time / Shift</label>
+                            <input type="text" class="top-search doctor_time" value="${timeIdx !== -1 ? cols[timeIdx] : ''}">
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 6px;">
+                            <label style="font-size: 12px; font-weight: 600;">Doctor Status</label>
+                            <select class="top-search doctor_status" required>
+                                <option value="Active" ${(statusIdx!==-1 && cols[statusIdx]==='Active')?'selected':''}>Active</option>
+                                <option value="Inactive" ${(statusIdx!==-1 && cols[statusIdx]==='Inactive')?'selected':''}>Inactive</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div style="border-top: 1px solid var(--border-color); padding-top:12px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                        <div style="display: flex; flex-direction: column; gap: 6px;">
+                            <label style="font-size: 12px; font-weight: 600;">Medical Reg Certificate ⭐⭐⭐</label>
+                            <input type="file" class="top-search doctor_doc_reg" accept=".pdf,image/*">
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 6px;">
+                            <label style="font-size: 12px; font-weight: 600;">Medical Degree Certificate ⭐⭐⭐</label>
+                            <input type="file" class="top-search doctor_doc_degree" accept=".pdf,image/*">
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 6px;">
+                            <label style="font-size: 12px; font-weight: 600;">Specialization Certificate ⭐⭐</label>
+                            <input type="file" class="top-search doctor_doc_spec" accept=".pdf,image/*">
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 6px;">
+                            <label style="font-size: 12px; font-weight: 600;">Government ID Proof ⭐⭐</label>
+                            <input type="file" class="top-search doctor_doc_id" accept=".pdf,image/*">
                         </div>
                     </div>
                 `;
@@ -1762,233 +1991,7 @@ loadUserProfile();
 function openProfileModal() {
     const modal = document.getElementById("profileModal") || document.getElementById("profileModalBox");
     if (modal) modal.style.display = "flex";
-    
-    // Fetch entities to populate the dropdown
-    const entityType = document.getElementById('profileEntityType')?.value || 'hospital';
-    if (entityType) {
-        fetch('/api/vendor/my-entities/' + entityType)
-            .then(res => res.json())
-            .then(data => {
-                if (data.success && data.data) {
-                    const select = document.getElementById('entitySelect');
-                    if (select) {
-                        select.innerHTML = '<option value="">Select Hospital Name...</option>';
-                        data.data.forEach(ent => {
-                            select.innerHTML += '<option value="' + ent.id + '">' + ent.name + (ent.profile_completed ? ' (Profile Completed)' : '') + '</option>';
-                        });
-                        
-                        if (data.data.length === 0) {
-                            select.innerHTML = '<option value="">No hospitals added yet.</option>';
-                        }
-                        
-                        // Handler when entity is selected
-                        select.onchange = async (e) => {
-                            const entityId = select.value;
-                            const bannerContainer = document.getElementById('profileStatusBannerContainer');
-                            const actionButtons = document.getElementById('profileModalActionButtons');
-                            const form = document.getElementById('vendorProfileForm');
-                            
-                            if (!entityId) {
-                                if (bannerContainer) bannerContainer.innerHTML = '';
-                                if (actionButtons) {
-                                    actionButtons.innerHTML = `
-                                        <button type="button" id="closeProfileBtn" style="padding:10px 18px; border:1px solid var(--hk-border, #cbd5e1); background:var(--hk-surface, #fff); border-radius:10px; cursor:pointer; color:var(--hk-text-main, #101828); font-weight:600;" onclick="closeProfileModal()">Close</button>
-                                        <button type="submit" id="saveProfileBtn" style="padding:10px 18px; border:none; background:var(--hk-primary-blue, #2563eb); color:#fff; border-radius:10px; cursor:pointer; font-weight:600;">Save Profile</button>
-                                    `;
-                                }
-                                return;
-                            }
-                            
-                            try {
-                                const res = await fetch('/api/vendor/entity-details/' + entityType + '/' + entityId);
-                                const result = await res.json();
-                                if (result.success && result.data) {
-                                    const entityData = result.data;
-                                    
-                                    // Populate all text & number fields
-                                    if (form.elements['hospital_registration_number']) {
-                                        form.elements['hospital_registration_number'].value = entityData.hospital_registration_number || '';
-                                    }
-                                    if (form.elements['address']) {
-                                        form.elements['address'].value = entityData.address || '';
-                                    }
-                                    if (form.elements['contact_number']) {
-                                        form.elements['contact_number'].value = entityData.contact_number || '';
-                                    }
-                                    if (form.elements['number_of_beds']) {
-                                        form.elements['number_of_beds'].value = entityData.number_of_beds || '';
-                                    }
-                                    if (form.elements['facilities']) {
-                                        form.elements['facilities'].value = entityData.facilities || '';
-                                    }
-                                    
-                                    // Explicit matching for hospital_type dropdown
-                                    if (entityData.hospital_type) {
-                                        const typeSelect = form.querySelector('select[name="hospital_type"]');
-                                        if (typeSelect) {
-                                            for (let i = 0; i < typeSelect.options.length; i++) {
-                                                if (typeSelect.options[i].value.toLowerCase() === entityData.hospital_type.toLowerCase() || typeSelect.options[i].text.toLowerCase() === entityData.hospital_type.toLowerCase()) {
-                                                    typeSelect.selectedIndex = i;
-                                                    break;
-                                                }
-                                            }
-                                        }
-                                    }
-                                    
-                                    // Explicit matching for hospital_ownership dropdown
-                                    if (entityData.hospital_ownership) {
-                                        const ownSelect = form.querySelector('select[name="hospital_ownership"]');
-                                        if (ownSelect) {
-                                            for (let i = 0; i < ownSelect.options.length; i++) {
-                                                if (ownSelect.options[i].value.toLowerCase() === entityData.hospital_ownership.toLowerCase() || ownSelect.options[i].text.toLowerCase() === entityData.hospital_ownership.toLowerCase()) {
-                                                    ownSelect.selectedIndex = i;
-                                                    break;
-                                                }
-                                            }
-                                        }
-                                    }
-                                    
-                                    const fileInputs = form.querySelectorAll('input[type="file"]');
-                                    const allInputs = form.querySelectorAll('input, select, textarea');
-
-                                    if (!entityData.profile_completed) {
-                                        // 1. Initial State: Profile NOT completed yet
-                                        allInputs.forEach(input => {
-                                            if (input.id !== 'profileEntityType') {
-                                                input.disabled = false;
-                                                input.style.backgroundColor = '#fff';
-                                                input.style.cursor = 'auto';
-                                            }
-                                        });
-                                        fileInputs.forEach(input => input.setAttribute('required', 'required'));
-                                        
-                                        if (bannerContainer) {
-                                            bannerContainer.innerHTML = `
-                                                <div style="padding:12px 16px; background:rgba(37,99,235,0.08); border:1px solid rgba(37,99,235,0.2); border-radius:10px; font-size:13px; color:#1d4ed8; font-weight:500; display:flex; align-items:center; gap:8px;">
-                                                    <i class="fa-solid fa-circle-info" style="font-size:16px;"></i>
-                                                    <div>Please complete the required details and upload your hospital registration documents below to verify your hospital.</div>
-                                                </div>
-                                            `;
-                                        }
-                                        if (actionButtons) {
-                                            actionButtons.innerHTML = `
-                                                <button type="button" id="closeProfileBtn" style="padding:10px 18px; border:1px solid var(--hk-border, #cbd5e1); background:var(--hk-surface, #fff); border-radius:10px; cursor:pointer; color:var(--hk-text-main, #101828); font-weight:600;" onclick="closeProfileModal()">Close</button>
-                                                <button type="submit" id="saveProfileBtn" style="padding:10px 22px; border:none; background:var(--hk-primary-blue, #2563eb); color:#fff; border-radius:10px; cursor:pointer; font-weight:600; display:inline-flex; align-items:center; gap:8px;"><i class="fa-solid fa-floppy-disk"></i> Save Profile</button>
-                                            `;
-                                        }
-                                    } else if (!entityData.edit_allowed) {
-                                        // 2. Profile Completed & Locked (Needs Admin Permission)
-                                        allInputs.forEach(input => {
-                                            if (input.id !== 'entitySelect' && input.id !== 'profileEntityType') {
-                                                input.disabled = true;
-                                                input.style.backgroundColor = '#f8fafc';
-                                                input.style.cursor = 'not-allowed';
-                                            }
-                                        });
-                                        fileInputs.forEach(input => input.removeAttribute('required'));
-
-                                        if (!entityData.edit_requested) {
-                                            if (bannerContainer) {
-                                                bannerContainer.innerHTML = `
-                                                    <div style="padding:12px 16px; background:#fffbeb; border:1px solid #fde68a; border-radius:10px; font-size:13px; color:#92400e; font-weight:500; display:flex; align-items:center; gap:10px;">
-                                                        <i class="fa-solid fa-shield-halved" style="color:#d97706; font-size:18px;"></i>
-                                                        <div style="flex:1;">
-                                                            <strong>Profile is Verified & Locked.</strong> Direct updates are restricted. If you need to update any hospital information or documents, please request permission from the Admin.
-                                                        </div>
-                                                    </div>
-                                                `;
-                                            }
-                                            if (actionButtons) {
-                                                actionButtons.innerHTML = `
-                                                    <button type="button" id="closeProfileBtn" style="padding:10px 18px; border:1px solid var(--hk-border, #cbd5e1); background:var(--hk-surface, #fff); border-radius:10px; cursor:pointer; color:var(--hk-text-main, #101828); font-weight:600;" onclick="closeProfileModal()">Close</button>
-                                                    <button type="button" id="requestAdminEditBtn" style="padding:10px 22px; border:none; background:#d97706; color:#fff; border-radius:10px; cursor:pointer; font-weight:700; display:inline-flex; align-items:center; gap:8px; box-shadow:0 2px 8px rgba(217,119,6,0.25);"><i class="fa-solid fa-lock"></i> Request Admin for Edit</button>
-                                                `;
-                                                const reqBtn = document.getElementById('requestAdminEditBtn');
-                                                if (reqBtn) {
-                                                    reqBtn.onclick = async () => {
-                                                        reqBtn.disabled = true;
-                                                        reqBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Requesting...';
-                                                        try {
-                                                            const reqRes = await fetch('/api/vendor/request-profile-edit/' + entityType + '/' + entityId, { method: 'POST' });
-                                                            const reqData = await reqRes.json();
-                                                            if (reqData.success) {
-                                                                alert('Edit request sent to Admin successfully! Once Admin approves, you can update your profile details.');
-                                                                select.dispatchEvent(new Event('change'));
-                                                            } else {
-                                                                alert(reqData.message || 'Failed to submit request.');
-                                                                reqBtn.disabled = false;
-                                                                reqBtn.innerHTML = '<i class="fa-solid fa-lock"></i> Request Admin for Edit';
-                                                            }
-                                                        } catch(err) {
-                                                            alert('Network error while requesting edit.');
-                                                            reqBtn.disabled = false;
-                                                            reqBtn.innerHTML = '<i class="fa-solid fa-lock"></i> Request Admin for Edit';
-                                                        }
-                                                    };
-                                                }
-                                            }
-                                        } else {
-                                            // Edit requested & pending approval
-                                            if (bannerContainer) {
-                                                bannerContainer.innerHTML = `
-                                                    <div style="padding:12px 16px; background:#fef3c7; border:1px solid #fcd34d; border-radius:10px; font-size:13px; color:#78350f; font-weight:500; display:flex; align-items:center; gap:10px;">
-                                                        <i class="fa-solid fa-hourglass-half" style="color:#d97706; font-size:18px;"></i>
-                                                        <div style="flex:1;">
-                                                            <strong>Edit Request Pending Admin Approval.</strong> You have requested to update this profile. Once Admin approves the request, the form will become editable.
-                                                        </div>
-                                                    </div>
-                                                `;
-                                            }
-                                            if (actionButtons) {
-                                                actionButtons.innerHTML = `
-                                                    <button type="button" id="closeProfileBtn" style="padding:10px 18px; border:1px solid var(--hk-border, #cbd5e1); background:var(--hk-surface, #fff); border-radius:10px; cursor:pointer; color:var(--hk-text-main, #101828); font-weight:600;" onclick="closeProfileModal()">Close</button>
-                                                    <button type="button" disabled style="padding:10px 20px; border:none; background:#94a3b8; color:#fff; border-radius:10px; cursor:not-allowed; font-weight:600; display:inline-flex; align-items:center; gap:8px;"><i class="fa-solid fa-clock"></i> Edit Request Pending Admin Approval</button>
-                                                `;
-                                            }
-                                        }
-                                    } else {
-                                        // 3. Edit Approved by Admin
-                                        allInputs.forEach(input => {
-                                            if (input.id !== 'profileEntityType') {
-                                                input.disabled = false;
-                                                input.style.backgroundColor = '#fff';
-                                                input.style.cursor = 'auto';
-                                            }
-                                        });
-                                        fileInputs.forEach(input => input.removeAttribute('required'));
-
-                                        if (bannerContainer) {
-                                            bannerContainer.innerHTML = `
-                                                <div style="padding:12px 16px; background:#ecfdf5; border:1px solid #a7f3d0; border-radius:10px; font-size:13px; color:#065f46; font-weight:500; display:flex; align-items:center; gap:10px;">
-                                                    <i class="fa-solid fa-circle-check" style="color:#059669; font-size:18px;"></i>
-                                                    <div style="flex:1;">
-                                                        <strong>Edit Permission Approved!</strong> Admin has granted access to update your hospital profile. Make your changes and click 'Update Profile' below.
-                                                    </div>
-                                                </div>
-                                            `;
-                                        }
-                                        if (actionButtons) {
-                                            actionButtons.innerHTML = `
-                                                <button type="button" id="closeProfileBtn" style="padding:10px 18px; border:1px solid var(--hk-border, #cbd5e1); background:var(--hk-surface, #fff); border-radius:10px; cursor:pointer; color:var(--hk-text-main, #101828); font-weight:600;" onclick="closeProfileModal()">Close</button>
-                                                <button type="submit" id="saveProfileBtn" style="padding:10px 22px; border:none; background:#059669; color:#fff; border-radius:10px; cursor:pointer; font-weight:600; display:inline-flex; align-items:center; gap:8px;"><i class="fa-solid fa-pen-to-square"></i> Update Profile</button>
-                                            `;
-                                        }
-                                    }
-                                }
-                            } catch(err) { console.error(err); }
-                        };
-
-                        // Auto-select first hospital if available
-                        if (data.data.length > 0) {
-                            select.value = data.data[0].id;
-                            select.dispatchEvent(new Event('change'));
-                        }
-                    }
-                }
-            });
-    }
 }
-
 function closeProfileModal() {
     const modal = document.getElementById("profileModalBox") || document.getElementById("profileModal");
     if (modal) modal.style.display = "none";
@@ -1997,13 +2000,6 @@ function closeProfileModal() {
 document.getElementById('vendorProfileForm')?.addEventListener('submit', async (event) => {
     event.preventDefault();
     const form = event.target;
-    const entityId = document.getElementById('entitySelect')?.value;
-    const entityType = document.getElementById('profileEntityType')?.value || 'hospital';
-    
-    if (!entityId) {
-        alert('Please select a hospital first.');
-        return;
-    }
     
     const formData = new FormData(form);
     
@@ -2015,13 +2011,14 @@ document.getElementById('vendorProfileForm')?.addEventListener('submit', async (
     }
 
     try {
-        const response = await fetch('/api/vendor/complete-profile/' + entityType + '/' + entityId, { 
-            method: 'POST', 
-            body: formData 
+        const response = await fetch('/api/user/profile', { 
+            method: 'PUT', 
+            body: formData,
+            credentials: 'include'
         });
         const result = await response.json();
         if (result.success) {
-            alert('Hospital profile updated successfully!');
+            alert('Vendor Profile saved successfully!');
             closeProfileModal();
             await loadUserProfile();
         } else {
@@ -2038,3 +2035,349 @@ document.getElementById('vendorProfileForm')?.addEventListener('submit', async (
 });
 // ===================================
 
+
+async function loadHospitalProfiles(){
+    try{
+        const response = await fetch('/api/hospitals');
+        const result = await response.json();
+
+        const mainContent = document.getElementById("mainContent");
+        mainContent.innerHTML = `
+            <div style="margin-bottom: 25px; display:flex; justify-content:space-between; align-items:center;">
+                <div>
+                    <h2 style="font-size: 24px; color: var(--text-main, #1e293b); font-weight: 700;">Hospital Details</h2>
+                    <p style="color: var(--text-muted);">Click on a hospital to view and edit its profile details.</p>
+                </div>
+                <button id="addHospitalDetailsBtn" style="padding:10px 20px; border-radius:10px; font-weight:600; cursor:pointer; background-color: var(--sidebar-active-bg, #2563eb); color: white; border: none; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);">
+                    <i class="fa-solid fa-plus"></i> Add Hospital Details
+                </button>
+            </div>
+            <div class="table-container">
+                <table class="adminTable">
+                    <thead>
+                        <tr>
+                            <th style="width:60px;">ID</th>
+                            <th>Hospital Name</th>
+                            <th>Type</th>
+                            <th>Ownership</th>
+                            <th>Address</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="hospitalProfilesTableBody">
+                    </tbody>
+                </table>
+            </div>
+        `;
+
+        const tbody = document.getElementById("hospitalProfilesTableBody");
+
+        if(!result.success || !result.hospitals || result.hospitals.length === 0){
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding: 20px;">No Hospitals Found</td></tr>';
+            return;
+        }
+
+        result.hospitals.forEach(hospital => {
+            const tr = document.createElement("tr");
+            tr.style.cursor = "pointer";
+            tr.innerHTML = `
+                <td>${hospital.id}</td>
+                <td><span style="font-weight:700; color:var(--text-main, #1e293b); font-size:14px;">${hospital.hospital_name || ''}</span></td>
+                <td><span style="background: rgba(37, 99, 235, 0.1); color: #2563eb; padding: 4px 8px; border-radius: 6px; font-size: 12px; font-weight: 600;">${hospital.hospital_type || 'General Hospital'}</span></td>
+                <td><span style="background: rgba(16, 185, 129, 0.1); color: #059669; padding: 4px 8px; border-radius: 6px; font-size: 12px; font-weight: 600;">${hospital.hospital_ownership || 'Private'}</span></td>
+                <td>${hospital.address || '-'}</td>
+                <td><span style="padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 700; display: inline-block; background:#dcfce7; color:#16a34a;">${hospital.status || 'Active'}</span></td>
+            `;
+            tr.addEventListener("click", () => {
+                openHospitalProfileModal(hospital.id);
+            });
+            tbody.appendChild(tr);
+        });
+        if (typeof applyHospitalPanelSearch === 'function') applyHospitalPanelSearch();
+        
+        const addDetailsBtn = document.getElementById("addHospitalDetailsBtn");
+        if (addDetailsBtn) {
+            addDetailsBtn.addEventListener("click", () => {
+                openHospitalProfileModal(null);
+            });
+        }
+    }
+    catch(error){
+        console.log(error);
+    }
+}
+
+async function openHospitalProfileModal(hospitalId) {
+    const modal = document.getElementById("hospitalEntityModal");
+    const entitySelect = document.getElementById('hospitalEntitySelect');
+    
+    if (entitySelect) {
+        if (entitySelect.options.length <= 1) {
+            try {
+                const res = await fetch('/api/vendor/my-entities/hospital');
+                const result = await res.json();
+                if (result.success && result.data) {
+                    entitySelect.innerHTML = '<option value="">Select Hospital...</option>';
+                    let count = 0;
+                    result.data.forEach(ent => {
+                        if (!ent.profile_completed || ent.edit_allowed) {
+                            entitySelect.innerHTML += `<option value="${ent.id}">${ent.name}</option>`;
+                            count++;
+                        }
+                    });
+                    if (count === 0) {
+                        entitySelect.innerHTML = '<option value="">No hospitals available</option>';
+                    }
+                }
+            } catch(e) {}
+        }
+        
+        if (hospitalId) {
+            if (!Array.from(entitySelect.options).some(opt => opt.value == hospitalId)) {
+                entitySelect.innerHTML += `<option value="${hospitalId}">Loading...</option>`;
+            }
+            entitySelect.parentElement.style.display = 'none';
+            entitySelect.value = hospitalId;
+        } else {
+            entitySelect.parentElement.style.display = 'flex';
+            entitySelect.value = '';
+        }
+        
+        // Trigger data fetch for the selected hospital
+        await handleHospitalEntitySelect(entitySelect.value);
+    }
+    
+    if (modal) {
+        modal.style.display = "flex";
+    }
+}
+
+function closeHospitalEntityModal() {
+    const modal = document.getElementById("hospitalEntityModal");
+    if (modal) modal.style.display = "none";
+}
+
+async function handleHospitalEntitySelect(entityId) {
+    const bannerContainer = document.getElementById('hospitalStatusBannerContainer');
+    const actionButtons = document.getElementById('hospitalEntityActionButtons');
+    const form = document.getElementById('hospitalEntityForm');
+    
+    if (!entityId) {
+        if (bannerContainer) bannerContainer.innerHTML = '';
+        form.reset();
+        if (actionButtons) {
+            actionButtons.innerHTML = `
+                <button type="button" onclick="closeHospitalEntityModal()" style="padding:10px 18px; border:1px solid var(--hk-border, #cbd5e1); background:var(--hk-surface, #fff); border-radius:10px; cursor:pointer; color:var(--hk-text-main, #101828); font-weight:600;">Close</button>
+                <button type="submit" id="saveHospitalEntityBtn" style="padding:10px 18px; border:none; background:var(--hk-primary-blue, #2563eb); color:#fff; border-radius:10px; cursor:pointer; font-weight:600;">Save Details</button>
+            `;
+        }
+        return;
+    }
+    
+    try {
+        const res = await fetch('/api/vendor/entity-details/hospital/' + entityId);
+        const result = await res.json();
+        if (result.success && result.data) {
+            const entityData = result.data;
+            
+            // Populate text & number fields
+            const textFields = ['hospital_registration_number', 'address', 'contact_number', 'number_of_beds', 'facilities'];
+            textFields.forEach(field => {
+                if (form.elements[field]) {
+                    form.elements[field].value = entityData[field] || '';
+                }
+            });
+            
+            // Explicit matching for dropdowns
+            ['hospital_type', 'hospital_ownership'].forEach(field => {
+                if (entityData[field]) {
+                    const select = form.querySelector(`select[name="${field}"]`);
+                    if (select) {
+                        for (let i = 0; i < select.options.length; i++) {
+                            if (select.options[i].value.toLowerCase() === entityData[field].toLowerCase() || select.options[i].text.toLowerCase() === entityData[field].toLowerCase()) {
+                                select.selectedIndex = i;
+                                break;
+                            }
+                        }
+                    }
+                }
+            });
+            
+            const fileInputs = form.querySelectorAll('input[type="file"]');
+            const allInputs = form.querySelectorAll('input, select, textarea');
+            
+            if (!entityData.profile_completed) {
+                // Not completed
+                allInputs.forEach(input => {
+                    input.disabled = false;
+                    input.style.backgroundColor = '#fff';
+                });
+                fileInputs.forEach(input => input.setAttribute('required', 'required'));
+                // GST is optional
+                const gst = form.querySelector('[name="gst_certificate"]');
+                if(gst) gst.removeAttribute('required');
+                
+                if (bannerContainer) {
+                    bannerContainer.innerHTML = `
+                        <div style="padding:12px 16px; background:rgba(37,99,235,0.08); border:1px solid rgba(37,99,235,0.2); border-radius:10px; font-size:13px; color:#1d4ed8; font-weight:500; display:flex; align-items:center; gap:8px;">
+                            <i class="fa-solid fa-circle-info" style="font-size:16px;"></i>
+                            <div>Please complete the required details and upload your hospital registration documents below to verify your hospital.</div>
+                        </div>
+                    `;
+                }
+                if (actionButtons) {
+                    actionButtons.innerHTML = `
+                        <button type="button" onclick="closeHospitalEntityModal()" style="padding:10px 18px; border:1px solid var(--hk-border, #cbd5e1); background:var(--hk-surface, #fff); border-radius:10px; cursor:pointer; color:var(--hk-text-main, #101828); font-weight:600;">Close</button>
+                        <button type="submit" id="saveHospitalEntityBtn" style="padding:10px 22px; border:none; background:var(--hk-primary-blue, #2563eb); color:#fff; border-radius:10px; cursor:pointer; font-weight:600; display:inline-flex; align-items:center; gap:8px;"><i class="fa-solid fa-floppy-disk"></i> Save Details</button>
+                    `;
+                }
+            } else if (!entityData.edit_allowed) {
+                // Completed & Locked
+                allInputs.forEach(input => {
+                    if (input.id !== 'hospitalEntitySelect' && input.name !== 'hospitalEntityType') {
+                        input.disabled = true;
+                        input.style.backgroundColor = '#f8fafc';
+                    }
+                });
+                fileInputs.forEach(input => input.removeAttribute('required'));
+                
+                if (!entityData.edit_requested) {
+                    if (bannerContainer) {
+                        let statusHtml = '';
+                        if (entityData.status === 'pending') {
+                            statusHtml = `
+                            <div style="background:rgba(245, 158, 11, 0.1); color:#d97706; padding:12px 16px; border-radius:10px; margin-bottom:0; display:flex; align-items:center; gap:12px; border:1px solid rgba(245, 158, 11, 0.2);">
+                                <i class="fa-solid fa-clock"></i>
+                                <div style="font-size:13px;">
+                                    <strong style="display:block; margin-bottom:2px;">Under Review</strong>
+                                    Hospital details are currently being reviewed by our admin team.
+                                </div>
+                            </div>`;
+                        } else if (entityData.status === 'approved') {
+                            statusHtml = `
+                            <div style="background:rgba(16, 185, 129, 0.1); color:#059669; padding:12px 16px; border-radius:10px; margin-bottom:0; display:flex; align-items:center; gap:12px; border:1px solid rgba(16, 185, 129, 0.2);">
+                                <i class="fa-solid fa-circle-check"></i>
+                                <div style="font-size:13px; display:flex; justify-content:space-between; align-items:center; width:100%;">
+                                    <div>
+                                        <strong style="display:block; margin-bottom:2px;">Hospital Verified</strong>
+                                        Hospital details are verified and active on the platform.
+                                    </div>
+                                    <button type="button" onclick="requestHospitalEdit(${entityId})" style="background:#059669; color:#fff; border:none; padding:8px 14px; border-radius:8px; cursor:pointer; font-size:12px; font-weight:600; display:inline-flex; align-items:center; gap:6px;">
+                                        Request Edit <i class="fa-solid fa-pen-to-square"></i>
+                                    </button>
+                                </div>
+                            </div>`;
+                        }
+                        bannerContainer.innerHTML = statusHtml;
+                    }
+                } else {
+                    if (bannerContainer) {
+                        bannerContainer.innerHTML = `
+                            <div style="padding:12px 16px; background:#fffbeb; border:1px solid #fde68a; border-radius:10px; font-size:13px; color:#92400e; font-weight:500; display:flex; align-items:center; gap:10px;">
+                                <i class="fa-solid fa-shield-halved" style="color:#d97706; font-size:18px;"></i>
+                                <div style="flex:1;">
+                                    <strong>Edit Requested.</strong> Pending admin approval to update hospital details.
+                                </div>
+                            </div>
+                        `;
+                    }
+                }
+                
+                if (actionButtons) {
+                    actionButtons.innerHTML = `
+                        <button type="button" onclick="closeHospitalEntityModal()" style="padding:10px 18px; border:1px solid var(--hk-border, #cbd5e1); background:var(--hk-surface, #fff); border-radius:10px; cursor:pointer; color:var(--hk-text-main, #101828); font-weight:600;">Close</button>
+                    `;
+                }
+            } else {
+                // Edit Mode Unlocked
+                allInputs.forEach(input => {
+                    input.disabled = false;
+                    input.style.backgroundColor = '#fff';
+                });
+                fileInputs.forEach(input => input.removeAttribute('required'));
+                
+                if (bannerContainer) {
+                    bannerContainer.innerHTML = `
+                        <div style="background:rgba(59, 130, 246, 0.1); color:#2563eb; padding:12px 16px; border-radius:10px; margin-bottom:0; display:flex; align-items:center; gap:12px; border:1px solid rgba(59, 130, 246, 0.2);">
+                            <i class="fa-solid fa-unlock"></i>
+                            <div style="font-size:13px;">
+                                <strong style="display:block; margin-bottom:2px;">Edit Mode Unlocked</strong>
+                                You can now update hospital details.
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                if (actionButtons) {
+                    actionButtons.innerHTML = `
+                        <button type="button" onclick="closeHospitalEntityModal()" style="padding:10px 18px; border:1px solid var(--hk-border, #cbd5e1); background:var(--hk-surface, #fff); border-radius:10px; cursor:pointer; color:var(--hk-text-main, #101828); font-weight:600;">Cancel</button>
+                        <button type="submit" id="saveHospitalEntityBtn" style="padding:10px 22px; border:none; background:var(--hk-primary-blue, #2563eb); color:#fff; border-radius:10px; cursor:pointer; font-weight:600; display:inline-flex; align-items:center; gap:8px;"><i class="fa-solid fa-paper-plane"></i> Submit Updates</button>
+                    `;
+                }
+            }
+        }
+    } catch (e) {
+        console.error('Error fetching entity details:', e);
+    }
+}
+
+document.getElementById('hospitalEntitySelect')?.addEventListener('change', (e) => {
+    handleHospitalEntitySelect(e.target.value);
+});
+
+async function requestHospitalEdit(entityId) {
+    try {
+        const reqRes = await fetch('/api/vendor/request-profile-edit/hospital/' + entityId, { method: 'POST' });
+        const reqData = await reqRes.json();
+        if (reqData.success) {
+            alert('Edit request sent to Admin successfully! Once Admin approves, you can update details.');
+            handleHospitalEntitySelect(entityId);
+        } else {
+            alert(reqData.message || 'Failed to submit request.');
+        }
+    } catch(err) {
+        alert('Network error while requesting edit.');
+    }
+}
+
+document.getElementById('hospitalEntityForm')?.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const entityId = document.getElementById('hospitalEntitySelect')?.value;
+    if (!entityId) {
+        alert("Please select a hospital first.");
+        return;
+    }
+    
+    const form = event.target;
+    const formData = new FormData(form);
+    
+    const btn = document.getElementById('saveHospitalEntityBtn');
+    if(btn) { btn.disabled = true; btn.innerHTML = 'Saving...'; }
+    
+    try {
+        const res = await fetch('/api/vendor/complete-profile/hospital/' + entityId, {
+            method: 'POST',
+            body: formData
+        });
+        const data = await res.json();
+        if (data.success) {
+            alert(data.message || 'Hospital details saved successfully!');
+            closeHospitalEntityModal();
+            const entitySelect = document.getElementById('hospitalEntitySelect');
+            if (entitySelect) entitySelect.innerHTML = '<option value="">Select Hospital...</option>';
+            loadHospitalProfiles(); // Refresh the list
+        } else {
+            alert(data.message || 'Failed to save details.');
+        }
+    } catch (error) {
+        alert('An error occurred. Please try again.');
+    } finally {
+        if(btn) { btn.disabled = false; btn.innerHTML = 'Save Details'; }
+    }
+});
+
+document.getElementById("hospitalDetailsBtn")?.addEventListener("click", () => {
+    document.querySelectorAll(".menuItem").forEach(item => item.classList.remove("active"));
+    document.getElementById("hospitalDetailsBtn").classList.add("active");
+    loadHospitalProfiles();
+});

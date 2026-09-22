@@ -1,4 +1,4 @@
-﻿/* ═══════════════════════════════════════════════════════════════════════
+/* ═══════════════════════════════════════════════════════════════════════
    HOSPIKARE - HEALTHCARE COMMAND CENTRE DESIGN SYSTEM v5.0
    Award-Winning Healthcare Operations & Vendor SaaS Interface
    ═══════════════════════════════════════════════════════════════════════ */
@@ -899,7 +899,9 @@ body.sidebar-collapsed .navItem:hover {
   color: var(--hk-text-main, #101828) !important;
   font-size: 13.5px !important;
   border-bottom: 1px solid var(--hk-divider, #F1F5F9) !important;
-  white-space: nowrap !important;
+  white-space: normal !important;
+  word-break: break-word !important;
+  line-height: 1.5 !important;
   vertical-align: middle !important;
 }
 
@@ -1200,7 +1202,9 @@ table.adminTable {
   border-left: none !important;
   border-right: none !important;
   border-bottom: 1px solid #F1F5F9 !important;
-  white-space: nowrap !important;
+  white-space: normal !important;
+  word-break: break-word !important;
+  line-height: 1.5 !important;
   vertical-align: middle !important;
 }
 
@@ -1477,3 +1481,12 @@ div[id$="Wrapper"] {
 
 
 
+
+
+/* Table Columns Fix */
+.adminTable th, .adminTable td { white-space: nowrap; }
+.adminTable td[style*='white-space: normal'] { white-space: normal !important; }
+
+/* Forced Table Fixes */
+.adminTable th, .adminTable td { white-space: nowrap !important; }
+.adminTable td[style*='white-space: normal'], .adminTable td.wrap-text { white-space: normal !important; }

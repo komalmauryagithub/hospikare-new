@@ -7,12 +7,12 @@ module.exports = function(app, pool, upload) {
             const userId = req.session.user.id;
             const type = req.params.type;
             let query = '';
-            if (type === 'hospital') { query = 'SELECT id, hospital_name as name, profile_completed FROM hospitals WHERE users_id = ?'; }
-            else if (type === 'ambulance') { query = "SELECT id, COALESCE(NULLIF(ambulance_service_name, ''), CONCAT(ambulance_type, ' Ambulance (', COALESCE(vehicle_number, id), ')')) as name, profile_completed FROM ambulances WHERE users_id = ?"; }
-            else if (type === 'lab') { query = 'SELECT id, lab_name as name, profile_completed FROM labs WHERE users_id = ?'; }
-            else if (type === 'pharmacy') { query = 'SELECT id, pharmacy_name as name, profile_completed FROM pharmacies WHERE users_id = ?'; }
-            else if (type === 'equipment_source') { query = 'SELECT id, business_name as name, profile_completed FROM equipment_sources WHERE users_id = ?'; }
-            else if (type === 'insurance') { query = 'SELECT id, comp_name as name, profile_completed FROM insurances WHERE users_id = ?'; }
+            if (type === 'hospital') { query = 'SELECT id, hospital_name as name, profile_completed, edit_allowed FROM hospitals WHERE users_id = ?'; }
+            else if (type === 'ambulance') { query = "SELECT id, COALESCE(NULLIF(ambulance_service_name, ''), CONCAT(ambulance_type, ' Ambulance (', COALESCE(vehicle_number, id), ')')) as name, profile_completed, edit_allowed FROM ambulances WHERE users_id = ?"; }
+            else if (type === 'lab') { query = 'SELECT id, lab_name as name, profile_completed, edit_allowed FROM labs WHERE users_id = ?'; }
+            else if (type === 'pharmacy') { query = 'SELECT id, pharmacy_name as name, profile_completed, edit_allowed FROM pharmacies WHERE users_id = ?'; }
+            else if (type === 'equipment_source') { query = 'SELECT id, business_name as name, profile_completed, edit_allowed FROM equipment_sources WHERE users_id = ?'; }
+            else if (type === 'insurance') { query = 'SELECT id, comp_name as name, profile_completed, edit_allowed FROM insurances WHERE users_id = ?'; }
             else { return res.json({ success: false, message: 'Invalid type' }); }
 
             const [rows] = await pool.query(query, [userId]);

@@ -87,10 +87,9 @@ async function loadUserProfile(){
                 el.textContent = vendorName;
             });
             fillProfileForm(result.user, result.details || {});
-            const isComplete = result.user.bank_account && result.user.ifsc;
-            const triggerText = document.getElementById('profileTriggerText');
-            if(triggerText) {
-                triggerText.innerText = 'Complete Profile';
+            const isComplete = Boolean(result.user?.vendor_profile_completed || (result.user?.bank_account && result.user?.ifsc));
+            if (triggerText) {
+                triggerText.innerText = isComplete ? 'Show Profile' : 'Complete Profile';
             }
             if(window.setProfileMode) {
                 window.setProfileMode(isComplete ? 'view' : 'edit');

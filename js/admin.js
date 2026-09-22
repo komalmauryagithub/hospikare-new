@@ -4,6 +4,7 @@
     let bookingChart;
     let bedsChart;
     let currentVendorInvoicePrintHtml = "";
+    let allAdminVendors = [];
 
     function formatCurrency(value) {
         const amount = Number(value || 0);
@@ -149,7 +150,7 @@
                                     .map(([key, value]) => `
                                         <div>
                                             <span>${escapeHtml(prettifyLabel(key))}</span>
-                                            <b>${renderNestedValue(value)}</b>
+                                            <b>${renderDetailValue(key, value)}</b>
                                         </div>
                                     `).join("")}
                             </div>
@@ -172,7 +173,7 @@
                         .map(([key, value]) => `
                             <div>
                                 <span>${escapeHtml(prettifyLabel(key))}</span>
-                                <b>${renderNestedValue(value)}</b>
+                                <b>${renderDetailValue(key, value)}</b>
                             </div>
                         `).join("")}
                 </div>
@@ -704,6 +705,7 @@
             const response = await fetch('/api/vendors');
             const result = await response.json();
             if (result.success) {
+                allAdminVendors = result.vendors;
                 const filteredVendors =
                     result.vendors.filter(
                         vendor =>
@@ -895,6 +897,29 @@
             alert("Failed to load vendors");
         }
     }
+
+    document.getElementById("vendorTypeFilter")?.addEventListener("change", function(e) {
+        const selectedFilter = e.target.value;
+        activeVendorFilter = selectedFilter;
+        
+        const headingMap = {
+            'all': 'All Vendors',
+            'hospital': 'Hospitals',
+            'lab': 'Diagnostic Labs',
+            'pharmacy': 'Pharmacies',
+            'ambulance': 'Ambulances'
+        };
+        
+        const headingText = headingMap[selectedFilter] || 'All Vendors';
+        document.getElementById("vendorSectionHeading").innerText = headingText;
+        
+        const listingsHeading = document.getElementById("filteredListingsHeading");
+        if (listingsHeading) {
+            listingsHeading.innerText = headingText + " Listings";
+        }
+        
+        loadVendors(selectedFilter);
+    });
 
     document.getElementById("vendorSearch").addEventListener("keyup", function(){
         const value = this.value.toLowerCase();
@@ -1242,69 +1267,77 @@
 
 
 
+        let allAdminBookings = [];
+
     async function loadBookings(){
-
         try{
-
-            const response =
-                await fetch(
-                    '/api/admin/bookings'
-                );
-
-            const result =
-                await response.json();
-
-            const tbody =
-                document.getElementById(
-                    "bookingsTableBody"
-                );
-
-            tbody.innerHTML = "";
-
-            result.bookings.forEach(
-                booking => {
-
-                tbody.innerHTML += `
-                <tr>
-
-                    <td data-label="Booking ID" >
-                        #${booking.id}
-                    </td>
-
-                    <td data-label="User" >
-                        ${booking.user_name}
-                    </td>
-
-                    <td data-label="Type" >
-                        ${booking.type}
-                    </td>
-
-                    <td data-label="Amount" >
-                        ₹${booking.total_amount}
-                    </td>
-
-                    <td data-label="Status" >
-                        ${booking.status}
-                    </td>
-
-                    <td data-label="Date" >
-                        ${new Date(
-                            booking.created_at
-                        ).toLocaleDateString()}
-                    </td>
-
-                </tr>
-                `;
-            });
-
+            const response = await fetch('/api/admin/bookings');
+            const result = await response.json();
+            allAdminBookings = result.bookings || [];
+            renderBookings();
         }
         catch(error){
-
             console.log(error);
-
         }
-
     }
+    
+    function renderBookings() {
+        const tbody = document.getElementById("bookingsTableBody");
+        tbody.innerHTML = "";
+        
+        const filterVal = document.getElementById("bookingsTypeFilter")?.value || "all";
+        
+        const filtered = allAdminBookings.filter(b => {
+            if(filterVal !== "all" && !(b.type || "").toLowerCase().includes(filterVal)) return false;
+            return true;
+        });
+
+        filtered.forEach(booking => {
+            let paymentBadge = '';
+            let paymentDetails = '';
+            
+            const totalAmt = parseFloat(booking.total_amount || 0);
+            const paidAmt = parseFloat(booking.paid_amount || totalAmt);
+            const isPart = booking.payment_type === 'Part';
+            const balance = isPart ? Math.max(0, totalAmt - paidAmt) : 0;
+            
+            if (isPart) {
+                paymentBadge = `<span style="padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 700; background:#fff7ed; color:#ea580c;">Part Payment</span>`;
+                paymentDetails = `
+                    <div style="font-size: 12px; margin-top: 4px;">
+                        <div style="color: #64748b;">Total: <span style="color:#0f172a; font-weight:600;">₹${totalAmt}</span></div>
+                        <div style="color: #64748b;">Paid: <span style="color:#16a34a; font-weight:600;">₹${paidAmt}</span></div>
+                        <div style="color: #64748b;">Balance: <span style="color:#dc2626; font-weight:600;">₹${balance}</span></div>
+                    </div>
+                `;
+            } else {
+                paymentBadge = `<span style="padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 700; background:#f0fdf4; color:#16a34a;">Full Payment</span>`;
+                paymentDetails = `
+                    <div style="font-size: 12px; margin-top: 4px;">
+                        <div style="color: #64748b;">Total Paid: <span style="color:#16a34a; font-weight:600;">₹${totalAmt}</span></div>
+                    </div>
+                `;
+            }
+
+            tbody.innerHTML += `
+            <tr>
+                <td data-label="Booking ID">#${booking.id}</td>
+                <td data-label="User">${booking.user_name}</td>
+                <td data-label="Type">${booking.type}</td>
+                <td data-label="Payment Info">
+                    ${paymentBadge}
+                    ${paymentDetails}
+                </td>
+                <td data-label="Status">${booking.status}</td>
+                <td data-label="Date">${new Date(booking.created_at).toLocaleDateString()}</td>
+            </tr>
+            `;
+        });
+    }
+
+    document.getElementById("bookingsTypeFilter")?.addEventListener("change", () => {
+        renderBookings();
+    });
 
     const ordersBtn = document.getElementById("ordersBtn");
     if (ordersBtn) {

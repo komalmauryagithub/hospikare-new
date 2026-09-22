@@ -447,10 +447,10 @@ async function loadUserProfile(){
             });
 
             fillProfileForm(result.user, result.details || {});
-            const isComplete = result.user.bank_account && result.user.ifsc;
-            const triggerText = document.getElementById('profileTriggerText');
-            if(triggerText) {
-                triggerText.innerText = 'Complete Profile';
+            const isComplete = Boolean(result.user?.vendor_profile_completed || (result.user?.bank_account && result.user?.ifsc));
+            const triggerText = document.getElementById("profileTriggerText");
+            if (triggerText) {
+                triggerText.innerText = isComplete ? 'Show Profile' : 'Complete Profile';
             }
             if(window.setProfileMode) {
                 window.setProfileMode(isComplete ? 'view' : 'edit');
@@ -622,6 +622,7 @@ async function loadLabs() {
         tbody.innerHTML = "";
 
         if (result.success) {
+            window.hk_vendorLabs = result.labs;
             const labs = filterLabRecords(
                 result.labs,
                 ["created_at"]
@@ -640,9 +641,9 @@ async function loadLabs() {
 
             labs.forEach(lab => {
                 tbody.innerHTML += `
-                    <tr>
-                        <td>${lab.id}</td>
-                        <td>${lab.lab_name}</td>
+                    <tr style="cursor: pointer;" onclick="viewLabVendorDetails(${lab.id})">
+                          <td>${lab.id}</td>
+                          <td>${lab.lab_name}</td>
                         <td>${lab.address}</td>
                         <td>${lab.home_coll}</td>
                         <td>${lab.emergency_test}</td>
@@ -1472,10 +1473,10 @@ async function loadDashboard(){
 
         paymentBody.innerHTML = "";
 
-        if(paymentsResult.success){
+        if(payoutsResult.success){
             const payments =
                 filterLabRecords(
-                    paymentsResult.payments,
+                    payoutsResult.payouts,
                     ["paid_at", "created_at"]
                 );
 
@@ -1583,6 +1584,32 @@ async function loadLabBookings(){
                     actionHtml = `<span style="text-transform: capitalize; font-weight: bold; color: var(--text-muted);">${booking.booking_status}</span>`;
                 }
 
+                let paymentBadge = '';
+                let paymentDetails = '';
+                
+                const totalAmt = parseFloat(booking.total_amount || 0);
+                const paidAmt = parseFloat(booking.paid_amount || totalAmt);
+                const isPart = booking.payment_type === 'Part';
+                const balance = isPart ? Math.max(0, totalAmt - paidAmt) : 0;
+                
+                if (isPart) {
+                    paymentBadge = `<span style="padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 700; background:#fff7ed; color:#ea580c;">Part Payment</span>`;
+                    paymentDetails = `
+                        <div style="font-size: 12px; margin-top: 4px;">
+                            <div style="color: #64748b;">Total: <span style="color:#0f172a; font-weight:600;">₹${totalAmt}</span></div>
+                            <div style="color: #64748b;">Paid: <span style="color:#16a34a; font-weight:600;">₹${paidAmt}</span></div>
+                            <div style="color: #64748b;">Balance: <span style="color:#dc2626; font-weight:600;">₹${balance}</span></div>
+                        </div>
+                    `;
+                } else {
+                    paymentBadge = `<span style="padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 700; background:#f0fdf4; color:#16a34a;">Full Payment</span>`;
+                    paymentDetails = `
+                        <div style="font-size: 12px; margin-top: 4px;">
+                            <div style="color: #64748b;">Total Paid: <span style="color:#16a34a; font-weight:600;">₹${totalAmt}</span></div>
+                        </div>
+                    `;
+                }
+
                 tbody.innerHTML += `
                 <tr>
                     <td>${booking.id}</td>
@@ -1590,13 +1617,15 @@ async function loadLabBookings(){
                     <td>${booking.test_name}</td>
                     <td>${booking.sample_collection_type}</td>
                     <td>${new Date(booking.booking_date).toLocaleDateString()}</td>
-                    <td>₹${booking.total_amount}</td>
+                    <td>
+                        ${paymentBadge}
+                        ${paymentDetails}
+                    </td>
                     <td>
                         <span class="status-badge ${booking.booking_status === 'completed' ? 'status-active' : (booking.booking_status === 'cancelled' ? 'status-rejected' : 'status-pending')}">
                             ${booking.booking_status}
                         </span>
                     </td>
-                    <td>${booking.payment_status}</td>
                     <td>${actionHtml}</td>
                 </tr>`;
             });
@@ -2110,3 +2139,50 @@ document.getElementById('vendorProfileForm')?.addEventListener('submit', async (
     }
 });
 // ===================================
+
+
+window.viewLabVendorDetails = function(labId) {
+    const lab = (window.hk_vendorLabs || []).find(l => l.id == labId);
+    if (!lab) return;
+    
+    const titleEl = document.getElementById("vendorLabDetailsTitle");
+    if(titleEl) titleEl.textContent = lab.lab_name || "Lab Details";
+    
+    let tests = [];
+    try { tests = JSON.parse(lab.test || "[]"); } catch(e) {}
+    
+    let testGrid = '<div style="margin-top: 15px; background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0; text-align: center; color: #64748b;">No tests listed.</div>';
+    if (tests && tests.length > 0) {
+        testGrid = '<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px;">' + 
+            tests.map(t => `<div style="background: #e0f2fe; color: #0369a1; padding: 8px 12px; border-radius: 6px; font-weight: 500; font-size: 14px; display: flex; align-items: center; gap: 8px;"><i class="fa-solid fa-vial" style="opacity: 0.5;"></i> ${t}</div>`).join('') +
+        '</div>';
+    }
+
+    const bodyEl = document.getElementById("vendorLabDetailsBody");
+    if(bodyEl) {
+        bodyEl.innerHTML = `
+            <div style="margin-bottom: 15px;">
+                <p style="margin: 0; color: #475569; font-size: 14px;"><i class="fa-solid fa-location-dot" style="margin-right: 5px;"></i>${lab.address || "N/A"}</p>
+            </div>
+            <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+                <span style="background: #f1f5f9; padding: 6px 10px; border-radius: 6px; font-size: 13px; color: #334155;">
+                    Home Collection: ${lab.home_coll}
+                </span>
+                <span style="background: #f1f5f9; padding: 6px 10px; border-radius: 6px; font-size: 13px; color: #334155;">
+                    Emergency: ${lab.emergency_test}
+                </span>
+            </div>
+            <h4 style="margin: 0; padding-bottom: 10px; border-bottom: 1px solid #e2e8f0; color: #0f172a;">Available Tests</h4>
+            ${testGrid}
+        `;
+    }
+    const modal = document.getElementById("vendorLabDetailsModal");
+    if(modal) modal.style.display = "flex";
+};
+
+document.addEventListener("DOMContentLoaded", () => {
+    document.getElementById("closeVendorLabDetailsModal")?.addEventListener("click", () => {
+        const m = document.getElementById("vendorLabDetailsModal");
+        if(m) m.style.display = "none";
+    });
+});

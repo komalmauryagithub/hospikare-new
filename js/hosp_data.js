@@ -188,18 +188,7 @@ async function loadHospitalDetails(){
                                 </option>
                             </select>
                         </div>
-                        <div class="inputGroup">
-                            <label>Admission Date</label>
-                            <input type="date"
-                            id="admissionDate"
-                            required>
-                        </div>
-                        <div class="inputGroup">
-                            <label>Discharge Date</label>
-                            <input type="date"
-                            id="dischargeDate"
-                            required>
-                        </div>
+
                         <div class="inputGroup">
                             <label>Room Type</label>
                             <select id="roomType" required>
@@ -212,16 +201,12 @@ async function loadHospitalDetails(){
                         </div>
                         <div class="inputGroup">
                             <label>Bed Type</label>
-                            <select id="bedType">
-                                <option value="Single Bed">
-                                    Single Bed
-                                </option>
-                                <option value="Double Bed">
-                                    Double Bed
-                                </option>
-                                <option value="ICU Bed">
-                                    ICU Bed
-                                </option>
+                            <select id="bedType" required>
+                                <option value="Single Bed">Single Bed</option>
+                                <option value="Twin Bed">Twin Bed</option>
+                                <option value="Double Bed">Double Bed</option>
+                                <option value="Electric/Hospital Bed">Electric/Hospital Bed</option>
+                                <option value="ICU Bed">ICU Bed</option>
                             </select>
                         </div>
                         <div class="priceBox">
@@ -238,6 +223,28 @@ async function loadHospitalDetails(){
                                 </span>
                             </h3>
                         </div>
+                        <div class="inputGroup" style="margin-top:12px;">
+                            <label style="font-weight:600;">Payment Type</label>
+                            <div style="display:flex; gap:16px; margin-top:8px;">
+                                <label style="display:flex; align-items:center; gap:6px; cursor:pointer; font-weight:500;">
+                                    <input type="radio" name="paymentType" value="full" checked style="accent-color:#2563eb; width:18px; height:18px;"> Full Payment
+                                </label>
+                                <label style="display:flex; align-items:center; gap:6px; cursor:pointer; font-weight:500;">
+                                    <input type="radio" name="paymentType" value="part" style="accent-color:#2563eb; width:18px; height:18px;"> Part Payment
+                                </label>
+                            </div>
+                        </div>
+                        <div id="partPaymentSection" style="display:none; margin-top:12px; padding:12px; background:var(--surface-alt, #f8fafc); border-radius:8px; border:1px solid var(--border-color, #e2e8f0);">
+                            <div class="inputGroup" style="margin-bottom:8px;">
+                                <label style="font-weight:600;">Enter Amount to Pay Now</label>
+                                <input type="number" id="partPayAmount" placeholder="Enter amount" min="0" style="width:100%; padding:10px; border:1px solid #d1d5db; border-radius:8px; font-size:14px;">
+                                <small id="partPayError" style="color:#ef4444; display:none; margin-top:4px;">Minimum 50% of total amount is required</small>
+                            </div>
+                            <div style="display:flex; justify-content:space-between; font-size:13px; color:var(--text-muted, #64748b); margin-top:8px;">
+                                <span>Paying Now: <strong id="payingNowDisplay">₹0</strong></span>
+                                <span>Remaining: <strong id="remainingDisplay">₹0</strong></span>
+                            </div>
+                        </div>
                         <button type="submit"
                         class="submitAppointmentBtn">
                             Confirm Booking
@@ -250,16 +257,6 @@ async function loadHospitalDetails(){
 const roomTypeSelect =
 document.getElementById(
     "roomType"
-);
-
-const admissionDateInput =
-document.getElementById(
-    "admissionDate"
-);
-
-const dischargeDateInput =
-document.getElementById(
-    "dischargeDate"
 );
 
 const roomPrice =
@@ -291,45 +288,8 @@ function updateRoomPrice(){
     roomPrice.innerText =
     `₹${roomCost}`;
 
-    let totalDays = 1;
-
-    if(
-        admissionDateInput.value &&
-        dischargeDateInput.value
-    ){
-
-        const admission =
-        new Date(
-            admissionDateInput.value
-        );
-
-        const discharge =
-        new Date(
-            dischargeDateInput.value
-        );
-
-        const diffTime =
-        discharge - admission;
-
-        totalDays =
-        Math.ceil(
-            diffTime /
-            (1000 * 60 * 60 * 24)
-        );
-
-        if(totalDays <= 0){
-
-            totalDays = 1;
-
-        }
-
-    }
-
-    const total =
-    roomCost * totalDays;
-
     totalAmount.innerText =
-    `₹${total}`;
+    `₹${roomCost}`;
 
 }
 
@@ -338,17 +298,50 @@ roomTypeSelect.addEventListener(
     updateRoomPrice
 );
 
-admissionDateInput.addEventListener(
-    "change",
-    updateRoomPrice
-);
-
-dischargeDateInput.addEventListener(
-    "change",
-    updateRoomPrice
-);
-
 updateRoomPrice();
+
+// Payment type toggle logic
+const paymentTypeRadios = document.querySelectorAll('input[name="paymentType"]');
+const partPaymentSection = document.getElementById('partPaymentSection');
+const partPayAmountInput = document.getElementById('partPayAmount');
+const partPayError = document.getElementById('partPayError');
+const payingNowDisplay = document.getElementById('payingNowDisplay');
+const remainingDisplay = document.getElementById('remainingDisplay');
+
+paymentTypeRadios.forEach(radio => {
+    radio.addEventListener('change', function() {
+        if (this.value === 'part') {
+            partPaymentSection.style.display = 'block';
+            partPayAmountInput.value = '';
+            payingNowDisplay.innerText = '₹0';
+            remainingDisplay.innerText = totalAmount.innerText;
+        } else {
+            partPaymentSection.style.display = 'none';
+            partPayError.style.display = 'none';
+        }
+    });
+});
+
+if (partPayAmountInput) {
+    partPayAmountInput.addEventListener('input', function() {
+        const total = Number(totalAmount.innerText.replace('₹',''));
+        const entered = Number(this.value) || 0;
+        const minRequired = Math.ceil(total / 2);
+        
+        if (entered > 0 && entered < minRequired) {
+            partPayError.style.display = 'block';
+            partPayError.innerText = 'Minimum ' + minRequired + ' (50% of total) is required';
+        } else if (entered > total) {
+            partPayError.style.display = 'block';
+            partPayError.innerText = 'Amount cannot exceed total ' + total;
+        } else {
+            partPayError.style.display = 'none';
+        }
+        
+        payingNowDisplay.innerText = '₹' + entered;
+        remainingDisplay.innerText = '₹' + Math.max(0, total - entered);
+    });
+}
 
 const appointmentForm =
 document.getElementById("appointmentForm");
@@ -357,8 +350,7 @@ appointmentForm.addEventListener(
     async function(e){
         e.preventDefault();
 
-        alert("Booking is temporarily disabled. Live room availability check requires real-time Hospital API integration, which is coming soon.");
-        return;
+        
 
         const savedUser =
         JSON.parse(
@@ -408,27 +400,34 @@ const formData = {
         "bedType"
     ).value,
 
-    admission_date:
-    document.getElementById(
-        "admissionDate"
-    ).value,
-
-    discharge_date:
-    document.getElementById(
-        "dischargeDate"
-    ).value,
-
     total_amount:
     totalAmount.innerText
     .replace("₹","")
 
 };
 try{
-    const amount =
-    Number(
-        totalAmount.innerText
-        .replace("₹","")
-    );
+    const fullTotal = Number(totalAmount.innerText.replace("₹",""));
+    const selectedPayType = document.querySelector('input[name="paymentType"]:checked')?.value || 'Full';
+    let amount = fullTotal;
+    
+    if (selectedPayType === 'Part' || selectedPayType === 'part') {
+        const partVal = Number(document.getElementById('partPayAmount')?.value || 0);
+        const minRequired = Math.ceil(fullTotal / 2);
+        if (partVal < minRequired) {
+            alert('Minimum payment is ₹' + minRequired + ' (50% of total amount)');
+            return;
+        }
+        if (partVal > fullTotal) {
+            alert('Payment amount cannot exceed total amount');
+            return;
+        }
+        amount = partVal;
+    }
+    
+    formData.payment_type = selectedPayType === 'part' ? 'Part' : (selectedPayType === 'full' ? 'Full' : selectedPayType);
+    formData.paid_amount = amount;
+    formData.amount_remaining = fullTotal - amount;
+    
     const orderResponse =
     await fetch("/api/create-order",
         {

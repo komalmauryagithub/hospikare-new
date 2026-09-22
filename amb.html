@@ -28,6 +28,10 @@
     <link rel="stylesheet" type="text/css" href="/css/amb.css?v=20260918-fix26">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+    
+
 </head>
 <body class="with-sidebar">
 
@@ -58,6 +62,11 @@
           <div class="menuItem" id="availabilityBtn" data-section="availability">
               <i class="fa-solid fa-clock"></i>
               <span>Availability</span>
+          </div>
+          
+          <div class="menuItem" id="liveMapBtn" data-section="livemap">
+              <i class="fa-solid fa-map-location-dot"></i>
+              <span>Live Fleet Map</span>
           </div>
           <div class="menuItem" id="bookingsBtn" data-section="bookings">
               <i class="fa-solid fa-calendar-check"></i>
@@ -207,8 +216,25 @@
             </div>
             
             <div class="modern-card">
-                <div style="padding: 16px 20px; border-bottom: 1px solid var(--border-light); display: flex; justify-content: space-between; align-items: center;">
+                <div style="padding: 16px 20px; border-bottom: 1px solid var(--border-light); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
                     <h3 style="font-size: 15px; font-weight: 600; color: var(--text-dark); margin: 0;">Driver Directory</h3>
+                    <div style="display: flex; gap: 12px; align-items: center;">
+                        <div style="display: flex; align-items: center; gap: 8px; background: var(--surface-soft); padding: 6px 12px; border-radius: 6px; border: 1px solid var(--hk-grey-200);">
+                            <i class="fa-solid fa-filter" style="color: var(--brand-primary); font-size: 14px;"></i>
+                            <select id="driverAmbulanceFilter" style="border: none; background: transparent; font-weight: 500; font-size: 13px; color: var(--text-dark); outline: none; cursor: pointer;">
+                                <option value="all">All Ambulance Types</option>
+                                <option value="ICU Ambulance">ICU Ambulance</option>
+                                <option value="Patient Transport Ambulance">Patient Transport</option>
+                                <option value="Neonatal Ambulance">Neonatal Ambulance</option>
+                                <option value="Mortuary Ambulance">Mortuary Ambulance</option>
+                                <option value="unassigned">Unassigned</option>
+                            </select>
+                        </div>
+                        <div class="search-wrapper" style="max-width: 250px;">
+                            <i class="fa-solid fa-magnifying-glass"></i>
+                            <input type="text" id="driverSearchInput" class="top-search" placeholder="Search by name or ID...">
+                        </div>
+                    </div>
                 </div>
                 <div class="table-responsive">
                     <table class="adminTable">
@@ -308,30 +334,28 @@
                 </div>
             </div>
 
-            <!-- Heat Map Section -->
-            <div class="grid-container" style="margin-bottom: 24px;">
-                <div class="chartWrapper dashboard-link dashboard-clickable-panel" data-dashboard-target="availabilityBtn" style="grid-column: span 12; margin-top: 0;">
-                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; flex-wrap: wrap; gap: 16px; border-bottom: 1px solid var(--hk-divider); padding-bottom: 16px;">
-                        <div style="display: flex; align-items: center; gap: 14px;">
-                            <div style="width: 44px; height: 44px; border-radius: 12px; background: rgba(40, 100, 240, 0.1); color: var(--hk-primary-blue); display: flex; align-items: center; justify-content: center; font-size: 18px;">
-                                <i class="fa-solid fa-chart-line"></i>
-                            </div>
-                            <div>
-                                <h3 style="font-family: var(--font-heading); font-size: 18px; font-weight: 700; color: var(--hk-text-main); margin: 0 0 2px 0;">Ambulance Availability Heat Map</h3>
-                                <p style="font-size: 13px; color: var(--hk-text-muted); margin: 0;">Multi-metric live area trends: Available vs. On-Duty vs. Total Fleet</p>
-                            </div>
-                        </div>
-                        <div style="display: flex; align-items: center; gap: 12px;">
-                            <div style="font-size: 13px; color: var(--hk-text-muted); background: var(--hk-surface-soft); padding: 6px 14px; border-radius: 20px; border: 1px solid var(--hk-border); font-weight: 600;">
-                                <i class="fa-solid fa-shield-halved" style="color: var(--hk-primary-blue); margin-right: 6px;"></i> Active Coverage
-                            </div>
-                            <span class="status-badge" style="background: rgba(24, 185, 129, 0.12); color: #18B981; font-size: 12px; font-weight: 700; padding: 6px 12px; border-radius: 20px;">
-                                <i class="fa-solid fa-circle" style="font-size: 8px; margin-right: 6px; color: #18B981;"></i> Live Dispatch
-                            </span>
-                        </div>
+            <!-- Live Fleet Tracker Section -->
+            <div class="grid-container" style="margin-bottom: 24px; display: grid; grid-template-columns: 1fr 2fr; gap: 20px;">
+                <!-- Left Panel: Active Fleet List -->
+                <div class="chartWrapper" style="grid-column: span 1; margin-top: 0; display: flex; flex-direction: column; max-height: 450px;">
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; border-bottom: 1px solid var(--hk-divider); padding-bottom: 12px;">
+                        <h3 style="font-family: var(--font-heading); font-size: 16px; font-weight: 700; color: var(--hk-text-main); margin: 0;">Active Fleet</h3>
+                        <span class="status-badge" style="background: rgba(59, 130, 246, 0.1); color: #3b82f6; font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 20px;">Live <i class="fa-solid fa-circle-dot fa-fade" style="margin-left: 4px;"></i></span>
                     </div>
-                    <div style="height: 300px; width: 100%; position: relative;">
-                        <canvas id="ambulanceHeatmapChart"></canvas>
+                    <div id="liveFleetList" style="flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; padding-right: 8px;">
+                        <!-- JS populated fleet cards -->
+                    </div>
+                </div>
+
+                <!-- Right Panel: Live Location Details -->
+                <div class="chartWrapper" style="grid-column: span 1; margin-top: 0; display: flex; flex-direction: column; position: relative;">
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; border-bottom: 1px solid var(--hk-divider); padding-bottom: 12px;">
+                        <h3 style="font-family: var(--font-heading); font-size: 16px; font-weight: 700; color: var(--hk-text-main); margin: 0;"><i class="fa-solid fa-location-crosshairs" style="color: var(--hk-primary-blue); margin-right: 8px;"></i> Tracker</h3>
+                    </div>
+                    
+                    <div id="liveFleetDetails" style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; color: var(--hk-text-muted);">
+                        <i class="fa-solid fa-map-location-dot" style="font-size: 48px; color: var(--hk-grey-300); margin-bottom: 16px;"></i>
+                        <p style="margin: 0; font-size: 14px; font-weight: 500;">Select an ambulance from the Active Fleet list to view live location details.</p>
                     </div>
                 </div>
             </div>
@@ -380,9 +404,25 @@
                     <h2 style="font-family:var(--font-heading); font-size:24px; font-weight:800; color:var(--hk-text-main); margin:0 0 4px;">Manage Ambulances</h2>
                     <p style="margin:0; font-size:13px; color:var(--hk-text-muted);">Manage your ambulance fleet - add, edit and track all vehicles</p>
                 </div>
-                <button id="addAmbulanceBtn" class="add-btn">
-                    <i class="fa-solid fa-plus"></i> Add Ambulance
-                </button>
+                <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+                    <div style="display: flex; align-items: center; gap: 8px; background: var(--surface-soft); padding: 8px 16px; border-radius: 8px; border: 1px solid var(--hk-grey-200);">
+                        <i class="fa-solid fa-filter" style="color: var(--brand-primary);"></i>
+                        <select id="ambulanceTypeFilter" style="border: none; background: transparent; font-weight: 600; color: var(--text-dark); outline: none; cursor: pointer;">
+                            <option value="all">All Ambulance Types</option>
+                            <option value="ICU Ambulance">ICU Ambulance</option>
+                            <option value="Patient Transport Ambulance">Patient Transport</option>
+                            <option value="Neonatal Ambulance">Neonatal Ambulance</option>
+                            <option value="Mortuary Ambulance">Mortuary Ambulance</option>
+                        </select>
+                    </div>
+                    <div class="search-wrapper" style="max-width: 250px;">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                        <input type="text" id="ambulanceSearchInput" class="top-search" placeholder="Search by type or reg no...">
+                    </div>
+                    <button id="addAmbulanceBtn" class="add-btn">
+                        <i class="fa-solid fa-plus"></i> Add Ambulance
+                    </button>
+                </div>
             </div>
             <div class="table-wrapper" id="ambulanceTableContainer">
                 <table id="ambulanceTable" class="adminTable">
@@ -407,69 +447,61 @@
             </div>
         </div>
 
-        <!-- ================= AVAILABILITY ================= -->
-        <div id="availabilitySection" style="display:none;">
-            <div class="table-header" style="margin-bottom:24px;">
-                <h2 style="font-family:var(--font-heading); font-size:24px; font-weight:800; color:var(--hk-text-main); margin:0 0 4px;">Fleet Dispatch & Live Availability</h2>
-                <p style="margin:0; font-size:13px; color:var(--hk-text-muted);">Monitor real-time ambulance readiness, active emergency trips, and adjust pricing tiers</p>
+                <!-- ================= AVAILABILITY ================= -->
+        <div id="availabilitySection" style="display: none;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+                <h2 style="font-family: var(--font-heading); font-size: 24px; font-weight: 800; color: #ffffff; margin: 0;">Fleet Status Board</h2>
             </div>
             
-            <div style="margin-bottom: 28px;">
-                <div style="display:flex; align-items:center; gap:8px; margin-bottom:14px;">
-                    <span style="width:10px; height:10px; border-radius:50%; background:#18B981; display:inline-block;"></span>
-                    <h3 style="margin:0; font-size:16px; font-weight:700; color:var(--hk-text-main);">Available Fleet Ready for Dispatch</h3>
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;">
+                
+                <!-- Available Column -->
+                <div style="background: #111827; border-radius: 12px; padding: 20px; border: 1px solid #1e293b; display: flex; flex-direction: column; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.3);">
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid #1e293b;">
+                        <h3 style="margin: 0; font-size: 15px; color: #ffffff; font-weight: 700; display: flex; align-items: center; gap: 8px;">
+                            <i class="fa-solid fa-circle" style="color: #10b981; font-size: 10px;"></i> Ready for Dispatch
+                        </h3>
+                        <span id="countAvailable" style="background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.4); padding: 3px 10px; border-radius: 99px; font-size: 12px; font-weight: 700;">0</span>
+                    </div>
+                    <div id="colAvailable" style="display: flex; flex-direction: column; gap: 12px; flex: 1; min-height: 120px;">
+                    </div>
                 </div>
-                <div class="table-wrapper">
-                    <table class="adminTable">
-                        <thead>
-                            <tr>
-                                <th>ID</th>
-                                <th>Type</th>
-                                <th>Area</th>
-                                <th>ETA</th>
-                                <th>Base Price</th>
-                                <th>Update Price</th>
-                                <th>Update Status</th>
-                                <th>Action</th>
-                            </tr>
-                        </thead>
-                        <tbody id="availableAmbulanceBody">
-                        </tbody>
-                    </table>
-                </div>
-            </div>
 
-            <div>
-                <div style="display:flex; align-items:center; gap:8px; margin-bottom:14px;">
-                    <span style="width:10px; height:10px; border-radius:50%; background:#F59E0B; display:inline-block;"></span>
-                    <h3 style="margin:0; font-size:16px; font-weight:700; color:var(--hk-text-main);">Busy / On Active Emergency Trip</h3>
+                <!-- On Trip Column -->
+                <div style="background: #111827; border-radius: 12px; padding: 20px; border: 1px solid #1e293b; display: flex; flex-direction: column; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.3);">
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid #1e293b;">
+                        <h3 style="margin: 0; font-size: 15px; color: #ffffff; font-weight: 700; display: flex; align-items: center; gap: 8px;">
+                            <i class="fa-solid fa-circle-notch fa-spin" style="color: #3b82f6; font-size: 12px;"></i> On Active Trip
+                        </h3>
+                        <span id="countOnTrip" style="background: rgba(59, 130, 246, 0.2); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.4); padding: 3px 10px; border-radius: 99px; font-size: 12px; font-weight: 700;">0</span>
+                    </div>
+                    <div id="colOnTrip" style="display: flex; flex-direction: column; gap: 12px; flex: 1; min-height: 120px;">
+                    </div>
                 </div>
-                <div class="table-wrapper">
-                    <table class="adminTable">
-                        <thead>
-                            <tr>
-                                <th>ID</th>
-                                <th>Type</th>
-                                <th>Area</th>
-                                <th>ETA</th>
-                                <th>Base Price</th>
-                                <th>Update Price</th>
-                                <th>Update Status</th>
-                                <th>Action</th>
-                            </tr>
-                        </thead>
-                        <tbody id="busyAmbulanceBody">
-                        </tbody>
-                    </table>
+
+                <!-- Offline Column -->
+                <div style="background: #111827; border-radius: 12px; padding: 20px; border: 1px solid #1e293b; display: flex; flex-direction: column; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.3);">
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid #1e293b;">
+                        <h3 style="margin: 0; font-size: 15px; color: #ffffff; font-weight: 700; display: flex; align-items: center; gap: 8px;">
+                            <i class="fa-solid fa-circle" style="color: #64748b; font-size: 10px;"></i> Offline / No Driver
+                        </h3>
+                        <span id="countOffline" style="background: rgba(148, 163, 184, 0.2); color: #cbd5e1; border: 1px solid rgba(148, 163, 184, 0.4); padding: 3px 10px; border-radius: 99px; font-size: 12px; font-weight: 700;">0</span>
+                    </div>
+                    <div id="colOffline" style="display: flex; flex-direction: column; gap: 12px; flex: 1; min-height: 120px;">
+                    </div>
                 </div>
             </div>
         </div>
 
-        <!-- ================= BOOKINGS ================= -->
+
+
+                <!-- ================= BOOKINGS ================= -->
         <div id="bookingsSection" style="display:none;">
-            <div class="table-header" style="margin-bottom:24px;">
-                <h2 style="font-family:var(--font-heading); font-size:24px; font-weight:800; color:var(--hk-text-main); margin:0 0 4px;">Emergency Dispatch Bookings</h2>
-                <p style="margin:0; font-size:13px; color:var(--hk-text-muted);">Complete record of ambulance service dispatches, pickup/drop coordinates, and billing</p>
+            <div class="table-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; flex-wrap:wrap; gap:16px;">
+                <div>
+                    <h2 style="font-family:var(--font-heading); font-size:24px; font-weight:800; color:var(--hk-text-main); margin:0 0 4px;">Emergency Dispatch Bookings</h2>
+                    <p style="margin:0; font-size:13px; color:var(--hk-text-muted);">Complete record of ambulance service dispatches, pickup/drop coordinates, and billing</p>
+                </div>
             </div>
             <div class="table-wrapper">
                 <table class="adminTable">
@@ -493,11 +525,13 @@
             </div>
         </div>
 
-        <!-- ================= PAYMENTS ================= -->
+                <!-- ================= PAYMENTS ================= -->
         <div id="paymentsSection" style="display:none;">
-            <div class="table-header" style="margin-bottom:24px;">
-                <h2 style="font-family:var(--font-heading); font-size:24px; font-weight:800; color:var(--hk-text-main); margin:0 0 4px;">Fleet Settlement & Payout History</h2>
-                <p style="margin:0; font-size:13px; color:var(--hk-text-muted);">Track customer payments, Razorpay gateway receipts, and vendor payouts</p>
+            <div class="table-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; flex-wrap:wrap; gap:16px;">
+                <div>
+                    <h2 style="font-family:var(--font-heading); font-size:24px; font-weight:800; color:var(--hk-text-main); margin:0 0 4px;">Fleet Settlement & Payout History</h2>
+                    <p style="margin:0; font-size:13px; color:var(--hk-text-muted);">Track customer payments, Razorpay gateway receipts, and vendor payouts</p>
+                </div>
             </div>
             <div class="table-wrapper">
                 <table class="adminTable">
@@ -516,6 +550,28 @@
             </div>
         </div>
 
+      
+        <!-- ================= LIVE FLEET MAP ================= -->
+        <div id="livemapSection" style="display: none; height: calc(100vh - 100px); flex-direction: column;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                <h2 style="font-size: 20px; font-weight: 700; color: var(--text-dark); margin:0;">Live Fleet Map</h2>
+                <div style="font-size: 14px; color: #64748b; font-weight: 500;">
+                    <i class="fa-solid fa-circle fa-fade" style="color: #10b981; font-size: 10px; margin-right: 4px;"></i> Tracking <span id="activeFleetCount">0</span> active ambulances
+                </div>
+            </div>
+            <div style="display: flex; gap: 20px; flex: 1;">
+                <div style="width: 300px; background: white; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); display: flex; flex-direction: column; overflow: hidden;">
+                    <div style="padding: 16px; border-bottom: 1px solid #e2e8f0; background: #f8fafc;">
+                        <h3 style="margin: 0; font-size: 15px; font-weight: 600; color: #0f172a;">Active Dispatches</h3>
+                    </div>
+                    <div id="fleetList" style="flex: 1; overflow-y: auto; padding: 12px; display: flex; flex-direction: column; gap: 12px;">
+                        <!-- Drivers will appear here -->
+                        <div style="text-align:center; color:#94a3b8; font-size:13px; margin-top:20px;">No active trips</div>
+                    </div>
+                </div>
+                <div id="fleetMap" style="flex: 1; border-radius: 12px; background: #e2e8f0; border: 1px solid #cbd5e1; z-index: 1;"></div>
+            </div>
+        </div>
       </main>
   </div>
 
@@ -869,7 +925,8 @@
     </div>
 
   <script src="/js/vendor-panel-controls.js?v=20260918-fix28"></script>
-  <script src="/js/amb.js?v=20260918-fix28"></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="/js/amb.js?v=20260918-v10001"></script>
   <script src="/js/sidebar-toggle.js?v=20260918-fix28"></script>
   <script src="/js/ui-interactions.js?v=20260918-fix28"></script>
 
@@ -879,7 +936,7 @@
     
 
 
-</body>
+    </body>
 </html>
 
 

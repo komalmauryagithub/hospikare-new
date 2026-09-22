@@ -529,6 +529,7 @@ function openAmbulanceSection(section, activeItem) {
     document.getElementById("availabilitySection").style.display = "none";
     document.getElementById("bookingsSection").style.display = "none";
     document.getElementById("paymentsSection").style.display = "none";
+    if(document.getElementById("livemapSection")) document.getElementById("livemapSection").style.display = "none";
     if(document.getElementById("driversSection")) document.getElementById("driversSection").style.display = "none";
 
     if (section === "dashboard") {
@@ -554,6 +555,10 @@ function openAmbulanceSection(section, activeItem) {
     else if (section === "drivers") {
         if(document.getElementById("driversSection")) document.getElementById("driversSection").style.display = "block";
         loadDrivers();
+    }
+    else if (section === "livemap") {
+        if(document.getElementById("livemapSection")) document.getElementById("livemapSection").style.display = "flex";
+        if(typeof initFleetMap === "function") initFleetMap();
     }
 }
 
@@ -2471,3 +2476,41 @@ async function deleteDriver(driverId) {
         }
     } catch(err) { alert('Server error'); }
 }
+
+function initFleetMap() {
+    if (window.fleetMapInitialized) return;
+    const mapContainer = document.getElementById("fleetMap");
+    if (!mapContainer || typeof L === "undefined") return;
+
+    window.fleetMap = L.map("fleetMap").setView([20.5937, 78.9629], 5);
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        attribution: "© OpenStreetMap contributors"
+    }).addTo(window.fleetMap);
+    window.fleetMapInitialized = true;
+
+    // Simulate getting ambulance locations
+    const ambIcon = L.icon({
+        iconUrl: "https://cdn-icons-png.flaticon.com/512/883/883360.png",
+        iconSize: [32, 32],
+        iconAnchor: [16, 32],
+        popupAnchor: [0, -32]
+    });
+
+    const mockAmbulances = [
+        { lat: 19.0760, lng: 72.8777, name: "MH-01-AB-1234", status: "Available" },
+        { lat: 28.7041, lng: 77.1025, name: "DL-10-XY-9876", status: "On Route" },
+        { lat: 12.9716, lng: 77.5946, name: "KA-05-ZX-5555", status: "Available" }
+    ];
+
+    mockAmbulances.forEach(amb => {
+        L.marker([amb.lat, amb.lng], { icon: ambIcon })
+            .addTo(window.fleetMap)
+            .bindPopup(`<b>${amb.name}</b><br>Status: ${amb.status}`);
+    });
+    
+    // Invalidate size in case map is rendered while container is hidden
+    setTimeout(() => {
+        window.fleetMap.invalidateSize();
+    }, 100);
+}
+
