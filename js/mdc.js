@@ -1,4 +1,4 @@
-﻿async function fillProfileForm(profile, details = {}) {
+async function fillProfileForm(profile, details = {}) {
     if (!profile) return;
     const nameField = document.getElementById("profileName");
     const emailField = document.getElementById("profileEmail");
@@ -43,6 +43,10 @@ async function loadUserProfile(){
         const result = await response.json();
         if(result.success){
             const vendorName = result.user?.name || result.details?.pharmacy_name || "Vendor";
+            const profilePhotoUrl = result.user?.profile_photo ? `/uploads/${result.user.profile_photo}` : `https://ui-avatars.com/api/?name=${encodeURIComponent(vendorName)}&background=0284c7&color=fff`;
+            const avatarImg = document.getElementById('navbarProfileAvatar');
+            if (avatarImg) avatarImg.src = profilePhotoUrl;
+            
             currentVendorName = vendorName;
             const welcomeText = document.getElementById("welcomeText");
             if (welcomeText) welcomeText.innerText = `Welcome ${vendorName}`;
@@ -488,7 +492,7 @@ async function loadMedicineOrders(){
                     <thead>
                         <tr>
                             <th>ID</th>
-                            <th>Customer</th>
+                            <th>User Name</th>
                             <th>Products</th>
                             <th>Total</th>
                             <th>Order Status</th>
@@ -582,100 +586,122 @@ document.getElementById("mainContent").style.display = "block"; document.getElem
 
 async function loadVendorPayments(){
     try{
-        const response = await fetch('/api/vendor/payments');
-        const result = await response.json();
-
-        let html = `
-        <div id="paymentsSection">
-            <div class="table-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; flex-wrap:wrap; gap:16px;">
-                <div>
-                    <h2 style="font-family:var(--font-heading); font-size:24px; font-weight:800; color:var(--hk-text-main); margin:0 0 4px;">Pharmacy Settlements & Payments</h2>
-                    <p style="margin:0; font-size:13px; color:var(--hk-text-muted);">Track payout transfers, bank settlement schedules, and transaction receipts</p>
-                </div>
+        const mainContent = document.getElementById("mainContent");
+        mainContent.innerHTML = `
+            <div style="margin-bottom: 25px;">
+                <h2 style="font-size: 24px; color: var(--hk-text-main, #1e293b); font-weight: 700;">User Payments</h2>
+                <p style="font-size: 13px; color: var(--hk-text-muted, #64748b); margin-top: 4px;">Payments received from users</p>
             </div>
-            <div class="table-wrapper">
-                <table id="paymentsTable" class="adminTable">
+            <div class="table-container">
+                <table class="adminTable">
                     <thead>
                         <tr>
-                            <th>ID</th>
-                            <th>Amount</th>
-                            <th>Method</th>
-                            <th>Status</th>
-                            <th>Transaction ID</th>
-                            <th>Date</th>
+                            <th>Order ID</th>
+                            <th>User Name</th>
+                            <th>Total Amount</th>
+                            <th>Paid Amount</th>
+                            <th>Balance</th>
+                            <th>Payment Status</th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody id="orderPaymentsTableBody">
+                    </tbody>
+                </table>
+            </div>
         `;
 
-        if(result.success){
-            const payments = filterMedicineRecords(
-                result.payments,
-                ["paid_at", "created_at"]
-            );
+        const orderRes = await fetch('/api/medicine/orders');
+        const orderResult = await orderRes.json();
+        const orderTbody = document.getElementById("orderPaymentsTableBody");
 
-            if(payments.length > 0){
-                payments.forEach(payment => {
-                    const isSuccess = (payment.payment_status || '').toLowerCase() === 'success';
-                    html += `
+        if(orderResult.success && orderResult.orders && orderResult.orders.length > 0) {
+            const orders = filterMedicineRecords(orderResult.orders, ["created_at", "order_date"]);
+            if(orders.length === 0){
+                orderTbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding: 20px;">No User Payments Found</td></tr>`;
+            } else {
+                orders.forEach(order => {
+                    const totalAmt = parseFloat(order.total_amount || order.total_price || 0);
+                    const paidAmt = parseFloat(order.paid_amount || totalAmt);
+                    const isPart = order.payment_type === 'Part';
+                    const balance = isPart ? Math.max(0, totalAmt - paidAmt) : 0;
+                    let paymentBadge = isPart
+                        ? `<span style="padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 700; background:#fff7ed; color:#ea580c;">Part Payment</span>`
+                        : `<span style="padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 700; background:#f0fdf4; color:#16a34a;">Full Payment</span>`;
+                    orderTbody.innerHTML += `
                     <tr>
-                        <td style="font-weight:600; color:var(--hk-primary-blue);">#${payment.id}</td>
-                        <td style="font-weight:700; color:var(--hk-text-main);">₹${Number(payment.amount || 0).toLocaleString()}</td>
-                        <td>${payment.payment_method || 'Direct Transfer'}</td>
-                        <td><span class="status-badge ${isSuccess ? 'active' : 'pending'}"><i class="fa-solid ${isSuccess ? 'fa-circle-check' : 'fa-clock'}"></i> ${payment.payment_status || 'Success'}</span></td>
-                        <td style="font-family:monospace; font-size:12px; color:var(--hk-text-muted);">${payment.transaction_id || 'TXN-' + payment.id}</td>
-                        <td>${payment.paid_at ? new Date(payment.paid_at).toLocaleString() : 'Recent'}</td>
+                        <td>${order.id}</td>
+                        <td><span style="font-weight:600;">${order.customer_name || order.user_name || '-'}</span></td>
+                        <td><span style="font-weight:600;">&#8377;${totalAmt}</span></td>
+                        <td><span style="font-weight:600; color:#16a34a;">&#8377;${paidAmt}</span></td>
+                        <td><span style="font-weight:600; color:#dc2626;">&#8377;${balance}</span></td>
+                        <td>${paymentBadge}</td>
                     </tr>
                     `;
                 });
             }
-            else{
-                html += `
-                <tr>
-                    <td colspan="6" style="text-align:center; padding:56px 24px;">
-                        <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; gap:12px;">
-                            <div style="width:56px; height:56px; border-radius:50%; background:rgba(40,100,240,0.1); color:#2864F0; display:flex; align-items:center; justify-content:center; font-size:24px;">
-                                <i class="fa-solid fa-wallet"></i>
-                            </div>
-                            <h4 style="margin:0; font-size:16px; font-weight:700; color:var(--hk-text-main);">No Payments Found</h4>
-                            <p style="margin:0; font-size:13px; color:var(--hk-text-muted); max-width:320px;">Pharmacy settlement disbursements will appear here.</p>
-                        </div>
-                    </td>
-                </tr>
-                `;
-            }
-        }
-        else{
-            html += `
-            <tr>
-                <td colspan="6" style="text-align:center; padding:56px 24px;">
-                    <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; gap:12px;">
-                        <div style="width:56px; height:56px; border-radius:50%; background:rgba(40,100,240,0.1); color:#2864F0; display:flex; align-items:center; justify-content:center; font-size:24px;">
-                            <i class="fa-solid fa-wallet"></i>
-                        </div>
-                        <h4 style="margin:0; font-size:16px; font-weight:700; color:var(--hk-text-main);">No Payments Found</h4>
-                        <p style="margin:0; font-size:13px; color:var(--hk-text-muted); max-width:320px;">Pharmacy settlement disbursements will appear here.</p>
-                    </div>
-                </td>
-            </tr>
-            `;
+        } else {
+            orderTbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding: 20px;">No User Payments Found</td></tr>`;
         }
 
-        html += `
-                    </tbody>
-                </table>
-            </div>
+
+    // --- Vendor Payouts Section ---
+    let vendorPayoutsHtml = `
+        <div style="margin-top: 40px; margin-bottom: 25px;">
+            <h2 style="font-size: 24px; color: #1e293b; font-weight: 700;">Vendor Payouts</h2>
+            <p style="font-size: 13px; color: #64748b; margin-top: 4px;">Payouts received from admin</p>
         </div>
-        `;
+        <div class="table-container">
+            <table class="adminTable">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Amount</th>
+                        <th>Razorpay Payment ID</th>
+                        <th>Status</th>
+                        <th>Paid At</th>
+                    </tr>
+                </thead>
+                <tbody id="vendorPayoutsTableBody">
+                </tbody>
+            </table>
+        </div>
+    `;
+    mainContent.insertAdjacentHTML('beforeend', vendorPayoutsHtml);
 
-        document.getElementById("mainContent").innerHTML = html;
+    try {
+        const payoutsRes = await fetch('/api/vendor/payments');
+        const payoutsResult = await payoutsRes.json();
+        const payoutsTbody = document.getElementById("vendorPayoutsTableBody");
+        if (payoutsResult.success && payoutsResult.payments && payoutsResult.payments.length > 0) {
+            const payouts = filterMedicineRecords(payoutsResult.payments, ["paid_at", "created_at"]);
+            if (payouts.length === 0) {
+                payoutsTbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding: 20px;">No Vendor Payouts Found</td></tr>`;
+            } else {
+                payouts.forEach(p => {
+                    const statusColor = (p.payout_status || '').toLowerCase() === 'paid' ? '#16a34a' : '#ea580c';
+                    const statusBg = (p.payout_status || '').toLowerCase() === 'paid' ? '#f0fdf4' : '#fff7ed';
+                    payoutsTbody.innerHTML += `
+                    <tr>
+                        <td>#${p.id}</td>
+                        <td style="font-weight:700;">&#8377;${Number(p.amount || 0).toLocaleString()}</td>
+                        <td style="font-family:monospace; font-size:12px; color:#64748b;">${p.razorpay_payment_id || 'N/A'}</td>
+                        <td><span style="padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 700; background:${statusBg}; color:${statusColor};">${p.payout_status || 'pending'}</span></td>
+                        <td>${p.paid_at ? new Date(p.paid_at).toLocaleString() : 'N/A'}</td>
+                    </tr>
+                    `;
+                });
+            }
+        } else {
+            payoutsTbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding: 20px;">No Vendor Payouts Found</td></tr>`;
+        }
+    } catch(e) { console.log('Vendor payouts error:', e); }
+
         reapplyVendorSearch();
     }
     catch(error){
         console.log(error);
     }
 }
-
 async function loadDashboard(){
 
     try{

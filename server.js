@@ -2325,7 +2325,7 @@ app.put(
         values.push(vendorAddrProof);
       }
 
-      if (body.is_vendor_profile || body.company_name || body.business_reg_number) {
+      if (body.is_vendor_profile || body.company_name || body.business_reg_number || body.bank_account || body.ifsc) {
         updates.push("vendor_profile_completed = 1");
         updates.push("edit_allowed = 0");
         updates.push("edit_requested = 0");
@@ -3512,7 +3512,7 @@ app.post(
           body.lab_hrs,
           body.test_time,
           body.emergency_test,
-          body.test_price,
+          body.test_price === "" ? 0 : body.test_price,
         ],
       );
       res.json({
@@ -8658,3 +8658,33 @@ app.get('/logout', (req, res) => {
     });
 });
 
+
+
+// Edit Lab
+app.post("/api/edit/lab/:id", upload.fields([{ name: "lab_reg", maxCount: 1 }]), async (req, res) => {
+    try {
+        const id = req.params.id;
+        const { lab_name, address, test, test_price, lab_type, home_coll, emergency_test, lab_hrs, extra_chrg, available_areas, adv_equipment, test_time, pathologist } = req.body;
+        const ec = extra_chrg === '' ? 0 : extra_chrg;
+        const tp = test_price === '' ? 0 : test_price;
+        await pool.query(
+            "UPDATE labs SET lab_name=?, address=?, location=?, description=?, test=?, test_price=?, lab_type=?, home_coll=?, extra_chrg=?, available_areas=?, adv_equipment=?, lab_hrs=?, test_time=?, emergency_test=?, pathologist=? WHERE id=?",
+            [lab_name, address, req.body.location, req.body.description, test, tp, lab_type, home_coll, ec, available_areas, adv_equipment, lab_hrs, test_time, emergency_test, pathologist, id]
+        );
+        res.json({ success: true, message: "Lab updated successfully" });
+    } catch (e) {
+        console.error(e);
+        res.status(500).json({ success: false, message: "Server Error" });
+    }
+});
+
+// Delete Lab
+app.delete("/api/delete/lab/:id", async (req, res) => {
+    try {
+        await pool.query("DELETE FROM labs WHERE id = ?", [req.params.id]);
+        res.json({ success: true, message: "Lab deleted successfully" });
+    } catch (e) {
+        console.error(e);
+        res.status(500).json({ success: false, message: "Server Error" });
+    }
+});

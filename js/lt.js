@@ -402,33 +402,118 @@ setInterval(() => {
 },5000);
 
 document.getElementById("labSection").style.display = "none";
+            if(document.getElementById("labDetailsSection")) document.getElementById("labDetailsSection").style.display = "none";
 document.getElementById("patientsSection").style.display = "none";
 document.getElementById("paymentsSection").style.display = "none";
 document.getElementById("dashboardSection").style.display = "block";
 
 async function fillProfileForm(profile, details = {}) {
     if (!profile) return;
-    const nameField = document.getElementById("profileName");
-    const emailField = document.getElementById("profileEmail");
-    const userTypeField = document.getElementById("profileUserType");
-    const bankField = document.getElementById("profileBank");
-    const ifscField = document.getElementById("profileIfsc");
-
-    if (nameField) nameField.value = profile.name || "";
-    if (emailField) emailField.value = profile.emailorcontact || "";
-    if (userTypeField && profile.users_type) userTypeField.value = profile.users_type;
-    if (bankField) bankField.value = profile.bank_account || "";
-    if (ifscField) ifscField.value = profile.ifsc || "";
+    const form = document.getElementById("vendorProfileForm");
+    if (!form) return;
+    
+    // Fill user table fields mapping to form
+    const m = {
+        company_name: profile.company_name,
+        name: profile.name,
+        contact_number: profile.emailorcontact,
+        business_address: profile.business_address,
+        bank_account: profile.bank_account,
+        ifsc_code: profile.ifsc
+    };
+    for (const key in m) {
+        const input = form.querySelector(`[name="${key}"]`);
+        if (input && input.type !== 'file' && m[key]) input.value = m[key];
+    }
 
     if (details) {
         for (const [key, value] of Object.entries(details)) {
-            const input = document.querySelector('#vendorProfileForm [name="' + key + '"]');
-            if (input && input.type !== 'file') {
-                input.value = value || "";
+            const input = form.querySelector('[name="' + key + '"]');
+            if (input && input.type !== 'file' && value) {
+                input.value = value;
             }
         }
     }
+    
+    // Check lock status from the users table
+    const isCompleted = profile.vendor_profile_completed || (profile.bank_account && profile.ifsc);
+    const isAllowed = profile.edit_allowed;
+    const isRequested = profile.edit_requested;
+    
+    const allInputs = form.querySelectorAll('input, select, textarea');
+    const actionBtns = document.getElementById('profileModalActionButtons');
+    
+    let bannerContainer = document.getElementById('vendorProfileStatusBannerContainer');
+    if (!bannerContainer) {
+        bannerContainer = document.createElement('div');
+        bannerContainer.id = 'vendorProfileStatusBannerContainer';
+        bannerContainer.style.gridColumn = '1/-1';
+        form.insertBefore(bannerContainer, form.firstChild);
+    }
+    
+    if (isCompleted && !isAllowed) {
+        allInputs.forEach(input => {
+            input.disabled = true;
+            input.style.backgroundColor = '#f1f5f9';
+        });
+        
+        let statusHtml = '';
+        if (!isRequested) {
+            statusHtml = `
+            <div style="background:rgba(16, 185, 129, 0.1); color:#059669; padding:12px 16px; border-radius:10px; margin-bottom:10px; display:flex; align-items:center; gap:12px; border:1px solid rgba(16, 185, 129, 0.2);">
+                <i class="fa-solid fa-circle-check"></i>
+                <div style="font-size:13px; display:flex; justify-content:space-between; align-items:center; width:100%;">
+                    <div>
+                        <strong style="display:block; margin-bottom:2px;">Profile Verified</strong>
+                        Your profile is active.
+                    </div>
+                    <button type="button" onclick="requestVendorProfileEdit(${profile.id})" style="background:#059669; color:#fff; border:none; padding:8px 14px; border-radius:8px; cursor:pointer; font-size:12px; font-weight:600; display:inline-flex; align-items:center; gap:6px;">
+                        Request Edit <i class="fa-solid fa-pen-to-square"></i>
+                    </button>
+                </div>
+            </div>`;
+        } else {
+            statusHtml = `
+            <div style="padding:12px 16px; background:#fffbeb; border:1px solid #fde68a; border-radius:10px; font-size:13px; color:#92400e; font-weight:500; display:flex; align-items:center; gap:10px; margin-bottom:10px;">
+                <i class="fa-solid fa-shield-halved" style="color:#d97706; font-size:18px;"></i>
+                <div style="flex:1;">
+                    <strong>Edit Requested.</strong> Pending admin approval to update profile.
+                </div>
+            </div>`;
+        }
+        bannerContainer.innerHTML = statusHtml;
+        
+        if (actionBtns) {
+            actionBtns.innerHTML = `<button type="button" onclick="closeProfileModal()" style="padding:10px 18px; border:1px solid var(--hk-border, #cbd5e1); background:var(--hk-surface, #fff); border-radius:10px; cursor:pointer; color:var(--hk-text-main, #101828); font-weight:600;">Close</button>`;
+        }
+    } else {
+        allInputs.forEach(input => {
+            input.disabled = false;
+            input.style.backgroundColor = '#fff';
+        });
+        bannerContainer.innerHTML = '';
+        if (actionBtns) {
+            actionBtns.innerHTML = `
+                <button type="button" style="padding:10px 18px; border:1px solid var(--hk-border, #cbd5e1); background:var(--hk-surface, #fff); border-radius:10px; cursor:pointer; color:var(--hk-text-main, #101828); font-weight:600;" onclick="closeProfileModal()">Close</button>
+                <button type="submit" style="padding:10px 18px; border:none; background:var(--hk-primary-blue, #2563eb); color:#fff; border-radius:10px; cursor:pointer; font-weight:600;">Save Profile</button>
+            `;
+        }
+    }
 }
+
+window.requestVendorProfileEdit = async function(id) {
+    if(!confirm("Are you sure you want to request permission to edit your profile?")) return;
+    try {
+        const res = await fetch('/api/vendor/request-profile-edit/vendor/' + id, { method: 'POST' });
+        const result = await res.json();
+        alert(result.message);
+        if(result.success) {
+            closeProfileModal();
+            loadUserProfile();
+        }
+    } catch(e) { console.error(e); alert("Error requesting edit"); }
+};
+
 
 
 
@@ -439,6 +524,10 @@ async function loadUserProfile(){
         const result = await response.json();
         if(result.success){
             const vendorName = result.user?.name || result.details?.lab_name || "Vendor";
+            const profilePhotoUrl = result.user?.profile_photo ? `/uploads/${result.user.profile_photo}` : `https://ui-avatars.com/api/?name=${encodeURIComponent(vendorName)}&background=0284c7&color=fff`;
+            const avatarImg = document.getElementById('navbarProfileAvatar');
+            if (avatarImg) avatarImg.src = profilePhotoUrl;
+            
             const welcomeText = document.getElementById("welcomeText");
             if (welcomeText) welcomeText.innerText = `Welcome ${vendorName}`;
 
@@ -446,6 +535,8 @@ async function loadUserProfile(){
                 el.textContent = vendorName;
             });
 
+            window.currentUserProfile = result.user;
+            window.currentUserDetails = result.details || {};
             fillProfileForm(result.user, result.details || {});
             const isComplete = Boolean(result.user?.vendor_profile_completed || (result.user?.bank_account && result.user?.ifsc));
             const triggerText = document.getElementById("profileTriggerText");
@@ -537,6 +628,7 @@ navItems.forEach(item => {
             const text =  item.innerText.trim().toLowerCase();
 
             document.getElementById("labSection").style.display = "none";
+            if(document.getElementById("labDetailsSection")) document.getElementById("labDetailsSection").style.display = "none";
             document.getElementById("bookingSection").style.display = "none";
             document.getElementById("patientsSection").style.display = "none";
             document.getElementById("reportsSection").style.display = "none";
@@ -550,6 +642,11 @@ navItems.forEach(item => {
             else if(text.includes("lab tests")){
                 document.getElementById("labSection").style.display = "block";
                 loadLabs();
+            }
+            
+            else if(text.includes("lab details")){
+                if(document.getElementById("labDetailsSection")) document.getElementById("labDetailsSection").style.display = "block";
+                loadLabDetails();
             }
             else if(text.includes("bookings")){
                 document.getElementById("bookingSection").style.display = "block";
@@ -649,6 +746,10 @@ async function loadLabs() {
                         <td>${lab.emergency_test}</td>
                         <td>${lab.lab_hrs}</td>
                         <td>${new Date(lab.created_at).toLocaleDateString()}</td>
+                        <td>
+                            <button title="Edit" onclick="editLab(${lab.id}); event.stopPropagation();" style="border:none;background:transparent;color:#3b82f6;cursor:pointer;margin-right:8px;"><i class="fa-solid fa-pen-to-square"></i></button>
+                            <button title="Delete" onclick="deleteLab(${lab.id}); event.stopPropagation();" style="border:none;background:transparent;color:#ef4444;cursor:pointer;"><i class="fa-solid fa-trash"></i></button>
+                        </td>
                     </tr>
                 `;
             });
@@ -662,7 +763,7 @@ async function loadLabs() {
 // LAB MODAL CONTROLS
 // ============================================================
 document.getElementById("addLabBtn").addEventListener("click", () => {
-    document.getElementById("labModal").style.display = "flex";
+    if(document.getElementById("edit_lab_id")) document.getElementById("edit_lab_id").value = ""; const saveBtn = document.getElementById("saveLabBtn"); if(saveBtn) saveBtn.innerText = "Save Lab"; document.getElementById("labModalHeader").querySelector("h2").innerText = "Add Lab"; document.getElementById("labModal").style.display = "flex";
 });
 
 document.getElementById("closeLabModal").addEventListener("click", () => {
@@ -786,11 +887,11 @@ document.getElementById("labForm").addEventListener("submit", async (e) => {
     e.preventDefault();
     const formData = new FormData();
 
-    formData.append("lab_name", document.getElementById("lab_name").value);
-    formData.append("address", document.getElementById("lab_address").value);
-    formData.append("location", document.getElementById("lab_location").value);
-    formData.append("description", document.getElementById("lab_description").value);
-    formData.append("test_price", document.getElementById("test_price").value);
+    formData.append("lab_name", document.getElementById("lab_name")?.value || "");
+    formData.append("address", document.getElementById("lab_address")?.value || "");
+    formData.append("location", document.getElementById("lab_location")?.value || "");
+    formData.append("description", document.getElementById("lab_description")?.value || "");
+    formData.append("test_price", document.getElementById("test_price")?.value || "");
 
     const labTypes = [];
     document.querySelectorAll("#labTypeGrid input:checked").forEach(item => labTypes.push(item.value));
@@ -831,19 +932,19 @@ document.getElementById("labForm").addEventListener("submit", async (e) => {
     formData.append("emergency_test", document.getElementById("emergency_test").value);
 
     const labRegFile = document.getElementById("lab_reg");
-    const nablFile = document.getElementById("nabl");
     if (labRegFile?.files[0]) formData.append("lab_reg", labRegFile.files[0]);
-    if (nablFile?.files[0]) formData.append("nabl", nablFile.files[0]);
 
     try {
-        const response = await fetch('/api/add/lab', { method: 'POST', body: formData });
+        const editId = document.getElementById("edit_lab_id")?.value;
+        const endpoint = editId ? '/api/edit/lab/' + editId : '/api/add/lab';
+        const response = await fetch(endpoint, { method: 'POST', body: formData });
         const result = await response.json();
         if (result.success) {
-            alert("Lab Added");
+            alert(editId ? "Lab Updated successfully" : "Lab Added successfully");
             document.getElementById("labModal").style.display = "none";
             loadLabs();
         } else {
-            alert(result.message || "Failed to add lab");
+            alert(result.message || "Operation failed");
         }
     } catch (error) {
         console.error("Add Lab Error:", error);
@@ -1262,94 +1363,122 @@ async function loadVendorPayments(){
 }
 
 async function loadPayments(){
-
     try{
+        const mainContent = document.getElementById("mainContent");
+        mainContent.innerHTML = `
+            <div style="margin-bottom: 25px;">
+                <h2 style="font-size: 24px; color: #1e293b; font-weight: 700;">User Payments</h2>
+                <p style="font-size: 13px; color: #64748b; margin-top: 4px;">Payments received from users</p>
+            </div>
+            <div class="table-container">
+                <table class="adminTable">
+                    <thead>
+                        <tr>
+                            <th>Booking ID</th>
+                            <th>User</th>
+                            <th>Total Amount</th>
+                            <th>Paid Amount</th>
+                            <th>Balance</th>
+                            <th>Payment Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="paymentsTableBody">
+                    </tbody>
+                </table>
+            </div>
+        `;
 
-        const response =
-        await fetch(
-            '/api/vendor/payments'
-        );
+        const response = await fetch('/api/lab/patients');
+        const result = await response.json();
+        const tbody = document.getElementById("paymentsTableBody");
 
-        const result =
-        await response.json();
-
-        const tbody =
-        document.getElementById(
-            "paymentsTableBody"
-        );
-
-        tbody.innerHTML = "";
-
-        if(result.success){
-            const payments =
-                filterLabRecords(
-                    result.payments,
-                    ["paid_at", "created_at"]
-                );
-
-            if(
-                payments.length === 0
-            ){
-
-                tbody.innerHTML = `
-                <tr>
-                    <td colspan="5">
-                        No Payments Found
-                    </td>
-                </tr>
-                `;
-
-                return;
-
-            }
-
-            payments.forEach(
-                payment => {
-
+        if(result.success && result.patients && result.patients.length > 0) {
+            const patients = filterLabRecords(result.patients, ["created_at", "booking_date"]);
+            if(patients.length === 0){
+                tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding: 20px;">No User Payments Found</td></tr>`;
+            } else {
+                patients.forEach(booking => {
+                    const totalAmt = parseFloat(booking.total_amount || booking.test_price || 0);
+                    const paidAmt = parseFloat(booking.paid_amount || totalAmt);
+                    const isPart = booking.payment_type === 'Part';
+                    const balance = isPart ? Math.max(0, totalAmt - paidAmt) : 0;
+                    let paymentBadge = isPart
+                        ? `<span style="padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 700; background:#fff7ed; color:#ea580c;">Part Payment</span>`
+                        : `<span style="padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 700; background:#f0fdf4; color:#16a34a;">Full Payment</span>`;
                     tbody.innerHTML += `
                     <tr>
-
-                        <td>
-                            ${payment.id}
-                        </td>
-
-                        <td>
-                            ₹${payment.amount}
-                        </td>
-
-                        <td>
-                            ${payment.razorpay_payment_id || 'N/A'}
-                        </td>
-
-                        <td>
-                            ${payment.payout_status}
-                        </td>
-
-                        <td>
-                            ${
-                                new Date(
-                                    payment.paid_at
-                                ).toLocaleString()
-                            }
-                        </td>
-
+                        <td>${booking.id}</td>
+                        <td><span style="font-weight:600;">${booking.patient_name || booking.name || '-'}</span></td>
+                        <td><span style="font-weight:600;">&#8377;${totalAmt}</span></td>
+                        <td><span style="font-weight:600; color:#16a34a;">&#8377;${paidAmt}</span></td>
+                        <td><span style="font-weight:600; color:#dc2626;">&#8377;${balance}</span></td>
+                        <td>${paymentBadge}</td>
                     </tr>
                     `;
-
-                }
-            );
-
+                });
+            }
+        } else {
+            tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding: 20px;">No User Payments Found</td></tr>`;
         }
+
+
+    // --- Vendor Payouts Section ---
+    let vendorPayoutsHtml = `
+        <div style="margin-top: 40px; margin-bottom: 25px;">
+            <h2 style="font-size: 24px; color: #1e293b; font-weight: 700;">Vendor Payouts</h2>
+            <p style="font-size: 13px; color: #64748b; margin-top: 4px;">Payouts received from admin</p>
+        </div>
+        <div class="table-container">
+            <table class="adminTable">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Amount</th>
+                        <th>Razorpay Payment ID</th>
+                        <th>Status</th>
+                        <th>Paid At</th>
+                    </tr>
+                </thead>
+                <tbody id="vendorPayoutsTableBody">
+                </tbody>
+            </table>
+        </div>
+    `;
+    mainContent.insertAdjacentHTML('beforeend', vendorPayoutsHtml);
+
+    try {
+        const payoutsRes = await fetch('/api/vendor/payments');
+        const payoutsResult = await payoutsRes.json();
+        const payoutsTbody = document.getElementById("vendorPayoutsTableBody");
+        if (payoutsResult.success && payoutsResult.payments && payoutsResult.payments.length > 0) {
+            const payouts = filterLabRecords(payoutsResult.payments, ["paid_at", "created_at"]);
+            if (payouts.length === 0) {
+                payoutsTbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding: 20px;">No Vendor Payouts Found</td></tr>`;
+            } else {
+                payouts.forEach(p => {
+                    const statusColor = (p.payout_status || '').toLowerCase() === 'paid' ? '#16a34a' : '#ea580c';
+                    const statusBg = (p.payout_status || '').toLowerCase() === 'paid' ? '#f0fdf4' : '#fff7ed';
+                    payoutsTbody.innerHTML += `
+                    <tr>
+                        <td>#${p.id}</td>
+                        <td style="font-weight:700;">&#8377;${Number(p.amount || 0).toLocaleString()}</td>
+                        <td style="font-family:monospace; font-size:12px; color:#64748b;">${p.razorpay_payment_id || 'N/A'}</td>
+                        <td><span style="padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 700; background:${statusBg}; color:${statusColor};">${p.payout_status || 'pending'}</span></td>
+                        <td>${p.paid_at ? new Date(p.paid_at).toLocaleString() : 'N/A'}</td>
+                    </tr>
+                    `;
+                });
+            }
+        } else {
+            payoutsTbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding: 20px;">No Vendor Payouts Found</td></tr>`;
+        }
+    } catch(e) { console.log('Vendor payouts error:', e); }
 
     }
     catch(error){
-
         console.log(error);
-
     }
-
 }
-
 async function loadDashboard(){
 
     try{
@@ -2042,9 +2171,92 @@ document.getElementById('addBookingForm')?.addEventListener('submit', async (e) 
 
 
 
-// ====== NEW PROFILE FLOW LOGIC ======
+
+
 function openProfileModal() {
-    const modal = document.getElementById("profileModalBox") || document.getElementById("profileModal");
+    const modal = document.getElementById("profileModal");
+    if (modal) {
+        modal.style.display = "flex";
+        if (window.currentUserProfile) {
+            fillProfileForm(window.currentUserProfile, window.currentUserDetails || {});
+        } else {
+            loadUserProfile();
+        }
+    }
+}
+function closeProfileModal() {
+    const modal = document.getElementById("profileModal");
+    if (modal) modal.style.display = "none";
+}
+
+// ====== LAB DETAILS TABLE ======
+async function loadLabDetails() {
+    const tbody = document.getElementById("labDetailsTableBody");
+    if (!tbody) return;
+    
+    try {
+        const response = await fetch('/api/labs');
+        const result = await response.json();
+        tbody.innerHTML = "";
+        
+        if (result.success && result.labs && result.labs.length > 0) {
+            const completedLabs = result.labs.filter(lab => lab.profile_completed);
+            const pendingLabs = result.labs.filter(lab => !lab.profile_completed);
+            
+            if (completedLabs.length === 0 && pendingLabs.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:30px; color:var(--hk-text-muted);">No lab details found. Add a lab test first, then complete its profile.</td></tr>';
+                return;
+            }
+
+            completedLabs.forEach(lab => {
+                let tests = '';
+                try {
+                    const t = typeof lab.test === 'string' ? JSON.parse(lab.test) : lab.test;
+                    tests = Array.isArray(t) ? t.join(', ') : (t || '-');
+                } catch(e) { tests = lab.test || '-'; }
+
+                tbody.innerHTML += `
+                    <tr>
+                        <td><strong>${lab.lab_name || '-'}</strong></td>
+                        <td>${lab.lab_registration_number || '-'}</td>
+                        <td>${lab.address || '-'}</td>
+                        <td>${lab.contact_number || '-'}</td>
+                        <td>${tests}</td>
+                        <td>${lab.home_coll || '-'}</td>
+                        <td><span style="display:inline-block; padding:4px 12px; border-radius:20px; font-size:12px; font-weight:600; background:#dcfce7; color:#16a34a;">Completed</span></td>
+                        <td>
+                            <button title="Edit" onclick="editLabDetails(${lab.id}); event.stopPropagation();" style="border:none;background:transparent;color:#3b82f6;cursor:pointer;margin-right:8px;"><i class="fa-solid fa-pen-to-square"></i></button>
+                            <button title="Delete" onclick="deleteLab(${lab.id}); event.stopPropagation();" style="border:none;background:transparent;color:#ef4444;cursor:pointer;"><i class="fa-solid fa-trash"></i></button>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            pendingLabs.forEach(lab => {
+                tbody.innerHTML += `
+                    <tr style="opacity:0.7;">
+                        <td><strong>${lab.lab_name || '-'}</strong></td>
+                        <td colspan="5" style="color:var(--hk-text-muted); font-style:italic;">Profile not filled yet</td>
+                        <td><span style="display:inline-block; padding:4px 12px; border-radius:20px; font-size:12px; font-weight:600; background:#fef3c7; color:#d97706;">Pending</span></td>
+                        <td>
+                            <button title="Edit" onclick="editLabDetails(${lab.id}); event.stopPropagation();" style="border:none;background:transparent;color:#3b82f6;cursor:pointer;margin-right:8px;"><i class="fa-solid fa-pen-to-square"></i></button>
+                            <button title="Delete" onclick="deleteLab(${lab.id}); event.stopPropagation();" style="border:none;background:transparent;color:#ef4444;cursor:pointer;"><i class="fa-solid fa-trash"></i></button>
+                        </td>
+                    </tr>
+                `;
+            });
+        } else {
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:30px; color:var(--hk-text-muted);">No lab tests added yet. Add a lab test first.</td></tr>';
+        }
+    } catch (error) {
+        console.error("Load Lab Details Error:", error);
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:30px; color:#ef4444;">Failed to load lab details.</td></tr>';
+    }
+}
+
+// ====== NEW PROFILE FLOW LOGIC ======
+function openLabEntityModal() {
+    const modal = document.getElementById("labEntityModal");
     if (modal) modal.style.display = "flex";
     
     // Fetch entities to populate the dropdown
@@ -2075,12 +2287,28 @@ function openProfileModal() {
                                   const res = await fetch('/api/vendor/entity-details/' + entityType + '/' + entityId);
                                   const result = await res.json();
                                   if (result.success && result.data) {
-                                      const form = document.getElementById('vendorProfileForm');
-                                      for (const key in result.data) {
-                                          const input = form.querySelector('[name="' + key + '"]');
-                                          if (input && result.data[key]) {
-                                              input.value = result.data[key];
+                                      const form = document.getElementById('labEntityForm');
+                                      if (form) {
+                                          // Default fill matching names
+                                          for (const key in result.data) {
+                                              const input = form.querySelector(`[name="${key}"]`);
+                                              if (input && result.data[key] !== undefined && input.type !== 'file') {
+                                                  input.value = result.data[key];
+                                              }
                                           }
+                                          // Special handling for lab details
+                                          if(form.elements['lab_registration_number'] && result.data.lab_registration_number) form.elements['lab_registration_number'].value = result.data.lab_registration_number;
+                                          if(form.elements['address'] && result.data.address) form.elements['address'].value = result.data.address;
+                                          if(form.elements['contact_number'] && result.data.contact_number) form.elements['contact_number'].value = result.data.contact_number;
+                                          
+                                          let testVal = result.data.test;
+                                          if (typeof testVal === 'string') {
+                                              try { testVal = JSON.parse(testVal); } catch(e){}
+                                          }
+                                          if (Array.isArray(testVal)) testVal = testVal.join(', ');
+                                          if(form.elements['test'] && testVal) form.elements['test'].value = testVal;
+                                          
+                                          if(form.elements['home_coll'] && result.data.home_coll) form.elements['home_coll'].value = result.data.home_coll;
                                       }
                                   }
                               } catch(err) { console.error(err); }
@@ -2092,12 +2320,12 @@ function openProfileModal() {
     }
 }
 
-function closeProfileModal() {
-    const modal = document.getElementById("profileModalBox") || document.getElementById("profileModal");
+function closeLabEntityModal() {
+    const modal = document.getElementById("labEntityModal");
     if (modal) modal.style.display = "none";
 }
 
-document.getElementById('vendorProfileForm')?.addEventListener('submit', async (event) => {
+document.getElementById('labEntityForm')?.addEventListener('submit', async (event) => {
     event.preventDefault();
     const form = event.target;
     const entityId = document.getElementById('entitySelect')?.value;
@@ -2110,7 +2338,7 @@ document.getElementById('vendorProfileForm')?.addEventListener('submit', async (
     
     const formData = new FormData(form);
     
-    const submitBtn = document.getElementById('saveProfileBtn');
+    const submitBtn = document.getElementById('saveLabEntityBtn');
     if (submitBtn) {
         submitBtn.disabled = true;
         submitBtn.innerText = 'Saving...';
@@ -2123,9 +2351,9 @@ document.getElementById('vendorProfileForm')?.addEventListener('submit', async (
         });
         const result = await response.json();
         if (result.success) {
-            alert('Profile completed successfully!');
-            closeProfileModal();
-            form.reset();
+            alert('Lab details updated successfully!'); closeLabEntityModal(); form.reset(); if(typeof loadLabDetails === 'function') loadLabDetails();
+            loadLabDetails();
+            loadLabs();
         } else {
             alert(result.message || 'Profile completion failed');
         }
@@ -2134,7 +2362,7 @@ document.getElementById('vendorProfileForm')?.addEventListener('submit', async (
     } finally {
         if (submitBtn) {
             submitBtn.disabled = false;
-            submitBtn.innerText = 'Save Profile';
+            submitBtn.innerText = 'Save Details';
         }
     }
 });
@@ -2186,3 +2414,320 @@ document.addEventListener("DOMContentLoaded", () => {
         if(m) m.style.display = "none";
     });
 });
+
+
+window.deleteLab = async function(id) {
+    if(!confirm("Are you sure you want to delete this lab?")) return;
+    try {
+        const response = await fetch('/api/delete/lab/' + id, { method: 'DELETE' });
+        const result = await response.json();
+        if (result.success) {
+            loadLabs();
+            if(typeof loadLabDetails === 'function') loadLabDetails();
+        } else alert("Failed to delete lab");
+    } catch(e) { console.error(e); }
+};
+
+window.editLab = function(id) {
+    const lab = window.hk_vendorLabs.find(l => l.id === id);
+    if(!lab) return;
+    document.getElementById("edit_lab_id").value = id;
+    const ln = document.getElementById("lab_name"); if(ln) ln.value = lab.lab_name || "";
+    const addr = document.getElementById("lab_address"); if(addr) addr.value = lab.address || "";
+    const loc = document.getElementById("lab_location"); if(loc) loc.value = lab.location || "";
+    const desc = document.getElementById("lab_description"); if(desc) desc.value = lab.description || "";
+    const tp = document.getElementById("test_price"); if(tp) tp.value = lab.test_price || "";
+    const hc = document.getElementById("home_coll"); if(hc) hc.value = lab.home_coll || "No";
+    const ec = document.getElementById("extra_chrg"); if(ec) ec.value = lab.extra_chrg || "";
+    const aa = document.getElementById("available_areas"); if(aa) aa.value = lab.available_areas || "";
+    const ae = document.getElementById("adv_equipment"); if(ae) ae.value = lab.adv_equipment || "";
+    const lh = document.getElementById("lab_hrs"); if(lh) lh.value = lab.lab_hrs || "";
+    const tt = document.getElementById("test_time"); if(tt) tt.value = lab.test_time || "";
+    const et = document.getElementById("emergency_test"); if(et) et.value = lab.emergency_test || "No";
+    
+    
+    let parsedTypes = [];
+    if(typeof lab.lab_type === 'string') {
+        try { parsedTypes = JSON.parse(lab.lab_type); }
+        catch(e) { parsedTypes = lab.lab_type.split(',').map(s=>s.trim()); }
+    } else if (Array.isArray(lab.lab_type)) {
+        parsedTypes = lab.lab_type;
+    }
+    
+    let parsedTests = [];
+    if(typeof lab.test === 'string') {
+        try { parsedTests = JSON.parse(lab.test); }
+        catch(e) { parsedTests = lab.test.split(',').map(s=>s.trim()); }
+    } else if (Array.isArray(lab.test)) {
+        parsedTests = lab.test;
+    }
+    
+    parsedTypes.forEach(t => {
+        if(!labTypeTestMap[t]) customLabTypes.add(t);
+    });
+    parsedTests.forEach(t => {
+        let found = false;
+        Object.values(labTypeTestMap).forEach(list => { if(list.includes(t)) found = true; });
+        if(!found) customLabTests.add(t);
+    });
+    
+    renderLabTypes();
+    
+    setTimeout(() => {
+        parsedTypes.forEach(t => {
+            const cb = document.querySelector(`#labTypeGrid input[value="${t}"]`);
+            if(cb) cb.checked = true;
+        });
+        renderLabTests();
+        setTimeout(() => {
+            parsedTests.forEach(t => {
+                const cb = document.querySelector(`#labTestGrid input[value="${t}"]`);
+                if(cb) cb.checked = true;
+            });
+        }, 50);
+    }, 50);
+
+    // Clear pathologist
+    const pList = document.getElementById("pathologistList");
+    if (pList) pList.innerHTML = "";
+    
+    document.getElementById("labModalHeader").querySelector("h2").innerText = "Edit Lab";
+    const saveBtn = document.getElementById("saveLabBtn");
+    if(saveBtn) saveBtn.innerText = "Update Lab";
+    document.getElementById("labModal").style.display = "flex";
+};
+
+
+// ==================== DYNAMIC LAB TYPES & TESTS ====================
+const labTypeTestMap = {
+    "Hematology Lab": ["Complete Blood Count (CBC)", "Hemoglobin (Hb)", "ESR", "Platelet Count", "Blood Group"],
+    "Biochemistry Lab": ["Blood Sugar", "HbA1c", "Liver Function Test (LFT)", "Kidney Function Test (KFT)", "Lipid Profile", "Uric Acid", "Calcium", "Creatinine"],
+    "Microbiology Lab": ["Blood Culture", "Urine Culture", "Stool Culture", "Sputum Culture"],
+    "Pathology Lab": ["Urine Routine", "Stool Routine", "CBC", "Blood Sugar", "Lipid Profile"],
+    "Immunology Lab": ["CRP", "Rheumatoid Factor (RF)", "ANA Test", "Immunoglobulin Test"],
+    "Serology Lab": ["Dengue Test", "Widal Test", "HIV Test", "Hepatitis B", "Hepatitis C"],
+    "Molecular Diagnostics Lab": ["COVID-19 RT-PCR", "HPV DNA Test", "TB PCR", "Genetic Testing"],
+    "Histopathology Lab": ["Biopsy Examination", "Tissue Examination", "Cancer Screening"],
+    "Cytology Lab": ["Pap Smear", "FNAC", "Body Fluid Cytology"],
+    "Endocrinology Lab": ["TSH", "T3", "T4", "Insulin", "Cortisol", "Prolactin"],
+    "Genetics Lab": ["DNA Testing", "Genetic Screening", "Chromosomal Analysis"],
+    "Clinical Laboratory": ["CBC", "Blood Sugar", "Urine Routine", "LFT", "KFT", "Lipid Profile"]
+};
+
+const customLabTypes = new Set();
+const customLabTests = new Set();
+
+function renderLabTypes() {
+    const grid = document.getElementById("labTypeGrid");
+    if(!grid) return;
+    
+    // Get currently checked
+    const checked = Array.from(grid.querySelectorAll("input:checked")).map(el => el.value);
+    
+    let html = '';
+    const allTypes = [...Object.keys(labTypeTestMap), ...Array.from(customLabTypes)];
+    
+    allTypes.forEach(type => {
+        const isChecked = checked.includes(type) ? 'checked' : '';
+        html += `<label><input type="checkbox" value="${type}" ${isChecked}> ${type}</label>`;
+    });
+    grid.innerHTML = html;
+    
+    // Attach event listeners
+    grid.querySelectorAll("input[type='checkbox']").forEach(cb => {
+        cb.addEventListener('change', renderLabTests);
+    });
+    
+    renderLabTests();
+}
+
+function renderLabTests() {
+    const typeGrid = document.getElementById("labTypeGrid");
+    const testGrid = document.getElementById("labTestGrid");
+    if(!typeGrid || !testGrid) return;
+    
+    // Get currently checked lab types
+    const selectedTypes = Array.from(typeGrid.querySelectorAll("input:checked")).map(el => el.value);
+    
+    // Get currently checked tests (to preserve selection)
+    const checkedTests = Array.from(testGrid.querySelectorAll("input:checked")).map(el => el.value);
+    
+    // Collect all valid tests for selected types
+    const availableTests = new Set();
+    selectedTypes.forEach(type => {
+        if(labTypeTestMap[type]) {
+            labTypeTestMap[type].forEach(t => availableTests.add(t));
+        }
+    });
+    
+    // Always add custom tests that user explicitly added
+    customLabTests.forEach(t => availableTests.add(t));
+    
+    if(availableTests.size === 0 && selectedTypes.length === 0) {
+        testGrid.innerHTML = '<span style="color:var(--text-muted); font-size:13px; grid-column:span 3;">Select a Lab Type to view available tests.</span>';
+        return;
+    } else if (availableTests.size === 0) {
+        testGrid.innerHTML = '<span style="color:var(--text-muted); font-size:13px; grid-column:span 3;">No predefined tests for selected lab type(s). You can add custom tests.</span>';
+        // But we still render if there are custom tests! Wait, custom tests were added. So size won't be 0 if custom exists.
+    }
+    
+    let html = '';
+    Array.from(availableTests).forEach(test => {
+        const isChecked = checkedTests.includes(test) ? 'checked' : '';
+        html += `<label><input type="checkbox" value="${test}" ${isChecked}> ${test}</label>`;
+    });
+    testGrid.innerHTML = html;
+}
+
+document.getElementById('addCustomLabTypeBtn')?.addEventListener('click', () => {
+    const panel = document.getElementById('customLabTypePanel');
+    if (panel.style.display === 'none' || panel.style.display === '') {
+        panel.style.display = 'flex';
+    } else {
+        panel.style.display = 'none';
+    }
+});
+
+document.getElementById('saveCustomLabTypeBtn')?.addEventListener('click', () => {
+    const input = document.getElementById('customLabTypeInput');
+    const val = input.value.trim();
+    if (val) {
+        customLabTypes.add(val);
+        input.value = '';
+        document.getElementById('customLabTypePanel').style.display = 'none';
+        renderLabTypes();
+    }
+});
+
+document.addEventListener('DOMContentLoaded', () => {
+    renderLabTypes();
+});
+
+
+window.editLabDetails = async function(id) {
+    const modal = document.getElementById("labEntityModal");
+    if (modal) modal.style.display = "flex";
+    
+    const labData = window.hk_vendorLabs?.find(l => l.id === id);
+    const labName = labData?.lab_name || 'Lab ' + id;
+    
+    const select = document.getElementById('entitySelect');
+    if (select) {
+        select.innerHTML = `<option value="${id}">${labName}</option>`;
+        select.value = id;
+        
+        // Trigger the API fetch to fill the form
+        try {
+            const res = await fetch('/api/vendor/entity-details/lab/' + id);
+            const result = await res.json();
+            if (result.success && result.data) {
+                const form = document.getElementById('labEntityForm');
+                if (form) {
+                    Array.from(form.elements).forEach(el => {
+                        if (el.name && result.data[el.name] !== undefined) {
+                            if (el.type !== 'file') {
+                                el.value = result.data[el.name];
+                            }
+                        }
+                    });
+                    
+                    // Fill extra fields matching lt.html names
+                    if(form.elements['lab_registration_number'] && result.data.lab_registration_number) form.elements['lab_registration_number'].value = result.data.lab_registration_number;
+                    if(form.elements['address'] && result.data.address) form.elements['address'].value = result.data.address;
+                    if(form.elements['contact_number'] && result.data.contact_number) form.elements['contact_number'].value = result.data.contact_number;
+                    
+                    let testVal = result.data.test;
+                    if (typeof testVal === 'string') {
+                        try { testVal = JSON.parse(testVal); } catch(e){}
+                    }
+                    if (Array.isArray(testVal)) testVal = testVal.join(', ');
+                    if(form.elements['test'] && testVal) form.elements['test'].value = testVal;
+                    
+                    if(form.elements['home_coll'] && result.data.home_coll) form.elements['home_coll'].value = result.data.home_coll;
+                    
+                    // Lock logic
+                    const isCompleted = result.data.profile_completed;
+                    const isAllowed = result.data.edit_allowed;
+                    const isRequested = result.data.edit_requested;
+                    
+                    const allInputs = form.querySelectorAll('input, select, textarea');
+                    const actionBtns = document.getElementById('profileModalActionButtons') || form.querySelector('#profileModalActionButtons'); // Watch out for duplicate ID
+                    
+                    let bannerContainer = document.getElementById('labEntityStatusBannerContainer');
+                    if (!bannerContainer) {
+                        bannerContainer = document.createElement('div');
+                        bannerContainer.id = 'labEntityStatusBannerContainer';
+                        bannerContainer.style.gridColumn = '1/-1';
+                        form.insertBefore(bannerContainer, form.firstChild);
+                    }
+                    
+                    if (isCompleted && !isAllowed) {
+                        allInputs.forEach(input => {
+                            if (input.id !== 'entitySelect') { // Don't disable dropdown
+                                input.disabled = true;
+                                input.style.backgroundColor = '#f1f5f9';
+                            }
+                        });
+                        
+                        let statusHtml = '';
+                        if (!isRequested) {
+                            statusHtml = `
+                            <div style="background:rgba(16, 185, 129, 0.1); color:#059669; padding:12px 16px; border-radius:10px; margin-bottom:10px; display:flex; align-items:center; gap:12px; border:1px solid rgba(16, 185, 129, 0.2);">
+                                <i class="fa-solid fa-circle-check"></i>
+                                <div style="font-size:13px; display:flex; justify-content:space-between; align-items:center; width:100%;">
+                                    <div>
+                                        <strong style="display:block; margin-bottom:2px;">Lab Details Verified</strong>
+                                        Lab details are verified.
+                                    </div>
+                                    <button type="button" onclick="requestLabEntityEdit(${id})" style="background:#059669; color:#fff; border:none; padding:8px 14px; border-radius:8px; cursor:pointer; font-size:12px; font-weight:600; display:inline-flex; align-items:center; gap:6px;">
+                                        Request Edit <i class="fa-solid fa-pen-to-square"></i>
+                                    </button>
+                                </div>
+                            </div>`;
+                        } else {
+                            statusHtml = `
+                            <div style="padding:12px 16px; background:#fffbeb; border:1px solid #fde68a; border-radius:10px; font-size:13px; color:#92400e; font-weight:500; display:flex; align-items:center; gap:10px; margin-bottom:10px;">
+                                <i class="fa-solid fa-shield-halved" style="color:#d97706; font-size:18px;"></i>
+                                <div style="flex:1;">
+                                    <strong>Edit Requested.</strong> Pending admin approval to update details.
+                                </div>
+                            </div>`;
+                        }
+                        bannerContainer.innerHTML = statusHtml;
+                        
+                        if (actionBtns) {
+                            actionBtns.innerHTML = `<button type="button" onclick="closeLabEntityModal()" style="padding:10px 18px; border:1px solid var(--hk-border, #cbd5e1); background:var(--hk-surface, #fff); border-radius:10px; cursor:pointer; color:var(--hk-text-main, #101828); font-weight:600;">Close</button>`;
+                        }
+                    } else {
+                        allInputs.forEach(input => {
+                            input.disabled = false;
+                            input.style.backgroundColor = '#fff';
+                        });
+                        bannerContainer.innerHTML = '';
+                        if (actionBtns) {
+                            actionBtns.innerHTML = `
+                                <button type="button" style="padding:10px 18px; border:1px solid var(--hk-border, #cbd5e1); background:var(--hk-surface, #fff); border-radius:10px; cursor:pointer; color:var(--hk-text-main, #101828); font-weight:600;" onclick="closeLabEntityModal()">Close</button>
+                                <button type="submit" style="padding:10px 18px; border:none; background:var(--hk-primary-blue, #2563eb); color:#fff; border-radius:10px; cursor:pointer; font-weight:600;">Save Details</button>
+                            `;
+                        }
+                    }
+                }
+            }
+        } catch (e) {
+            console.error("Failed to fetch lab details for edit", e);
+        }
+    }
+};
+
+window.requestLabEntityEdit = async function(id) {
+    if(!confirm("Are you sure you want to request permission to edit this lab's details?")) return;
+    try {
+        const res = await fetch('/api/vendor/request-profile-edit/lab/' + id, { method: 'POST' });
+        const result = await res.json();
+        alert(result.message);
+        if(result.success) {
+            closeLabEntityModal();
+            loadLabDetails();
+        }
+    } catch(e) { console.error(e); alert("Error requesting edit"); }
+};

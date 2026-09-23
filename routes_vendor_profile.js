@@ -266,6 +266,12 @@ module.exports = function(app, pool, upload) {
                 const doc3 = getFile('pan_card');
                 const doc4 = getFile('authorized_person_id_proof');
                 
+                let testJson = '[]';
+                if (body.test) {
+                    if (body.test.trim().startsWith('[')) testJson = body.test;
+                    else testJson = JSON.stringify(body.test.split(',').map(s => s.trim()));
+                }
+
                 await pool.query(
                     `UPDATE labs SET 
                         lab_registration_number = ?, contact_number = ?, address = ?, 
@@ -277,7 +283,7 @@ module.exports = function(app, pool, upload) {
                         profile_completed = TRUE, edit_allowed = 0, edit_requested = 0
                     WHERE id = ? AND users_id = ?`,
                     [body.lab_registration_number, body.contact_number, body.address, 
-                     body.test, body.home_coll,
+                     testJson, body.home_coll,
                      doc1, doc2, doc3, doc4, entityId, userId]
                 );
             }

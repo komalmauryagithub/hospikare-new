@@ -585,6 +585,10 @@ async function loadUserProfile(){
         const result = await response.json();
         if(result.success){
             const vendorName = result.user?.name || result.details?.hospital_name || "Vendor";
+            const profilePhotoUrl = result.user?.profile_photo ? `/uploads/${result.user.profile_photo}` : `https://ui-avatars.com/api/?name=${encodeURIComponent(vendorName)}&background=0284c7&color=fff`;
+            const avatarImg = document.getElementById('navbarProfileAvatar');
+            if (avatarImg) avatarImg.src = profilePhotoUrl;
+            
             currentVendorName = vendorName;
             const welcomeText = document.getElementById("welcomeText");
             if (welcomeText) welcomeText.innerText = `Welcome ${vendorName}`;
@@ -1015,12 +1019,11 @@ async function loadBookings(){
                     <thead>
                         <tr>
                             <th>ID</th>
-                            <th>Patient</th>
+                            <th>User</th>
                             <th>Age/Gender</th>
                             <th>Hospital</th>
                             <th>Room/Bed</th>
-                            <th>Payment Info</th>
-                        </tr>
+                            </tr>
                     </thead>
                     <tbody id="bookingsTableBody">
                     </tbody>
@@ -1041,7 +1044,7 @@ async function loadBookings(){
             );
 
         if(bookings.length === 0){
-            tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding: 20px;">No Bookings Found</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding: 20px;">No Bookings Found</td></tr>`;
             return;
         }
 
@@ -1082,10 +1085,7 @@ async function loadBookings(){
                     <span style="padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 700; display: inline-block; background:#e0e7ff; color:#4338ca; display:block; margin-bottom:4px;">${booking.room_type}</span>
                     <span style="font-size:12px; color:var(--text-muted, #64748b);">${booking.bed_type}</span>
                 </td>
-                <td>
-                    ${paymentBadge}
-                    ${paymentDetails}
-                </td>
+
             </tr>
             `;
         });
@@ -1099,23 +1099,25 @@ loadBookings();
 
 async function loadPayments(){
     try{
-        const response = await fetch('/api/vendor/payments');
+        const response = await fetch('/api/hospital/bookings');
         const result = await response.json();
 
         const mainContent = document.getElementById("mainContent");
         mainContent.innerHTML = `
             <div style="margin-bottom: 25px;">
-                <h2 style="font-size: 24px; color: #1e293b; font-weight: 700;">Vendor Payments</h2>
+                <h2 style="font-size: 24px; color: #1e293b; font-weight: 700;">User Payments</h2>
             </div>
             <div class="table-container">
                 <table class="adminTable">
                     <thead>
                         <tr>
-                            <th>User ID</th>
-                            <th>Amount</th>
-                            <th>Razorpay Payment ID</th>
-                            <th>Status</th>
-                            <th>Paid At</th>
+                            <th>Booking ID</th>
+                            <th>User Name</th>
+                            <th>Hospital</th>
+                            <th>Total Amount</th>
+                            <th>Paid Amount</th>
+                            <th>Balance</th>
+                            <th>Payment Status</th>
                         </tr>
                     </thead>
                     <tbody id="paymentsTableBody">
@@ -1125,38 +1127,95 @@ async function loadPayments(){
         `;
 
         const tbody = document.getElementById("paymentsTableBody");
-        const payments =
-            filterDashboardRecords(
-                result.payments,
-                ["paid_at", "created_at"]
-            );
+        if(result.success && result.bookings) {
+            if(result.bookings.length === 0){
+                tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding: 20px;">No Payments Found</td></tr>`;
+                return;
+            }
 
-        if(payments.length === 0){
-            tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding: 20px;">No Payments Found</td></tr>`;
-            return;
+            // We will show all bookings since they all have some payment info
+            result.bookings.forEach(booking => {
+                const totalAmt = parseFloat(booking.total_amount || 0);
+                const paidAmt = parseFloat(booking.paid_amount || totalAmt);
+                const isPart = booking.payment_type === 'Part';
+                const balance = isPart ? Math.max(0, totalAmt - paidAmt) : 0;
+                
+                let paymentBadge = '';
+                if (isPart) {
+                    paymentBadge = `<span style="padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 700; background:#fff7ed; color:#ea580c;">Part Payment</span>`;
+                } else {
+                    paymentBadge = `<span style="padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 700; background:#f0fdf4; color:#16a34a;">Full Payment</span>`;
+                }
+
+                tbody.innerHTML += `
+                <tr>
+                    <td>${booking.id}</td>
+                    <td><span style="font-weight:600; color:var(--text-main, #1e293b);">${booking.patient_name || '-'}</span></td>
+                    <td>${booking.hospital_name || '-'}</td>
+                    <td><span style="font-weight:600;">&#8377;${totalAmt}</span></td>
+                    <td><span style="font-weight:600; color:#16a34a;">&#8377;${paidAmt}</span></td>
+                    <td><span style="font-weight:600; color:#dc2626;">&#8377;${balance}</span></td>
+                    <td>${paymentBadge}</td>
+                </tr>
+                `;
+            });
+            applyHospitalPanelSearch();
+        } else {
+            tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding: 20px;">No Payments Found</td></tr>`;
         }
 
-        payments.forEach(payment => {
-            let statusColor = payment.payment_status === 'Success' ? 'background:#dcfce7; color:#15803d;' : 'background:#fef3c7; color:#b45309;';
-            tbody.innerHTML += `
-            <tr>
-                <td><span style="font-weight:600; color:var(--text-muted, #475569);">#${payment.vendor_id}</span></td>
-                <td style="font-weight:700; font-size:15px; color:var(--text-main, #1e293b);">₹${payment.amount}</td>
-                <td><span style="font-family:monospace; color:var(--text-muted, #64748b);">${payment.razorpay_payment_id || '-'}</span></td>
-                <td>
-                    <span style="padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 700; display: inline-block; ${statusColor}">${payment.payment_status || '-'}</span>
-                </td>
-                <td>${payment.paid_at ? new Date(payment.paid_at).toLocaleString() : '-'}</td>
-            </tr>
-            `;
-        });
-        applyHospitalPanelSearch();
+    // --- Vendor Payouts Section ---
+    let vendorPayoutsHtml = `
+        <div style="margin-top: 40px; margin-bottom: 25px;">
+            <h2 style="font-size: 24px; color: #1e293b; font-weight: 700;">Vendor Payouts</h2>
+            <p style="font-size: 13px; color: #64748b; margin-top: 4px;">Payouts received from admin</p>
+        </div>
+        <div class="table-container">
+            <table class="adminTable">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Amount</th>
+                        <th>Razorpay Payment ID</th>
+                        <th>Status</th>
+                        <th>Paid At</th>
+                    </tr>
+                </thead>
+                <tbody id="vendorPayoutsTableBody">
+                </tbody>
+            </table>
+        </div>
+    `;
+    mainContent.insertAdjacentHTML('beforeend', vendorPayoutsHtml);
+
+    try {
+        const payoutsRes = await fetch('/api/vendor/payments');
+        const payoutsResult = await payoutsRes.json();
+        const payoutsTbody = document.getElementById("vendorPayoutsTableBody");
+        if (payoutsResult.success && payoutsResult.payments && payoutsResult.payments.length > 0) {
+            payoutsResult.payments.forEach(p => {
+                const statusColor = (p.payout_status || '').toLowerCase() === 'paid' ? '#16a34a' : '#ea580c';
+                const statusBg = (p.payout_status || '').toLowerCase() === 'paid' ? '#f0fdf4' : '#fff7ed';
+                payoutsTbody.innerHTML += `
+                <tr>
+                    <td>#${p.id}</td>
+                    <td style="font-weight:700;">&#8377;${Number(p.amount || 0).toLocaleString()}</td>
+                    <td style="font-family:monospace; font-size:12px; color:#64748b;">${p.razorpay_payment_id || 'N/A'}</td>
+                    <td><span style="padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 700; background:${statusBg}; color:${statusColor};">${p.payout_status || 'pending'}</span></td>
+                    <td>${p.paid_at ? new Date(p.paid_at).toLocaleString() : 'N/A'}</td>
+                </tr>
+                `;
+            });
+        } else {
+            payoutsTbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding: 20px;">No Vendor Payouts Found</td></tr>`;
+        }
+    } catch(e) { console.log('Vendor payouts error:', e); }
+
     }
     catch(error){
         console.log(error);
     }
 }
-
 async function loadDashboard(){
     try{
         const bookingResponse = await fetch('/api/hospital/bookings');
@@ -1317,7 +1376,7 @@ async function loadDashboard(){
                         <table class="adminTable">
                             <thead>
                                 <tr>
-                                    <th>Patient</th>
+                                    <th>User</th>
                                     <th>Hospital</th>
                                     <th>Status</th>
                                 </tr>
