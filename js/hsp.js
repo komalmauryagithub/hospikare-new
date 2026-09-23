@@ -879,6 +879,7 @@ async function loadHospitals(){
                             <th>Address</th>
                             <th>Rooms</th>
                             <th>Status</th>
+                            <th>Action</th>
                         </tr>
                     </thead>
                     <tbody id="hospitalsTableBody">
@@ -890,7 +891,7 @@ async function loadHospitals(){
         const tbody = document.getElementById("hospitalsTableBody");
 
         if(!result.success || !result.hospitals || result.hospitals.length === 0){
-            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding: 20px;">No Hospitals Found</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; padding: 20px;">No Hospitals Found</td></tr>';
             return;
         }
 
@@ -910,6 +911,10 @@ async function loadHospitals(){
                 <td>${hospital.address || '-'}</td>
                 <td>${roomCount} rooms</td>
                 <td><span style="padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 700; display: inline-block; background:#dcfce7; color:#16a34a;">${hospital.status || 'Active'}</span></td>
+                <td>
+                    <i class="fa-solid fa-pen-to-square" onclick="editHospitalAction(${hospital.id})" title="Edit Hospital" style="color: #3b82f6; font-size: 16px; cursor: pointer; transition: transform 0.2s; margin-right: 15px;" onmouseover="this.style.transform='scale(1.25)'" onmouseout="this.style.transform='scale(1)'"></i>
+                    <i class="fa-solid fa-trash" onclick="deleteHospitalAction(${hospital.id})" title="Delete Hospital" style="color: #ef4444; font-size: 16px; cursor: pointer; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.25)'" onmouseout="this.style.transform='scale(1)'"></i>
+                </td>
             </tr>
             `;
         });
@@ -2121,6 +2126,7 @@ async function loadHospitalProfiles(){
                             <th>Ownership</th>
                             <th>Address</th>
                             <th>Status</th>
+                            <th>Action</th>
                         </tr>
                     </thead>
                     <tbody id="hospitalProfilesTableBody">
@@ -2132,7 +2138,7 @@ async function loadHospitalProfiles(){
         const tbody = document.getElementById("hospitalProfilesTableBody");
 
         if(!result.success || !result.hospitals || result.hospitals.length === 0){
-            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding: 20px;">No Hospitals Found</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; padding: 20px;">No Hospitals Found</td></tr>';
             return;
         }
 
@@ -2146,6 +2152,10 @@ async function loadHospitalProfiles(){
                 <td><span style="background: rgba(16, 185, 129, 0.1); color: #059669; padding: 4px 8px; border-radius: 6px; font-size: 12px; font-weight: 600;">${hospital.hospital_ownership || 'Private'}</span></td>
                 <td>${hospital.address || '-'}</td>
                 <td><span style="padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 700; display: inline-block; background:#dcfce7; color:#16a34a;">${hospital.status || 'Active'}</span></td>
+                <td>
+                    <i class="fa-solid fa-pen-to-square" onclick="event.stopPropagation(); editHospitalAction(${hospital.id})" title="Edit Hospital" style="color: #3b82f6; font-size: 16px; cursor: pointer; transition: transform 0.2s; margin-right: 15px;" onmouseover="this.style.transform='scale(1.25)'" onmouseout="this.style.transform='scale(1)'"></i>
+                    <i class="fa-solid fa-trash" onclick="event.stopPropagation(); deleteHospitalAction(${hospital.id})" title="Delete Hospital" style="color: #ef4444; font-size: 16px; cursor: pointer; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.25)'" onmouseout="this.style.transform='scale(1)'"></i>
+                </td>
             `;
             tr.addEventListener("click", () => {
                 openHospitalProfileModal(hospital.id);
@@ -2440,3 +2450,28 @@ document.getElementById("hospitalDetailsBtn")?.addEventListener("click", () => {
     document.getElementById("hospitalDetailsBtn").classList.add("active");
     loadHospitalProfiles();
 });
+
+
+window.editHospitalAction = function(id) {
+    if (typeof openHospitalProfileModal === 'function') {
+        openHospitalProfileModal(id);
+    }
+};
+window.deleteHospitalAction = async function(id) {
+    if (confirm("Are you sure you want to delete this hospital? This action cannot be undone.")) {
+        try {
+            const res = await fetch('/api/hospital/' + id, { method: 'DELETE' });
+            const result = await res.json();
+            if (result.success) {
+                alert("Hospital deleted successfully.");
+                if (typeof loadHospitals === 'function') loadHospitals();
+                if (typeof loadHospitalProfiles === 'function') loadHospitalProfiles();
+            } else {
+                alert(result.message || "Failed to delete hospital.");
+            }
+        } catch(e) {
+            console.error(e);
+            alert("Error deleting hospital.");
+        }
+    }
+};

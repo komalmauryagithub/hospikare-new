@@ -8688,3 +8688,17 @@ app.delete("/api/delete/lab/:id", async (req, res) => {
         res.status(500).json({ success: false, message: "Server Error" });
     }
 });
+
+app.delete("/api/hospital/:id", async (req, res) => {
+    try {
+        if (!req.session.user) return res.json({ success: false, message: 'Unauthorized' });
+        const hospitalId = req.params.id;
+        const userId = req.session.user.id;
+        
+        await pool.query('DELETE FROM hospitals WHERE id = ? AND users_id = ?', [hospitalId, userId]);
+        res.json({ success: true, message: 'Hospital deleted successfully' });
+    } catch (e) {
+        console.error(e);
+        res.json({ success: false, message: 'Server error while deleting hospital' });
+    }
+});
