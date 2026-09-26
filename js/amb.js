@@ -546,7 +546,7 @@ function openAmbulanceSection(section, activeItem) {
     }
     else if (section === "availability") {
         document.getElementById("availabilitySection").style.display = "block";
-        loadAmbulanceAvailability();
+        if(window.loadFleetStatus) window.loadFleetStatus();
     }
     else if (section === "bookings") {
         document.getElementById("bookingsSection").style.display = "block";
@@ -562,7 +562,12 @@ function openAmbulanceSection(section, activeItem) {
     }
     else if (section === "livemap") {
         if(document.getElementById("livemapSection")) document.getElementById("livemapSection").style.display = "flex";
-        if(typeof initFleetMap === "function") initFleetMap();
+        if(typeof initFleetMap === "function") {
+            initFleetMap();
+            if(window.fleetMap) {
+                setTimeout(() => { window.fleetMap.invalidateSize(); }, 200);
+            }
+        }
     }
 }
 
@@ -905,6 +910,9 @@ async function loadAmbulances(){
                     <td>
                         <span style="background: #e2e8f0; padding: 4px 8px; border-radius: 6px; font-size: 13px; font-weight: 600; font-family: monospace; color: #1e293b;">${ambulance.vehicle_number || "-"}</span>
                     </td>
+                    <td>
+                        <span style="font-size: 13px; font-weight: 500; color: var(--text-dark);">${ambulance.hospital_name || '<span style="color: #ef4444; font-size: 12px; font-weight: 600; background: rgba(239, 68, 68, 0.1); padding: 2px 8px; border-radius: 4px;">Unassigned</span>'}</span>
+                    </td>
 
                     <td>
                         ₹${ambulance.base_chrge}
@@ -1005,6 +1013,7 @@ async function openEditAmbulance(ambId) {
                     }
                 }
 
+                if(document.getElementById('hospital_id')) document.getElementById('hospital_id').value = amb.hospital_id || '';
                 if(document.getElementById('vehicle_number')) document.getElementById('vehicle_number').value = amb.vehicle_number || '';
                 if(document.getElementById('base_chrge')) document.getElementById('base_chrge').value = amb.base_chrge || '';
                 if(document.getElementById('min_chrge')) document.getElementById('min_chrge').value = amb.min_chrge || '';
@@ -1121,16 +1130,25 @@ async function updateAmbulanceStatus(
 
 }
 
-document.getElementById(
-    "addAmbulanceBtn"
-).addEventListener(
-    "click",
-    () => {
-        document.getElementById(
-            "ambulanceModal"
-        ).style.display = "flex";
+document.getElementById("addAmbulanceBtn")?.addEventListener("click", () => {
+    const form = document.getElementById("ambulanceForm");
+    if (form) form.reset();
+    
+    const hiddenId = document.getElementById('edit_ambulance_id');
+    if (hiddenId) {
+        hiddenId.value = "";
     }
-);
+    
+    const header = document.getElementById('ambulanceModalHeader');
+    if(header) {
+        const h2 = header.querySelector('h2');
+        if(h2) h2.innerText = 'Add Ambulance';
+    }
+    const saveBtn = document.getElementById('saveAmbulanceBtn');
+    if (saveBtn) saveBtn.innerText = 'Save Ambulance';
+
+    document.getElementById("ambulanceModal").style.display = "flex";
+});
 
 document.getElementById(
     "closeAmbulanceModal"
@@ -1148,6 +1166,7 @@ document.getElementById("ambulanceForm")?.addEventListener("submit", async (e) =
     const formData = new FormData();
     
     formData.append("ambulance_type", document.getElementById("ambulance_type")?.value || "");
+    formData.append("hospital_id", document.getElementById("hospital_id")?.value || "");
     formData.append("vehicle_number", document.getElementById("vehicle_number")?.value || "");
     formData.append("base_chrge", document.getElementById("base_chrge")?.value || "");
     formData.append("min_chrge", document.getElementById("min_chrge")?.value || "");
@@ -1461,33 +1480,65 @@ async function updateAmbulance(id){
 
 async function loadPayments(){
     try{
-        const mainContent = document.getElementById("mainContent");
-        mainContent.innerHTML = `
-            <div style="margin-bottom: 25px;">
-                <h2 style="font-size: 24px; color: #1e293b; font-weight: 700;">User Payments</h2>
-                <p style="font-size: 13px; color: #64748b; margin-top: 4px;">Payments received from users</p>
-            </div>
-            <div class="table-container">
-                <table class="adminTable">
-                    <thead>
-                        <tr>
-                            <th>Booking ID</th>
-                            <th>User</th>
-                            <th>Total Amount</th>
-                            <th>Paid Amount</th>
-                            <th>Balance</th>
-                            <th>Payment Status</th>
-                        </tr>
-                    </thead>
-                    <tbody id="paymentsTableBody">
-                    </tbody>
-                </table>
+        const paymentsSection = document.getElementById("paymentsSection");
+        paymentsSection.innerHTML = `
+            <div style="display: flex; flex-direction: column; gap: 32px;">
+                <!-- User Payments Section -->
+                <div>
+                    <div class="table-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; flex-wrap:wrap; gap:16px;">
+                        <div>
+                            <h2 style="font-family:var(--font-heading); font-size:24px; font-weight:800; color:var(--hk-text-main); margin:0 0 4px;">User Payments</h2>
+                            <p style="margin:0; font-size:13px; color:var(--hk-text-muted);">Payments received from users</p>
+                        </div>
+                    </div>
+                    <div class="table-wrapper paymentsTableContainer" style="margin-top: 24px;">
+                        <table class="adminTable">
+                            <thead>
+                                <tr>
+                                    <th>Booking ID</th>
+                                    <th>User</th>
+                                    <th>Total Amount</th>
+                                    <th>Paid Amount</th>
+                                    <th>Balance</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="userPaymentsTableBody">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Vendor Payouts Section -->
+                <div>
+                    <div class="table-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; flex-wrap:wrap; gap:16px;">
+                        <div>
+                            <h2 style="font-family:var(--font-heading); font-size:24px; font-weight:800; color:var(--hk-text-main); margin:0 0 4px;">Vendor Payments</h2>
+                            <p style="margin:0; font-size:13px; color:var(--hk-text-muted);">Payouts received from admin</p>
+                        </div>
+                    </div>
+                    <div class="table-wrapper paymentsTableContainer" style="margin-top: 24px;">
+                        <table class="adminTable">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Amount</th>
+                                    <th>Payment ID</th>
+                                    <th>Status</th>
+                                    <th>Paid At</th>
+                                </tr>
+                            </thead>
+                            <tbody id="vendorPayoutsTableBody">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
         `;
 
         const response = await fetch('/api/ambulance/bookings');
         const result = await response.json();
-        const tbody = document.getElementById("paymentsTableBody");
+        const tbody = document.getElementById("userPaymentsTableBody");
 
         if(result.success && result.bookings && result.bookings.length > 0) {
             const bookings = filterDashboardRecords(result.bookings, ["created_at", "booking_date"]);
@@ -1519,29 +1570,6 @@ async function loadPayments(){
         }
 
 
-    // --- Vendor Payouts Section ---
-    let vendorPayoutsHtml = `
-        <div style="margin-top: 40px; margin-bottom: 25px;">
-            <h2 style="font-size: 24px; color: #1e293b; font-weight: 700;">Vendor Payouts</h2>
-            <p style="font-size: 13px; color: #64748b; margin-top: 4px;">Payouts received from admin</p>
-        </div>
-        <div class="table-container">
-            <table class="adminTable">
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Amount</th>
-                        <th>Razorpay Payment ID</th>
-                        <th>Status</th>
-                        <th>Paid At</th>
-                    </tr>
-                </thead>
-                <tbody id="vendorPayoutsTableBody">
-                </tbody>
-            </table>
-        </div>
-    `;
-    mainContent.insertAdjacentHTML('beforeend', vendorPayoutsHtml);
 
     try {
         const payoutsRes = await fetch('/api/vendor/payments');
@@ -1577,6 +1605,8 @@ async function loadPayments(){
     }
 }
 async function loadDashboard(){
+    if(window.loadFleetStatus) window.loadFleetStatus();
+
 
     try{
 
@@ -2545,3 +2575,77 @@ function initFleetMap() {
     }, 100);
 }
 
+
+
+window.loadFleetStatus = async function() {
+    try {
+        const response = await fetch('/api/ambulances');
+        const result = await response.json();
+        
+        let tbody = document.getElementById('fleetStatusTableBody');
+        if(!tbody) return;
+        
+        if (result.success && result.ambulances) {
+            if (result.ambulances.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 20px;">No ambulances found in your fleet.</td></tr>';
+                return;
+            }
+            
+            let html = '';
+            result.ambulances.forEach(amb => {
+                const regNo = amb.vehicle_number || `-`;
+                const driver = amb.driver_name || '<span style="color: #ef4444; font-size: 12px; font-weight: 600; background: rgba(239, 68, 68, 0.1); padding: 2px 8px; border-radius: 4px;">Unassigned</span>';
+                const type = amb.ambulance_type || 'Ambulance';
+                
+                let fleetStatus = 'Offline';
+                let statusBadge = '<span style="padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 700; background:#f1f5f9; color:#64748b;"><i class="fa-solid fa-circle" style="font-size: 8px; margin-right: 4px;"></i> Offline / No Driver</span>';
+                
+                if (amb.status === 'On Trip') {
+                    fleetStatus = 'On Trip';
+                    statusBadge = '<span style="padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 700; background:#eff6ff; color:#3b82f6;"><i class="fa-solid fa-circle-notch fa-spin" style="font-size: 10px; margin-right: 4px;"></i> On Active Trip</span>';
+                } else if (amb.status === 'Active' && amb.assigned_driver_id) {
+                    fleetStatus = 'Ready';
+                    statusBadge = '<span style="padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 700; background:#f0fdf4; color:#10b981;"><i class="fa-solid fa-circle" style="font-size: 8px; margin-right: 4px;"></i> Ready for Dispatch</span>';
+                }
+                
+                const lastUpdated = amb.updated_at ? new Date(amb.updated_at).toLocaleString() : (amb.created_at ? new Date(amb.created_at).toLocaleString() : '-');
+
+                html += `
+                    <tr>
+                        <td>
+                            <div style="font-weight: 700; font-size: 14px;">${regNo}</div>
+                            <div style="font-size: 12px; opacity: 0.8;">ID: #${amb.id}</div>
+                        </td>
+                        <td><span style="background: rgba(100, 116, 139, 0.15); color: var(--text-main, #334155); border: 1px solid rgba(100, 116, 139, 0.3); padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: 600;">${type}</span></td>
+                        <td>${driver}</td>
+                        <td>${statusBadge}</td>
+                        <td style="font-size: 12px; opacity: 0.8;">${lastUpdated}</td>
+                    </tr>
+                `;
+            });
+            tbody.innerHTML = html;
+        } else {
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 20px;">Failed to load fleet status.</td></tr>';
+        }
+    } catch(err) {
+        console.error(err);
+    }
+};
+
+
+async function loadAllHospitalsForDropdown() {
+    try {
+        const response = await fetch('/api/all-hospitals-list');
+        const result = await response.json();
+        const select = document.getElementById('hospital_id');
+        if (!select) return;
+        
+        select.innerHTML = '<option value="">No Hospital Associated</option>';
+        if (result.success && result.hospitals) {
+            result.hospitals.forEach(h => {
+                select.innerHTML += `<option value="${h.id}">${h.hospital_name || 'Hospital #' + h.id}</option>`;
+            });
+        }
+    } catch(e) { console.error(e); }
+}
+loadAllHospitalsForDropdown();

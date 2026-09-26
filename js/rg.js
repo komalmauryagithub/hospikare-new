@@ -535,39 +535,7 @@ if (users_type === "hospital" && document.getElementById("hospitalFields")) {
     }
 });
 
-document.querySelector("#loginForm form").addEventListener("submit", async function(e) {
-    e.preventDefault();
 
-    const email = document.querySelector("#loginForm input[type='text']").value;
-    const password = document.querySelector("#loginForm input[type='password']").value;
-
-    try {
-        const response = await fetch('/api/login', {
-            method: 'POST',
-            credentials: 'include',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                email_or_contact: email,
-                password: password
-            })
-        });
-
-        const result = await response.json();
-
-        if (result.success) {
-            // 🔥 REDIRECT
-            window.location.href = result.redirect;
-        } else {
-            alert(result.message);
-        }
-
-    } catch (err) {
-        console.error(err);
-        alert("Server error");
-    }
-});
 
 // ===== CSV IMPORT FOR DOCTORS AND ROOMS =====
 

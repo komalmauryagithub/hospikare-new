@@ -55,11 +55,17 @@ async function loadUserProfile(){
             });
             fillProfileForm(result.user, result.details || {});
             const isComplete = Boolean(result.user?.vendor_profile_completed || (result.user?.bank_account && result.user?.ifsc));
+            const triggerText = document.getElementById('profileTriggerText');
             if (triggerText) {
                 triggerText.innerText = isComplete ? 'Show Profile' : 'Complete Profile';
             }
             if(window.setProfileMode) {
                 window.setProfileMode(isComplete ? 'view' : 'edit');
+            }
+            
+            // Populate dropdowns with user's pharmacies
+            if (typeof populatePharmacyDropdowns === 'function') {
+                populatePharmacyDropdowns();
             }
         }
         else{
@@ -180,47 +186,29 @@ navItems.forEach(item => {
 
         const text = item.innerText.toLowerCase();
 
-            const medicineSection =
-                document.getElementById(
-                    "medicineSection"
-                );
+        const medicineSection = document.getElementById("medicineSection");
+        const pharmacySection = document.getElementById("pharmacySection");
+        const pharmacistSection = document.getElementById("pharmacistSection");
 
-            if(medicineSection){
+        if(medicineSection) medicineSection.style.display = "none";
+        if(pharmacySection) pharmacySection.style.display = "none";
+        if(pharmacistSection) pharmacistSection.style.display = "none";
 
-                medicineSection.style.display =
-                    "none";
-
-            }
-
-            if(
-                text.includes(
-                    "dashboard"
-                )
-            ){
-
-                loadDashboard();
-
-            }
-
-            else if(
-                text.includes(
-                    "medicines"
-                )
-            ){
-
-                if(medicineSection){
-
-                    medicineSection.style.display =
-                        "block";
-
-                }
-
-                loadMedicines();
-
-            }
-            else if(text.includes("stock")){
-                loadStock();
-            }
+        if(text.includes("dashboard")){
+            loadDashboard();
+        }
+        else if(text.includes("medicines")){
+            loadMedicines();
+        }
+        else if(text.includes("pharmacies")){
+            loadPharmacies();
+        }
+        else if(text.includes("pharmacists")){
+            loadPharmacists();
+        }
+        else if(text.includes("stock")){
+            loadStock();
+        }
             else if(
                 text.includes(
                     "orders"
@@ -250,7 +238,7 @@ navItems.forEach(item => {
 
 
 document.getElementById("addMedicineBtn").addEventListener("click",()=>{
-    document.getElementById("medicineModal").style.display="flex";
+    document.getElementById('medicineForm').reset(); document.getElementById('edit_medicine_id').value = ''; document.getElementById('medicineModalTitle').innerText = 'Add Medicine'; document.getElementById("medicineModal").style.display="flex";
 });
 
 document.getElementById("closeMedicineModal").addEventListener("click",()=>{
@@ -293,34 +281,52 @@ document.getElementById("medicineForm").addEventListener("submit",async(e)=>{
         alert("Medicine Name Required");
         return;
     }
-    if(document.getElementById("medicine_image").files[0]){
-        formData.append(
-            "medicine_image",
-            document.getElementById("medicine_image").files[0]
-        );
-    }
-    if(document.getElementById("medicine_excel_file").files[0]){
-        formData.append(
-            "medicine_excel_file",
-            document.getElementById("medicine_excel_file").files[0]
-        );
-    }
-    try{
 
-        const response=await fetch('/api/add/medicine',{
-            method:'POST',
-            body:formData
-        });
-        const result=await response.json();
+    const editId = document.getElementById("edit_medicine_id") ? document.getElementById("edit_medicine_id").value : "";
+
+    try{
+        let response;
+        if (editId) {
+            // UPDATE existing medicine via PUT with JSON
+            const jsonBody = {};
+            for (let [key, value] of formData.entries()) {
+                jsonBody[key] = value;
+            }
+            response = await fetch("/api/update/medicine/" + editId, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(jsonBody)
+            });
+        } else {
+            // ADD new medicine via POST with FormData
+            if(document.getElementById("medicine_image").files[0]){
+                formData.append("medicine_image", document.getElementById("medicine_image").files[0]);
+            }
+            if(document.getElementById("medicine_excel_file").files[0]){
+                formData.append("medicine_excel_file", document.getElementById("medicine_excel_file").files[0]);
+            }
+            response = await fetch("/api/add/medicine", {
+                method: "POST",
+                body: formData
+            });
+        }
+
+        const result = await response.json();
         if(result.success){
             alert(result.message);
             document.getElementById('medicineForm').reset();
+            if(document.getElementById("edit_medicine_id")) document.getElementById("edit_medicine_id").value = "";
             document.getElementById('medicineModal').style.display='none';
-            loadMedicines();
+            // Reload the current view
+            if (typeof loadMedicines === "function") loadMedicines();
+            if (typeof loadStock === "function" && document.getElementById("stockTableBody")) loadStock();
+        } else {
+            alert(result.message || "Operation failed.");
         }
     }
     catch(error){
         console.log(error);
+        alert("Error saving medicine. Please try again.");
     }
 });
 
@@ -351,11 +357,12 @@ async function loadMedicines(){
                                 <th>Selling Price</th>
                                 <th>Stock</th>
                                 <th>Status</th>
+                                <th>Action</th>
                             </tr>
                         </thead>
                         <tbody id="medicineTableBody">
                             <tr>
-                                <td colspan="8" style="text-align: center; padding: 30px; color: var(--hk-text-muted);">
+                                <td colspan="9" style="text-align: center; padding: 30px; color: var(--hk-text-muted);">
                                     <i class="fa-solid fa-spinner fa-spin"></i> Loading Medicines...
                                 </td>
                             </tr>
@@ -376,13 +383,14 @@ async function loadMedicines(){
         const tbody = document.getElementById("medicineTableBody");
         const response = await fetch("/api/medicines");
         const result = await response.json();
+        window.medicinesData = result.medicines;
 
         tbody.innerHTML = "";
 
         if(!result.success){
             tbody.innerHTML = `
                 <tr>
-                    <td colspan="8" style="text-align:center; padding:56px 24px;">
+                    <td colspan="9" style="text-align:center; padding:56px 24px;">
                         <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; gap:12px;">
                             <div style="width:56px; height:56px; border-radius:50%; background:rgba(239,75,95,0.1); color:#EF4B5F; display:flex; align-items:center; justify-content:center; font-size:24px;">
                                 <i class="fa-solid fa-triangle-exclamation"></i>
@@ -396,6 +404,7 @@ async function loadMedicines(){
             return;
         }
 
+        window.medicinesData = result.medicines;
         const medicines = filterMedicineRecords(
             result.medicines,
             ["created_at", "updated_at"]
@@ -404,7 +413,7 @@ async function loadMedicines(){
         if(medicines.length === 0){
             tbody.innerHTML = `
                 <tr>
-                    <td colspan="8" style="text-align:center; padding:56px 24px;">
+                    <td colspan="9" style="text-align:center; padding:56px 24px;">
                         <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; gap:12px;">
                             <div style="width:56px; height:56px; border-radius:50%; background:rgba(40,100,240,0.1); color:#2864F0; display:flex; align-items:center; justify-content:center; font-size:24px;">
                                 <i class="fa-solid fa-capsules"></i>
@@ -434,6 +443,10 @@ async function loadMedicines(){
                             <i class="fa-solid ${isInStock ? 'fa-check' : 'fa-xmark'}"></i>
                             ${medicine.medicine_status || (isInStock ? 'In Stock' : 'Out of Stock')}
                         </span>
+                    </td>
+                    <td style="white-space: nowrap; text-align: center;">
+                        <i class="fa-solid fa-pen-to-square" onclick="editMedicine(${medicine.medicine_id || medicine.id})" title="Edit" style="color: #3b82f6; font-size: 16px; cursor: pointer; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.25)'" onmouseout="this.style.transform='scale(1)'"></i>
+                        <i class="fa-solid fa-trash" onclick="deleteMedicine(${medicine.medicine_id || medicine.id})" title="Delete" style="color: #ef4444; font-size: 16px; cursor: pointer; transition: transform 0.2s; margin-left: 10px;" onmouseover="this.style.transform='scale(1.25)'" onmouseout="this.style.transform='scale(1)'"></i>
                     </td>
                 </tr>
             `;
@@ -1134,11 +1147,12 @@ async function loadStock(){
                             <th>Batch No</th>
                             <th>Expiry Date</th>
                             <th>Inventory Status</th>
+                            <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody id="stockTableBody">
                         <tr>
-                            <td colspan="7" style="text-align: center; padding: 30px; color: var(--hk-text-muted);">
+                            <td colspan="8" style="text-align: center; padding: 30px; color: var(--hk-text-muted);">
                                 <i class="fa-solid fa-spinner fa-spin"></i> Loading Stock Levels...
                             </td>
                         </tr>
@@ -1161,13 +1175,14 @@ async function loadStock(){
         const tbody = document.getElementById("stockTableBody");
         const response = await fetch("/api/medicines");
         const result = await response.json();
+        window.medicinesData = result.medicines;
 
         tbody.innerHTML = "";
 
         if(!result.success){
             tbody.innerHTML = `
                 <tr>
-                    <td colspan="7" style="text-align:center; padding:56px 24px;">
+                    <td colspan="8" style="text-align:center; padding:56px 24px;">
                         <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; gap:12px;">
                             <div style="width:56px; height:56px; border-radius:50%; background:rgba(239,75,95,0.1); color:#EF4B5F; display:flex; align-items:center; justify-content:center; font-size:24px;">
                                 <i class="fa-solid fa-triangle-exclamation"></i>
@@ -1189,7 +1204,7 @@ async function loadStock(){
         if(stockMedicines.length === 0){
             tbody.innerHTML = `
                 <tr>
-                    <td colspan="7" style="text-align:center; padding:56px 24px;">
+                    <td colspan="8" style="text-align:center; padding:56px 24px;">
                         <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; gap:12px;">
                             <div style="width:56px; height:56px; border-radius:50%; background:rgba(40,100,240,0.1); color:#2864F0; display:flex; align-items:center; justify-content:center; font-size:24px;">
                                 <i class="fa-solid fa-box-open"></i>
@@ -1228,6 +1243,10 @@ async function loadStock(){
                 <td style="font-family:monospace; font-size:12px;">${medicine.batch_number || "BATCH-" + (medicine.id || "01")}</td>
                 <td>${medicine.expiry_date ? new Date(medicine.expiry_date).toLocaleDateString() : "Valid"}</td>
                 <td><span class="status-badge ${statusClass}"><i class="fa-solid ${statusIcon}"></i> ${status}</span></td>
+                <td style="white-space: nowrap;">
+                    <i class="fa-solid fa-pen-to-square" onclick="editMedicine(${medicine.medicine_id || medicine.id})" title="Edit" style="color: #3b82f6; font-size: 16px; cursor: pointer; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.25)'" onmouseout="this.style.transform='scale(1)'"></i>
+                    <i class="fa-solid fa-trash" onclick="deleteMedicine(${medicine.medicine_id || medicine.id})" title="Delete" style="color: #ef4444; font-size: 16px; cursor: pointer; transition: transform 0.2s; margin-left: 12px;" onmouseover="this.style.transform='scale(1.25)'" onmouseout="this.style.transform='scale(1)'"></i>
+                </td>
             </tr>
             `;
         });
@@ -1348,3 +1367,422 @@ document.getElementById('vendorProfileForm')?.addEventListener('submit', async (
     }
 });
 // ===================================
+async function loadPharmacies() {
+    document.getElementById("mainContent").innerHTML = `
+        <div id="pharmacySection" class="active-section" style="padding: 24px;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 24px;">
+                <div>
+                    <h2 style="font-family:var(--font-heading); font-size:24px; font-weight:800; color:var(--hk-text-main); margin:0 0 4px;">Pharmacies</h2>
+                    <p style="margin:0; font-size:13px; color:var(--hk-text-muted);">Manage your pharmacy branches and their details</p>
+                </div>
+                <button id="addPharmacyMainBtn" class="add-btn" onclick="document.getElementById('addPharmacyModalBox').style.display='flex'">
+                    <i class="fa-solid fa-plus"></i> Add Pharmacy
+                </button>
+            </div>
+            <div class="table-wrapper">
+                <table id="pharmacyTable" class="adminTable">
+                    <thead>
+                        <tr>
+                            <th>Pharmacy Name</th>
+                            <th>Owner</th>
+                            <th>Type</th>
+                            <th>Contact</th>
+                            <th>City</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="pharmacyTableBody">
+                        <tr>
+                            <td colspan="8" style="text-align: center; padding: 30px; color: var(--hk-text-muted);">
+                                <i class="fa-solid fa-spinner fa-spin"></i> Loading Pharmacies...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    `;
+
+    try {
+        const response = await fetch('/api/vendor/pharmacies');
+        const result = await response.json();
+        const tbody = document.getElementById('pharmacyTableBody');
+        tbody.innerHTML = '';
+        
+        if (result.success && result.pharmacies.length > 0) {
+            window.pharmaciesData = result.pharmacies;
+            result.pharmacies.forEach(ph => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td style="font-weight:600; color:var(--hk-text-main);">${ph.pharmacy_name}</td>
+                    <td>${ph.owner_name}</td>
+                    <td><span style="font-weight:500; color:var(--hk-text-muted);">${ph.pharmacy_type}</span></td>
+                    <td>${ph.contact_number}</td>
+                    <td>${ph.city}</td>
+                    <td>
+                        <span class="status-badge active">
+                            <i class="fa-solid fa-check"></i> ${ph.status || 'Active'}
+                        </span>
+                    </td>
+                    <td style="white-space: nowrap; text-align: center;">
+                        <i class="fa-solid fa-pen-to-square" onclick="editPharmacy(${ph.id})" title="Edit" style="color: #3b82f6; font-size: 16px; cursor: pointer; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.25)'" onmouseout="this.style.transform='scale(1)'"></i>
+                        <i class="fa-solid fa-trash" onclick="deletePharmacy(${ph.id})" title="Delete" style="color: #ef4444; font-size: 16px; cursor: pointer; transition: transform 0.2s; margin-left: 10px;" onmouseover="this.style.transform='scale(1.25)'" onmouseout="this.style.transform='scale(1)'"></i>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        } else {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="8" style="text-align: center; padding: 30px; color: var(--hk-text-muted);">
+                        No Pharmacies Added Yet.
+                    </td>
+                </tr>
+            `;
+        }
+    } catch (e) {
+        console.error(e);
+        document.getElementById('pharmacyTableBody').innerHTML = `
+            <tr>
+                <td colspan="8" style="text-align: center; padding: 30px; color: var(--hk-text-muted);">
+                    Failed to load pharmacies.
+                </td>
+            </tr>
+        `;
+    }
+}
+
+async function loadPharmacists() {
+    document.getElementById("mainContent").innerHTML = `
+        <div id="pharmacistSection" class="active-section" style="padding: 24px;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 24px;">
+                <div>
+                    <h2 style="font-family:var(--font-heading); font-size:24px; font-weight:800; color:var(--hk-text-main); margin:0 0 4px;">Pharmacists</h2>
+                    <p style="margin:0; font-size:13px; color:var(--hk-text-muted);">Manage pharmacist details and their availability</p>
+                </div>
+                <button id="addPharmacistMainBtn" class="add-btn" onclick="document.getElementById('addPharmacistModalBox').style.display='flex'">
+                    <i class="fa-solid fa-plus"></i> Add Pharmacist
+                </button>
+            </div>
+            <div class="table-wrapper">
+                <table id="pharmacistTable" class="adminTable">
+                    <thead>
+                        <tr>
+                            <th>Pharmacist Name</th>
+                            <th>Pharmacy</th>
+                            <th>Reg No</th>
+                            <th>Qualification</th>
+                            <th>Contact</th>
+                            <th>Availability</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="pharmacistTableBody">
+                        <tr>
+                            <td colspan="8" style="text-align: center; padding: 30px; color: var(--hk-text-muted);">
+                                <i class="fa-solid fa-spinner fa-spin"></i> Loading Pharmacists...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    `;
+
+    try {
+        const response = await fetch('/api/vendor/pharmacists');
+        const result = await response.json();
+        const tbody = document.getElementById('pharmacistTableBody');
+        tbody.innerHTML = '';
+        
+        if (result.success && result.pharmacists.length > 0) {
+            window.pharmacistsData = result.pharmacists;
+            result.pharmacists.forEach(ph => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td style="font-weight:600; color:var(--hk-text-main);">${ph.pharmacist_name}</td>
+                    <td>${ph.pharmacy_name}</td>
+                    <td style="font-weight:600; color:var(--hk-primary-blue);">${ph.registration_number}</td>
+                    <td><span style="font-weight:500; color:var(--hk-text-muted);">${ph.qualification}</span></td>
+                    <td>${ph.contact_number}</td>
+                    <td>
+                        <span class="status-badge ${ph.availability === 'Full Time' ? 'active' : 'pending'}">
+                            ${ph.availability}
+                        </span>
+                    </td>
+                    <td style="white-space: nowrap; text-align: center;">
+                        <i class="fa-solid fa-pen-to-square" onclick="editPharmacist(${ph.id})" title="Edit" style="color: #3b82f6; font-size: 16px; cursor: pointer; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.25)'" onmouseout="this.style.transform='scale(1)'"></i>
+                        <i class="fa-solid fa-trash" onclick="deletePharmacist(${ph.id})" title="Delete" style="color: #ef4444; font-size: 16px; cursor: pointer; transition: transform 0.2s; margin-left: 10px;" onmouseover="this.style.transform='scale(1.25)'" onmouseout="this.style.transform='scale(1)'"></i>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        } else {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="8" style="text-align: center; padding: 30px; color: var(--hk-text-muted);">
+                        No Pharmacists Added Yet.
+                    </td>
+                </tr>
+            `;
+        }
+    } catch (e) {
+        console.error(e);
+        document.getElementById('pharmacistTableBody').innerHTML = `
+            <tr>
+                <td colspan="8" style="text-align: center; padding: 30px; color: var(--hk-text-muted);">
+                    Failed to load pharmacists.
+                </td>
+            </tr>
+        `;
+    }
+}
+
+async function populatePharmacyDropdowns() {
+    try {
+        const response = await fetch('/api/vendor/pharmacies');
+        const result = await response.json();
+        if (result.success && result.pharmacies) {
+            const selects = document.querySelectorAll('select[name="pharmacy_name"], select#shop_name');
+            selects.forEach(select => {
+                // Keep the first default option
+                const defaultOption = select.options.length > 0 ? select.options[0].outerHTML : '<option value="">Select Pharmacy...</option>';
+                select.innerHTML = defaultOption;
+                
+                result.pharmacies.forEach(ph => {
+                    const opt = document.createElement('option');
+                    opt.value = ph.pharmacy_name;
+                    opt.textContent = ph.pharmacy_name;
+                    select.appendChild(opt);
+                });
+            });
+        }
+    } catch (e) {
+        console.error("Error populating pharmacy dropdowns:", e);
+    }
+}
+
+// Edit & Delete Action Handlers
+// editMedicine: full implementation defined below
+
+window.deleteMedicine = async function(id) {
+    if (confirm("Are you sure you want to delete this medicine? This action cannot be undone.")) {
+        try {
+            const res = await fetch('/api/medicine/' + id, { method: 'DELETE' });
+            const result = await res.json();
+            if (result.success) {
+                alert("Medicine deleted successfully.");
+                if (typeof loadMedicines === 'function') loadMedicines();
+            } else {
+                alert(result.message || "Failed to delete medicine.");
+            }
+        } catch (e) {
+            console.error(e);
+            alert("Error deleting medicine.");
+        }
+    }
+};
+
+// editPharmacy: full implementation defined below
+
+window.deletePharmacy = async function(id) {
+    if (confirm("Are you sure you want to delete this pharmacy? This action cannot be undone.")) {
+        try {
+            const res = await fetch('/api/vendor/pharmacy/' + id, { method: 'DELETE' });
+            const result = await res.json();
+            if (result.success) {
+                alert("Pharmacy deleted successfully.");
+                if (typeof loadPharmacies === 'function') loadPharmacies();
+            } else {
+                alert(result.message || "Failed to delete pharmacy.");
+            }
+        } catch (e) {
+            console.error(e);
+            alert("Error deleting pharmacy.");
+        }
+    }
+};
+
+// editPharmacist: full implementation defined below
+
+window.deletePharmacist = async function(id) {
+    if (confirm("Are you sure you want to delete this pharmacist? This action cannot be undone.")) {
+        try {
+            const res = await fetch('/api/vendor/pharmacist/' + id, { method: 'DELETE' });
+            const result = await res.json();
+            if (result.success) {
+                alert("Pharmacist deleted successfully.");
+                if (typeof loadPharmacists === 'function') loadPharmacists();
+            } else {
+                alert(result.message || "Failed to delete pharmacist.");
+            }
+        } catch (e) {
+            console.error(e);
+            alert("Error deleting pharmacist.");
+        }
+    }
+};
+
+window.editMedicine = async function(id) {
+    // Always fetch fresh data if medicinesData is not available
+    if (!window.medicinesData || !Array.isArray(window.medicinesData)) {
+        try {
+            const resp = await fetch('/api/medicines');
+            const data = await resp.json();
+            if (data.success) window.medicinesData = data.medicines;
+        } catch(e) { console.error('Failed to fetch medicines:', e); }
+    }
+    if (!window.medicinesData) { alert('Could not load medicines data.'); return; }
+    
+    const med = window.medicinesData.find(m => m.medicine_id == id || m.id == id);
+    if (!med) { alert('Medicine not found.'); return; }
+    
+    document.getElementById('medicineForm').reset();
+    document.getElementById('edit_medicine_id').value = med.medicine_id || med.id;
+    const titleEl = document.getElementById('medicineModalTitle') || document.querySelector('#medicineModalHeader h2');
+    if (titleEl) titleEl.innerText = 'Edit Medicine';
+    
+    // Populate all text/select fields
+    const fields = ['shop_name', 'medicine_name', 'generic_name', 'brand_name', 'medicine_type', 'category', 'manufacturer', 'composition', 'mrp', 'selling_price', 'gst_percentage', 'discount_percentage', 'stock_quantity', 'minimum_stock_alert', 'batch_number', 'manufacturing_date', 'expiry_date', 'prescription_required', 'schedule_type', 'uses_info', 'dosage_instructions', 'side_effects', 'warnings', 'storage_instructions', 'delivery_available', 'delivery_charge', 'barcode_number', 'medicine_status', 'featured_medicine'];
+    fields.forEach(field => {
+        const el = document.getElementById(field);
+        if (el && med[field] !== undefined && med[field] !== null) {
+            if (field === 'manufacturing_date' || field === 'expiry_date') {
+                try { el.value = new Date(med[field]).toISOString().split('T')[0]; } catch(e) { el.value = ''; }
+            } else {
+                el.value = med[field];
+            }
+        }
+    });
+    
+    // Show previously uploaded file info
+    const fileFields = [
+        { inputId: 'medicine_image', dbField: 'medicine_image', label: 'Medicine Image' },
+        { inputId: 'medicine_excel_file', dbField: 'medicine_excel_file', label: 'Excel/CSV File' }
+    ];
+    fileFields.forEach(ff => {
+        const inputEl = document.getElementById(ff.inputId);
+        if (!inputEl) return;
+        const parent = inputEl.closest('div');
+        // Remove old file preview if exists
+        const oldPreview = parent.querySelector('.file-preview-info');
+        if (oldPreview) oldPreview.remove();
+        
+        if (med[ff.dbField]) {
+            const previewDiv = document.createElement('div');
+            previewDiv.className = 'file-preview-info';
+            previewDiv.style.cssText = 'margin-top:6px; padding:8px 12px; background:rgba(40,100,240,0.08); border-radius:8px; font-size:12px; color:#2864F0; display:flex; align-items:center; gap:8px;';
+            previewDiv.innerHTML = '<i class="fa-solid fa-file-circle-check"></i> <span>Previously uploaded: <strong>' + med[ff.dbField] + '</strong> (select new file only to replace)</span>';
+            parent.appendChild(previewDiv);
+        }
+    });
+    
+    document.getElementById('medicineModal').style.display = 'flex';
+};
+
+window.editPharmacy = async function(id) {
+    if (!window.pharmaciesData || !Array.isArray(window.pharmaciesData)) {
+        try {
+            const resp = await fetch('/api/vendor/pharmacies');
+            const data = await resp.json();
+            if (data.success) window.pharmaciesData = data.pharmacies;
+        } catch(e) { console.error('Failed to fetch pharmacies:', e); }
+    }
+    if (!window.pharmaciesData) { alert('Could not load pharmacies data.'); return; }
+    
+    const pharm = window.pharmaciesData.find(p => p.id == id);
+    if (!pharm) { alert('Pharmacy not found.'); return; }
+    
+    const form = document.getElementById('addPharmacyForm');
+    form.reset();
+    document.getElementById('edit_pharmacy_id').value = pharm.id;
+    document.getElementById('pharmacyModalTitle').innerText = 'Edit Pharmacy';
+    
+    // Populate all text/select fields
+    const fields = ['pharmacy_name', 'owner_name', 'pharmacy_type', 'contact_number', 'email', 'alternate_contact', 'address', 'city', 'state', 'pincode', 'location', 'opening_time', 'closing_time', 'available_24_7', 'home_delivery', 'delivery_radius', 'status'];
+    fields.forEach(field => {
+        const el = form.querySelector('[name="'+field+'"]');
+        if (el && pharm[field] !== undefined && pharm[field] !== null) {
+            if (field === 'available_24_7') {
+                el.value = pharm[field] == 1 ? 'Yes' : (pharm[field] === 'Yes' ? 'Yes' : 'No');
+            } else if (field === 'home_delivery') {
+                el.value = pharm[field] == 1 ? 'Yes' : (pharm[field] === 'Yes' ? 'Yes' : 'No');
+            } else {
+                el.value = pharm[field];
+            }
+        }
+    });
+    
+    // Show previously uploaded file info for pharmacy docs
+    const pharmacyFileFields = ['pharmacy_logo', 'drug_licence', 'pharmacist_registration_certificate', 'pharmacist_qualification_certificate', 'shop_proof', 'owner_kyc'];
+    pharmacyFileFields.forEach(fieldName => {
+        const inputEl = form.querySelector('[name="'+fieldName+'"]');
+        if (!inputEl) return;
+        const parent = inputEl.closest('div');
+        const oldPreview = parent.querySelector('.file-preview-info');
+        if (oldPreview) oldPreview.remove();
+        
+        if (pharm[fieldName]) {
+            inputEl.removeAttribute('required');
+            const previewDiv = document.createElement('div');
+            previewDiv.className = 'file-preview-info';
+            previewDiv.style.cssText = 'margin-top:6px; padding:8px 12px; background:rgba(40,100,240,0.08); border-radius:8px; font-size:12px; color:#2864F0; display:flex; align-items:center; gap:8px;';
+            previewDiv.innerHTML = '<i class="fa-solid fa-file-circle-check"></i> <span>Uploaded: <strong>' + pharm[fieldName] + '</strong> (select new to replace)</span>';
+            parent.appendChild(previewDiv);
+        }
+    });
+    
+    document.getElementById('addPharmacyModalBox').style.display = 'flex';
+};
+
+window.editPharmacist = async function(id) {
+    if (!window.pharmacistsData || !Array.isArray(window.pharmacistsData)) {
+        try {
+            const resp = await fetch('/api/vendor/pharmacists');
+            const data = await resp.json();
+            if (data.success) window.pharmacistsData = data.pharmacists;
+        } catch(e) { console.error('Failed to fetch pharmacists:', e); }
+    }
+    if (!window.pharmacistsData) { alert('Could not load pharmacists data.'); return; }
+    
+    const pharm = window.pharmacistsData.find(p => p.id == id);
+    if (!pharm) { alert('Pharmacist not found.'); return; }
+    
+    const form = document.getElementById('addPharmacistForm');
+    form.reset();
+    document.getElementById('edit_pharmacist_id').value = pharm.id;
+    document.getElementById('pharmacistModalTitle').innerText = 'Edit Pharmacist';
+    
+    // Populate all text/select fields
+    const fields = ['pharmacist_name', 'pharmacy_name', 'registration_number', 'qualification', 'state_pharmacy_council', 'contact_number', 'email', 'experience_years', 'shift_timing', 'availability', 'status'];
+    fields.forEach(field => {
+        const el = form.querySelector('[name="'+field+'"]');
+        if (el && pharm[field] !== undefined && pharm[field] !== null) {
+            el.value = pharm[field];
+        }
+    });
+    
+    // Show previously uploaded file info for pharmacist docs
+    const pharmacistFileFields = ['registration_certificate_doc', 'pharmacist_certificate_doc', 'employment_proof'];
+    pharmacistFileFields.forEach(fieldName => {
+        const inputEl = form.querySelector('[name="'+fieldName+'"]');
+        if (!inputEl) return;
+        const parent = inputEl.closest('div');
+        const oldPreview = parent.querySelector('.file-preview-info');
+        if (oldPreview) oldPreview.remove();
+        
+        if (pharm[fieldName]) {
+            inputEl.removeAttribute('required');
+            const previewDiv = document.createElement('div');
+            previewDiv.className = 'file-preview-info';
+            previewDiv.style.cssText = 'margin-top:6px; padding:8px 12px; background:rgba(40,100,240,0.08); border-radius:8px; font-size:12px; color:#2864F0; display:flex; align-items:center; gap:8px;';
+            previewDiv.innerHTML = '<i class="fa-solid fa-file-circle-check"></i> <span>Uploaded: <strong>' + pharm[fieldName] + '</strong> (select new to replace)</span>';
+            parent.appendChild(previewDiv);
+        }
+    });
+    
+    document.getElementById('addPharmacistModalBox').style.display = 'flex';
+};
+
+// Remove old global Edit placeholder logic if it exists

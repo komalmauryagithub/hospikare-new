@@ -470,6 +470,13 @@ module.exports = function(app, pool, upload) {
             const doc = req.files && req.files['driving_license_doc'] ? req.files['driving_license_doc'][0].filename : null;
             const ambId = body.assigned_ambulance_id && body.assigned_ambulance_id !== "" ? body.assigned_ambulance_id : null;
             
+            if (body.driver_id_str) {
+                const [existing] = await pool.query('SELECT id FROM ambulance_drivers WHERE driver_id_str = ?', [body.driver_id_str]);
+                if (existing.length > 0) {
+                    return res.json({ success: false, message: "A driver with this Driver ID already exists." });
+                }
+            }
+            
             const [insRes] = await pool.query(
                 `INSERT INTO ambulance_drivers 
                 (users_id, driver_name, driver_id_str, mobile_number, status, address, driving_license_number, license_expiry_date, driver_photo, driving_license_doc, assigned_ambulance_id) 
@@ -479,8 +486,12 @@ module.exports = function(app, pool, upload) {
             
             let assignedAmbulance = null;
             if (ambId) {
-                // Clear any previous driver assigned to this ambulance
-                await pool.query('UPDATE ambulance_drivers SET assigned_ambulance_id = NULL WHERE assigned_ambulance_id = ? AND users_id = ? AND id != ?', [ambId, req.session.user.id, insRes.insertId]);
+                const [ambCheck] = await pool.query('SELECT assigned_driver_id FROM ambulances WHERE id = ?', [ambId]);
+                if (ambCheck.length > 0 && ambCheck[0].assigned_driver_id && String(ambCheck[0].assigned_driver_id) !== String(insRes.insertId)) {
+                    await pool.query('DELETE FROM ambulance_drivers WHERE id = ?', [insRes.insertId]);
+                    return res.json({ success: false, message: "This ambulance is already assigned to another driver." });
+                }
+
                 await pool.query('UPDATE ambulances SET assigned_driver_id = ? WHERE id = ? AND users_id = ?', [insRes.insertId, ambId, req.session.user.id]);
                 
                 const [ambRows] = await pool.query('SELECT ambulance_type, vehicle_number, base_chrge, min_chrge, area, eta FROM ambulances WHERE id = ?', [ambId]);
@@ -512,6 +523,13 @@ module.exports = function(app, pool, upload) {
             const doc = req.files && req.files['driving_license_doc'] ? req.files['driving_license_doc'][0].filename : null;
             const ambId = body.assigned_ambulance_id && body.assigned_ambulance_id !== "" ? body.assigned_ambulance_id : null;
             
+            if (body.driver_id_str) {
+                const [existing] = await pool.query('SELECT id FROM ambulance_drivers WHERE driver_id_str = ? AND id != ?', [body.driver_id_str, req.params.id]);
+                if (existing.length > 0) {
+                    return res.json({ success: false, message: "A driver with this Driver ID already exists." });
+                }
+            }
+            
             await pool.query(
                 `UPDATE ambulance_drivers SET 
                 driver_name = ?, driver_id_str = ?, mobile_number = ?, status = ?, address = ?, driving_license_number = ?, 
@@ -525,7 +543,11 @@ module.exports = function(app, pool, upload) {
             await pool.query('UPDATE ambulances SET assigned_driver_id = NULL WHERE assigned_driver_id = ? AND users_id = ?', [req.params.id, req.session.user.id]);
             let assignedAmbulance = null;
             if (ambId) {
-                await pool.query('UPDATE ambulance_drivers SET assigned_ambulance_id = NULL WHERE assigned_ambulance_id = ? AND users_id = ? AND id != ?', [ambId, req.session.user.id, req.params.id]);
+                const [ambCheck] = await pool.query('SELECT assigned_driver_id FROM ambulances WHERE id = ?', [ambId]);
+                if (ambCheck.length > 0 && ambCheck[0].assigned_driver_id && String(ambCheck[0].assigned_driver_id) !== String(req.params.id)) {
+                    return res.json({ success: false, message: "This ambulance is already assigned to another driver." });
+                }
+
                 await pool.query('UPDATE ambulances SET assigned_driver_id = ? WHERE id = ? AND users_id = ?', [req.params.id, ambId, req.session.user.id]);
                 const [ambRows] = await pool.query('SELECT ambulance_type, vehicle_number, base_chrge, min_chrge, area, eta FROM ambulances WHERE id = ?', [ambId]);
                 if (ambRows.length > 0) assignedAmbulance = ambRows[0];

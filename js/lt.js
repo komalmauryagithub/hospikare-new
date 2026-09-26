@@ -2097,6 +2097,9 @@ document.getElementById("customLabTestInput")?.addEventListener(
 // Add Booking Modal Logic
 document.getElementById('addBookingBtn')?.addEventListener('click', async () => {
     document.getElementById('addBookingModal').style.display = 'flex';
+    if(document.getElementById('edit_booking_id')) document.getElementById('edit_booking_id').value = '';
+    const h2 = document.getElementById('addBookingModal').querySelector('h2'); if(h2) h2.innerText = 'Add Manual Booking';
+    const form = document.getElementById('addBookingForm'); if(form) form.reset();
     // Fetch labs to populate dropdown
     try {
         const response = await fetch('/api/labs');
@@ -2137,23 +2140,28 @@ document.getElementById('addBookingForm')?.addEventListener('submit', async (e) 
     }
 
     try {
-        const response = await fetch('/api/lab/bookings/add', {
+        const editId = document.getElementById('edit_booking_id') ? document.getElementById('edit_booking_id').value : '';
+        const endpoint = editId ? '/api/lab/bookings/edit' : '/api/lab/bookings/add';
+        const payload = {
+            lab_vendor_id,
+            patient_name,
+            test_name,
+            sample_collection_type,
+            booking_date,
+            total_amount,
+            booking_status,
+            payment_status
+        };
+        if(editId) payload.id = editId;
+
+        const response = await fetch(endpoint, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                lab_vendor_id,
-                patient_name,
-                test_name,
-                sample_collection_type,
-                booking_date,
-                total_amount,
-                booking_status,
-                payment_status
-            })
+            body: JSON.stringify(payload)
         });
         const result = await response.json();
-        if(result.success) {
-            alert('Booking added successfully!');
+        if (result.success) {
+            alert(editId ? 'Booking updated successfully!' : 'Booking added successfully!');
             document.getElementById('addBookingModal').style.display = 'none';
             document.getElementById('addBookingForm').reset();
             loadLabBookings(); // Refresh the table
@@ -2730,4 +2738,77 @@ window.requestLabEntityEdit = async function(id) {
             loadLabDetails();
         }
     } catch(e) { console.error(e); alert("Error requesting edit"); }
+};
+
+window.editPatient = async function(id) {
+    try {
+        // Populate labs first if empty
+        const select = document.getElementById('bookingLabId');
+        if (select.options.length === 0) {
+            const labRes = await fetch('/api/labs');
+            const labResult = await labRes.json();
+            if (labResult.success && labResult.labs) {
+                labResult.labs.forEach(lab => {
+                    select.innerHTML += `<option value="${lab.id}">${lab.lab_name}</option>`;
+                });
+            }
+        }
+
+        const res = await fetch('/api/lab/bookings');
+        const data = await res.json();
+        
+        let patient = null;
+        if(data.success && data.bookings) {
+            patient = data.bookings.find(p => p.id == id);
+        }
+        
+        // fallback to patients endpoint
+        if (!patient) {
+            const pRes = await fetch('/api/lab/patients');
+            const pData = await pRes.json();
+            if(pData.success && pData.patients) {
+                patient = pData.patients.find(p => p.id == id);
+            }
+        }
+
+        if(patient) {
+            document.getElementById('edit_booking_id').value = patient.id;
+            document.getElementById('bookingLabId').value = patient.lab_vendor_id || '';
+            document.getElementById('bookingPatientName').value = patient.patient_name || '';
+            document.getElementById('bookingTestName').value = patient.test_name || '';
+            document.getElementById('bookingCollectionType').value = (patient.sample_collection_type || 'lab').toLowerCase();
+            if(patient.booking_date) {
+                const d = new Date(patient.booking_date);
+                document.getElementById('bookingDate').value = d.toISOString().split('T')[0];
+            }
+            document.getElementById('bookingAmount').value = patient.total_amount || 0;
+            document.getElementById('bookingStatus').value = (patient.booking_status || 'pending').toLowerCase();
+            document.getElementById('bookingPaymentStatus').value = (patient.payment_status || 'pending').toLowerCase();
+            
+            const h2 = document.getElementById('addBookingModal').querySelector('h2');
+            if (h2) h2.innerText = 'Edit Booking';
+            document.getElementById('addBookingModal').style.display = 'flex';
+        }
+    } catch(err) {
+        console.error("Error opening edit modal:", err);
+    }
+};
+
+window.deletePatient = async function(id) {
+    if(!confirm("Are you sure you want to delete this patient/booking?")) return;
+    try {
+        const response = await fetch('/api/lab/bookings/delete/' + id, { method: 'DELETE' });
+        const result = await response.json();
+        if(result.success) {
+            alert('Patient deleted successfully!');
+            if(typeof loadPatients === 'function') loadPatients();
+            if(typeof loadLabBookings === 'function') loadLabBookings();
+            if(typeof loadDashboard === 'function') loadDashboard();
+        } else {
+            alert('Failed to delete patient');
+        }
+    } catch(err) {
+        console.error(err);
+        alert('Error deleting patient');
+    }
 };

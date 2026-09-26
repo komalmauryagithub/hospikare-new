@@ -20,12 +20,12 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" type="text/css" href="/css/admin.css?v=1790144849">
-  <link rel="stylesheet" type="text/css" href="/css/modern-ui.css?v=1790144849">
-  <link rel="stylesheet" type="text/css" href="/css/theme-system.css?v=1790144849">
-  <link rel="stylesheet" type="text/css" href="/css/enhancements.css?v=1790144849">
-  <link rel="stylesheet" type="text/css" href="/css/mobile-ui.css?v=1790144849">
-  <link rel="stylesheet" type="text/css" href="/css/lt.css?v=1790144849">
+  <link rel="stylesheet" type="text/css" href="/css/admin.css?v=1790154050">
+  <link rel="stylesheet" type="text/css" href="/css/modern-ui.css?v=1790154050">
+  <link rel="stylesheet" type="text/css" href="/css/theme-system.css?v=1790154050">
+  <link rel="stylesheet" type="text/css" href="/css/enhancements.css?v=1790154050">
+  <link rel="stylesheet" type="text/css" href="/css/mobile-ui.css?v=1790154050">
+  <link rel="stylesheet" type="text/css" href="/css/lt.css?v=1790154050">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
@@ -484,7 +484,6 @@
                             <th>Booking Status</th>
                             <th>Payment Status</th>
                             <th>Created At</th>
-                            <th>Action</th>
                         </tr>
                     </thead>
                     <tbody id="patientsTableBody">
@@ -705,6 +704,7 @@
               <button id="closeBookingModalBtn" style="background:#f1f5f9; color:#64748b; border:none; width:32px; height:32px; border-radius:8px; cursor:pointer; display:flex; align-items:center; justify-content:center;"><i class="fa-solid fa-xmark"></i></button>
           </div>
           <form id="addBookingForm" style="display:flex; flex-direction:column; gap:15px;">
+              <input type="hidden" id="edit_booking_id">
               <div>
                   <label style="font-size:14px; font-weight:600; color:#374151; margin-bottom:6px; display:block;">Select Lab Center *</label>
                   <select id="bookingLabId" style="width:100%; padding:10px; border-radius:8px; border:1px solid #e2e8f0; outline:none;" required></select>
@@ -872,10 +872,10 @@
     </div>
   </div>
 
-  <script src="/js/vendor-panel-controls.js?v=1790144849"></script>
-  <script src="/js/lt.js?v=1790144849"></script>
-  <script src="/js/sidebar-toggle.js?v=1790144849"></script>
-  <script src="/js/ui-interactions.js?v=1790144849"></script>
+  <script src="/js/vendor-panel-controls.js?v=1790154050"></script>
+  <script src="/js/lt.js?v=1790154050"></script>
+  <script src="/js/sidebar-toggle.js?v=1790154050"></script>
+  <script src="/js/ui-interactions.js?v=1790154050"></script>
 </body>
 </html>
 

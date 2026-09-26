@@ -2973,10 +2973,12 @@ app.get("/api/ambulances", async (req, res) => {
       `
       SELECT ambulances.*,
              COALESCE(d.driver_name, d2.driver_name) AS driver_name,
-             COALESCE(ambulances.assigned_driver_id, d2.id) AS assigned_driver_id
+             COALESCE(ambulances.assigned_driver_id, d2.id) AS assigned_driver_id,
+             h.hospital_name
       FROM ambulances
       LEFT JOIN ambulance_drivers d ON ambulances.assigned_driver_id = d.id
       LEFT JOIN ambulance_drivers d2 ON d2.assigned_ambulance_id = ambulances.id
+      LEFT JOIN hospitals h ON ambulances.hospital_id = h.id
       WHERE ambulances.users_id = ?
       ORDER BY ambulances.id DESC
       `,
@@ -3018,12 +3020,23 @@ app.post(
       }
       const body = req.body;
       const userId = req.session.user.id;
+      
+      // Check if vehicle_number already exists
+      if (body.vehicle_number) {
+        const [existing] = await pool.query('SELECT id FROM ambulances WHERE vehicle_number = ?', [body.vehicle_number]);
+        if (existing.length > 0) {
+          return res.json({ success: false, message: "An ambulance with this vehicle registration number already exists." });
+        }
+      }
+
       await pool.query(
         `
                 INSERT INTO ambulances
                 (
+                    hospital_id,
                     users_id,
                     ambulance_type,
+                    vehicle_number,
                     base_chrge,
                     min_chrge,
                     night_chrg,
@@ -3039,11 +3052,13 @@ app.post(
                     veh_ins
                 )
                 VALUES
-                (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 `,
         [
+          body.hospital_id || null,
           userId,
           body.ambulance_type,
+          body.vehicle_number || null,
           body.base_chrge,
           body.min_chrge,
           body.night_chrg,
@@ -3066,6 +3081,7 @@ app.post(
       console.log(error);
       res.json({
         success: false,
+        message: "Server error occurred"
       });
     }
   },
@@ -3087,8 +3103,15 @@ app.post(
       const ambId = req.params.id;
       const userId = req.session.user.id;
 
-      let query = `UPDATE ambulances SET ambulance_type = ?, base_chrge = ?, min_chrge = ?, night_chrg = ?, wait_chrg = ?, status = ?, eta = ?, book_time_slot = ?, area = ?, description = ?, driver_exp = ?`;
-      const params = [body.ambulance_type, body.base_chrge, body.min_chrge, body.night_chrg, body.wait_chrg, body.status, body.eta, body.book_time_slot, body.area, body.description, body.driver_exp];
+      if (body.vehicle_number) {
+        const [existing] = await pool.query('SELECT id FROM ambulances WHERE vehicle_number = ? AND id != ?', [body.vehicle_number, ambId]);
+        if (existing.length > 0) {
+          return res.json({ success: false, message: "An ambulance with this vehicle registration number already exists." });
+        }
+      }
+
+      let query = `UPDATE ambulances SET hospital_id = ?, ambulance_type = ?, vehicle_number = ?, base_chrge = ?, min_chrge = ?, night_chrg = ?, wait_chrg = ?, status = ?, eta = ?, book_time_slot = ?, area = ?, description = ?, driver_exp = ?`;
+      const params = [body.hospital_id || null, body.ambulance_type, body.vehicle_number || null, body.base_chrge, body.min_chrge, body.night_chrg, body.wait_chrg, body.status, body.eta, body.book_time_slot, body.area, body.description, body.driver_exp];
 
       if (req.files["lic"]) { query += `, lic = ?`; params.push(req.files["lic"][0].filename); }
       if (req.files["rc"]) { query += `, rc = ?`; params.push(req.files["rc"][0].filename); }
@@ -3101,7 +3124,7 @@ app.post(
       res.json({ success: true });
     } catch (error) {
       console.log(error);
-      res.json({ success: false });
+      res.json({ success: false, message: "Server error occurred" });
     }
   }
 );
@@ -3319,9 +3342,11 @@ app.post(
         `INSERT INTO insurances(
                     users_id, comp_name, comp_type, description, irdai, comp_pan, gst, incorp_cert, offc_add,
                     add_proof, claim_type, doc_req, claim_time, cust_sup_num, email_sup)
-                VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )`,
+                VALUES
+                (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) )`,
         [
           userId,
+          body.hospital_id || null,
           safeString(comp_name),
           safeString(comp_type),
           safeString(ins_description),
@@ -6027,6 +6052,60 @@ app.post("/api/lab/bookings/add", async (req, res) => {
   }
 });
 
+app.post("/api/lab/bookings/edit", async (req, res) => {
+  try {
+    if (!req.session.user) {
+      return res.json({ success: false, message: "Unauthorized" });
+    }
+    const {
+      id,
+      lab_vendor_id,
+      patient_name,
+      test_name,
+      sample_collection_type,
+      booking_date,
+      total_amount,
+      booking_status,
+      payment_status,
+    } = req.body;
+
+    await pool.query(
+      `UPDATE user_lab_test_bookings SET 
+        lab_vendor_id = ?, patient_name = ?, test_name = ?, sample_collection_type = ?, 
+        booking_date = ?, total_amount = ?, booking_status = ?, payment_status = ?
+       WHERE id = ?`,
+      [
+        lab_vendor_id,
+        patient_name,
+        test_name,
+        sample_collection_type,
+        booking_date,
+        total_amount,
+        booking_status,
+        payment_status,
+        id,
+      ]
+    );
+    res.json({ success: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+});
+
+app.delete("/api/lab/bookings/delete/:id", async (req, res) => {
+  try {
+    if (!req.session.user) {
+      return res.json({ success: false, message: "Unauthorized" });
+    }
+    await pool.query(`DELETE FROM user_lab_test_bookings WHERE id = ?`, [req.params.id]);
+    res.json({ success: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+});
+
 app.get("/api/lab/bookings", async (req, res) => {
   try {
     if (!req.session.user) {
@@ -8352,6 +8431,93 @@ app.get("/api/payments", async (req, res) => {
 });
 
 //79
+
+// ==================== PHARMACY ENDPOINTS ====================
+app.post("/api/vendor/add-pharmacy", upload.any(), async (req, res) => {
+    try {
+        if (!req.session.user) return res.status(401).json({ success: false, message: "Unauthorized" });
+        
+        const vendorId = req.session.user.id;
+        const b = req.body;
+        
+        await pool.query(
+            `INSERT INTO vendor_pharmacies 
+            (vendor_id, pharmacy_name, owner_name, pharmacy_type, contact_number, email, alternate_contact, address, city, state, pincode, google_location, opening_time, closing_time, available_24_7, home_delivery, delivery_radius, status) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Pending')`,
+            [
+                vendorId, 
+                b.pharmacy_name, 
+                b.owner_name, 
+                b.pharmacy_type, 
+                b.contact_number, 
+                b.email || '', 
+                b.alternate_contact || '', 
+                b.address, 
+                b.city, 
+                b.state, 
+                b.pincode, 
+                b.location || '', 
+                b.opening_time || '', 
+                b.closing_time || '', 
+                b.available_24_7 === 'Yes', 
+                b.home_delivery === 'Yes', 
+                b.delivery_radius || ''
+            ]
+        );
+        
+        res.json({ success: true, message: "Pharmacy added successfully" });
+    } catch (error) {
+        console.error("Add Pharmacy Error:", error);
+        res.status(500).json({ success: false, message: "Server Error" });
+    }
+});
+
+app.post("/api/vendor/add-pharmacist", upload.any(), async (req, res) => {
+    try {
+        if (!req.session.user) return res.status(401).json({ success: false, message: "Unauthorized" });
+        
+        const vendorId = req.session.user.id;
+        const b = req.body;
+        
+        await pool.query(
+            `INSERT INTO vendor_pharmacists 
+            (vendor_id, pharmacist_name, pharmacy_name, registration_number, qualification, state_pharmacy_council, contact_number, availability) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+            [vendorId, b.pharmacist_name, b.pharmacy_name, b.registration_number, b.qualification, b.state_pharmacy_council, b.contact_number, b.availability]
+        );
+        
+        res.json({ success: true, message: "Pharmacist added successfully" });
+    } catch (error) {
+        console.error("Add Pharmacist Error:", error);
+        res.status(500).json({ success: false, message: "Server Error" });
+    }
+});
+
+app.get("/api/vendor/pharmacies", async (req, res) => {
+    try {
+        if (!req.session.user) return res.status(401).json({ success: false, message: "Unauthorized" });
+        const vendorId = req.session.user.id;
+        
+        const [rows] = await pool.query("SELECT * FROM vendor_pharmacies WHERE vendor_id = ? ORDER BY id DESC", [vendorId]);
+        res.json({ success: true, pharmacies: rows });
+    } catch (error) {
+        res.status(500).json({ success: false, message: "Server Error" });
+    }
+});
+
+app.get("/api/vendor/pharmacists", async (req, res) => {
+    try {
+        if (!req.session.user) return res.status(401).json({ success: false, message: "Unauthorized" });
+        const vendorId = req.session.user.id;
+        
+        const [rows] = await pool.query("SELECT * FROM vendor_pharmacists WHERE vendor_id = ? ORDER BY id DESC", [vendorId]);
+        res.json({ success: true, pharmacists: rows });
+    } catch (error) {
+        res.status(500).json({ success: false, message: "Server Error" });
+    }
+});
+// ============================================================
+
 app.get("/api/vendor/dashboard", async (req, res) => {
   try {
     if (!req.session.user) {
@@ -8700,5 +8866,114 @@ app.delete("/api/hospital/:id", async (req, res) => {
     } catch (e) {
         console.error(e);
         res.json({ success: false, message: 'Server error while deleting hospital' });
+    }
+});
+
+
+app.get("/api/all-hospitals-list", async (req, res) => {
+    try {
+        const [hospitals] = await pool.query('SELECT id, hospital_name FROM hospitals ORDER BY hospital_name ASC');
+        res.json({ success: true, hospitals });
+    } catch (e) {
+        console.error(e);
+        res.json({ success: false, message: 'Server error' });
+    }
+});
+
+app.delete("/api/medicine/:id", async (req, res) => {
+    try {
+        if (!req.session.user) return res.json({ success: false, message: 'Unauthorized' });
+        const medicineId = req.params.id;
+        const vendorId = req.session.user.id;
+        
+        await pool.query('DELETE FROM med_lists WHERE medicine_id = ? AND vendor_id = ?', [medicineId, vendorId]);
+        res.json({ success: true, message: 'Medicine deleted successfully' });
+    } catch (e) {
+        console.error(e);
+        res.json({ success: false, message: 'Server error while deleting medicine' });
+    }
+});
+
+app.delete("/api/vendor/pharmacy/:id", async (req, res) => {
+    try {
+        if (!req.session.user) return res.json({ success: false, message: 'Unauthorized' });
+        const pharmacyId = req.params.id;
+        const vendorId = req.session.user.id;
+        
+        await pool.query('DELETE FROM vendor_pharmacies WHERE id = ? AND vendor_id = ?', [pharmacyId, vendorId]);
+        res.json({ success: true, message: 'Pharmacy deleted successfully' });
+    } catch (e) {
+        console.error(e);
+        res.json({ success: false, message: 'Server error while deleting pharmacy' });
+    }
+});
+
+app.delete("/api/vendor/pharmacist/:id", async (req, res) => {
+    try {
+        if (!req.session.user) return res.json({ success: false, message: 'Unauthorized' });
+        const pharmacistId = req.params.id;
+        const vendorId = req.session.user.id;
+        
+        await pool.query('DELETE FROM vendor_pharmacists WHERE id = ? AND vendor_id = ?', [pharmacistId, vendorId]);
+        res.json({ success: true, message: 'Pharmacist deleted successfully' });
+    } catch (e) {
+        console.error(e);
+        res.json({ success: false, message: 'Server error while deleting pharmacist' });
+    }
+});
+
+
+// Edit Routes
+app.put("/api/update/medicine/:id", async (req, res) => {
+    try {
+        if (!req.session.user) return res.json({ success: false, message: 'Unauthorized' });
+        const medicineId = req.params.id;
+        const vendorId = req.session.user.id;
+        const data = req.body;
+        
+        await pool.query(
+            "UPDATE med_lists SET medicine_name=?, generic_name=?, brand_name=?, medicine_type=?, category=?, manufacturer=?, composition=?, mrp=?, selling_price=?, gst_percentage=?, discount_percentage=?, stock_quantity=?, minimum_stock_alert=?, batch_number=?, manufacturing_date=?, expiry_date=?, prescription_required=?, schedule_type=?, uses_info=?, dosage_instructions=?, side_effects=?, warnings=?, storage_instructions=?, delivery_available=?, delivery_charge=?, barcode_number=?, medicine_status=?, featured_medicine=? WHERE medicine_id=? AND vendor_id=?",
+            [data.medicine_name, data.generic_name, data.brand_name, data.medicine_type, data.category, data.manufacturer, data.composition, data.mrp, data.selling_price, data.gst_percentage, data.discount_percentage, data.stock_quantity, data.minimum_stock_alert, data.batch_number, data.manufacturing_date, data.expiry_date, data.prescription_required, data.schedule_type, data.uses_info, data.dosage_instructions, data.side_effects, data.warnings, data.storage_instructions, data.delivery_available, data.delivery_charge, data.barcode_number, data.medicine_status, data.featured_medicine, medicineId, vendorId]
+        );
+        res.json({ success: true, message: 'Medicine updated successfully' });
+    } catch (e) {
+        console.error(e);
+        res.json({ success: false, message: 'Server error while updating medicine' });
+    }
+});
+
+app.put("/api/update/vendor/pharmacy/:id", async (req, res) => {
+    try {
+        if (!req.session.user) return res.json({ success: false, message: 'Unauthorized' });
+        const pharmacyId = req.params.id;
+        const vendorId = req.session.user.id;
+        const data = req.body;
+        
+        await pool.query(
+            "UPDATE vendor_pharmacies SET pharmacy_name=?, owner_name=?, pharmacy_type=?, contact_number=?, email=?, alternate_contact=?, address=?, city=?, state=?, pincode=?, google_location=?, opening_time=?, closing_time=?, available_24_7=?, home_delivery=?, delivery_radius=?, status=? WHERE id=? AND vendor_id=?",
+            [data.pharmacy_name, data.owner_name, data.pharmacy_type, data.contact_number, data.email || '', data.alternate_contact || '', data.address, data.city, data.state, data.pincode, data.location || '', data.opening_time || '', data.closing_time || '', data.available_24_7 === 'Yes' ? 1 : 0, data.home_delivery === 'Yes' ? 1 : 0, data.delivery_radius || '', data.status || 'Pending', pharmacyId, vendorId]
+        );
+        res.json({ success: true, message: 'Pharmacy updated successfully' });
+    } catch (e) {
+        console.error(e);
+        res.json({ success: false, message: 'Server error while updating pharmacy' });
+    }
+});
+
+app.put("/api/update/vendor/pharmacist/:id", async (req, res) => {
+    try {
+        if (!req.session.user) return res.json({ success: false, message: 'Unauthorized' });
+        const pharmacistId = req.params.id;
+        const vendorId = req.session.user.id;
+        const data = req.body;
+        
+        await pool.query(
+            "UPDATE vendor_pharmacists SET pharmacist_name=?, pharmacy_name=?, registration_number=?, qualification=?, state_pharmacy_council=?, contact_number=?, availability=? WHERE id=? AND vendor_id=?",
+            [data.pharmacist_name, data.pharmacy_name, data.registration_number, data.qualification, data.state_pharmacy_council || '', data.contact_number, data.availability, pharmacistId, vendorId]
+        );
+        res.json({ success: true, message: 'Pharmacist updated successfully' });
+    } catch (e) {
+        console.error(e);
+        res.json({ success: false, message: 'Server error while updating pharmacist' });
     }
 });

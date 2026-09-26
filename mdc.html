@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <link rel="icon" type="image/png" href="/assets/logo.png">
@@ -20,12 +20,12 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" type="text/css" href="/css/admin.css?v=1790144849">
-    <link rel="stylesheet" type="text/css" href="/css/modern-ui.css?v=1790144849">
-    <link rel="stylesheet" type="text/css" href="/css/theme-system.css?v=1790144849">
-    <link rel="stylesheet" type="text/css" href="/css/enhancements.css?v=1790144849">
-    <link rel="stylesheet" type="text/css" href="/css/mobile-ui.css?v=1790144849">
-    <link rel="stylesheet" type="text/css" href="/css/mdc.css?v=1790144849">
+    <link rel="stylesheet" type="text/css" href="/css/admin.css?v=1790317796794_3">
+    <link rel="stylesheet" type="text/css" href="/css/modern-ui.css?v=1790317796794_3">
+    <link rel="stylesheet" type="text/css" href="/css/theme-system.css?v=1790317796794_3">
+    <link rel="stylesheet" type="text/css" href="/css/enhancements.css?v=1790317796794_3">
+    <link rel="stylesheet" type="text/css" href="/css/mobile-ui.css?v=1790317796794_3">
+    <link rel="stylesheet" type="text/css" href="/css/mdc.css?v=1790317796794_3">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
@@ -49,6 +49,14 @@
           <div class="menuItem navItem" id="medicinesBtn">
               <i class="fa-solid fa-pills"></i>
               <span>Medicines</span>
+          </div>
+          <div class="menuItem navItem" id="pharmaciesBtn">
+              <i class="fa-solid fa-store"></i>
+              <span>Pharmacies</span>
+          </div>
+          <div class="menuItem navItem" id="pharmacistsBtn">
+              <i class="fa-solid fa-user-doctor"></i>
+              <span>Pharmacists</span>
           </div>
           <div class="menuItem navItem" id="stockBtn">
               <i class="fa-solid fa-boxes-stacked"></i>
@@ -208,9 +216,61 @@
                             <th>Selling</th>
                             <th>Stock</th>
                             <th>Status</th>
+                            <th>Action</th>
                         </tr>
                     </thead>
                     <tbody id="medicineTableBody">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="pharmacySection" style="display: none;">
+            <div id="pharmacyTopBar" style="display: flex; justify-content: flex-end; padding: 20px 30px;">
+                <button id="addPharmacyMainBtn" class="btn-base" style="background-color: var(--sidebar-active-bg); color: white;" onclick="document.getElementById('addPharmacyModalBox').style.display='flex'; document.getElementById('addPharmacyForm').reset(); document.getElementById('edit_pharmacy_id').value=''; document.getElementById('pharmacyModalTitle').innerText='Add Pharmacy';">
+                    <i class="fa-solid fa-plus"></i>
+                    Add Pharmacy
+                </button>
+            </div>
+            <div id="pharmacyTableContainer" style="padding: 0 30px;">
+                <table id="pharmacyTable" style="width: 100%; border-collapse: collapse; text-align: left;">
+                    <thead>
+                        <tr style="border-bottom: 1px solid var(--border-color); color: var(--text-muted);">
+                            <th style="padding: 12px;">Pharmacy Name</th>
+                            <th style="padding: 12px;">Owner</th>
+                            <th style="padding: 12px;">Type</th>
+                            <th style="padding: 12px;">Contact</th>
+                            <th style="padding: 12px;">City</th>
+                            <th style="padding: 12px;">Status</th>
+                            <th style="padding: 12px;">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="pharmacyTableBody">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="pharmacistSection" style="display: none;">
+            <div id="pharmacistTopBar" style="display: flex; justify-content: flex-end; padding: 20px 30px;">
+                <button id="addPharmacistMainBtn" class="btn-base" style="background-color: var(--sidebar-active-bg); color: white;" onclick="document.getElementById('addPharmacistModalBox').style.display='flex'; document.getElementById('addPharmacistForm').reset(); document.getElementById('edit_pharmacist_id').value=''; document.getElementById('pharmacistModalTitle').innerText='Add Pharmacist';">
+                    <i class="fa-solid fa-plus"></i>
+                    Add Pharmacist
+                </button>
+            </div>
+            <div id="pharmacistTableContainer" style="padding: 0 30px;">
+                <table id="pharmacistTable" style="width: 100%; border-collapse: collapse; text-align: left;">
+                    <thead>
+                        <tr style="border-bottom: 1px solid var(--border-color); color: var(--text-muted);">
+                            <th style="padding: 12px;">Pharmacist Name</th>
+                            <th style="padding: 12px;">Reg No</th>
+                            <th style="padding: 12px;">Qualification</th>
+                            <th style="padding: 12px;">Contact</th>
+                            <th style="padding: 12px;">Availability</th>
+                            <th style="padding: 12px;">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="pharmacistTableBody">
                     </tbody>
                 </table>
             </div>
@@ -220,26 +280,33 @@
     <div id="medicineModal">
         <div id="medicineModalBox">
             <div id="medicineModalHeader" style="padding: 20px 24px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;">
-                <h2 style="font-family: var(--font-heading);">Add Medicine (Direct input through excel file, Input will be found at bottom)</h2>
+                <h2 id="medicineModalTitle" style="font-family: var(--font-heading);">Add Medicine (Direct input through excel file, Input will be found at bottom)</h2>
                 <button id="closeMedicineModal" style="background: transparent; border: none; font-size: 20px; color: var(--text-muted); cursor: pointer;"><i class="fa-solid fa-xmark"></i></button>
             </div>
             <form id="medicineForm">
+                <input type="hidden" id="edit_medicine_id" name="edit_medicine_id">
                 <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; margin-bottom: 24px;">
-                    <div style="display: flex; flex-direction: column; gap: 8px;">
-                        <label style="font-size: 13px; font-weight: 600; color: var(--text-muted);">Medicine Name</label>
-                        <input type="text" id="medicine_name" class="top-search" style="border-radius: var(--rounded-sm);">
+                    <div style="display: flex; flex-direction: column; gap: 8px; grid-column: span 2;">
+                        <label style="font-size: 13px; font-weight: 600; color: var(--text-muted);">Pharmacy (Shop Name) *</label>
+                        <select id="shop_name" class="top-search" style="border-radius: var(--rounded-sm);" required>
+                            <option value="">Select Pharmacy...</option>
+                        </select>
                     </div>
                     <div style="display: flex; flex-direction: column; gap: 8px;">
-                        <label style="font-size: 13px; font-weight: 600; color: var(--text-muted);">Generic Name</label>
-                        <input type="text" id="generic_name" class="top-search" style="border-radius: var(--rounded-sm);">
+                        <label style="font-size: 13px; font-weight: 600; color: var(--text-muted);">Medicine Name *</label>
+                        <input type="text" id="medicine_name" class="top-search" style="border-radius: var(--rounded-sm);" required>
                     </div>
                     <div style="display: flex; flex-direction: column; gap: 8px;">
-                        <label style="font-size: 13px; font-weight: 600; color: var(--text-muted);">Brand Name</label>
-                        <input type="text" id="brand_name" class="top-search" style="border-radius: var(--rounded-sm);">
+                        <label style="font-size: 13px; font-weight: 600; color: var(--text-muted);">Generic Name *</label>
+                        <input type="text" id="generic_name" class="top-search" style="border-radius: var(--rounded-sm);" required>
                     </div>
                     <div style="display: flex; flex-direction: column; gap: 8px;">
-                        <label style="font-size: 13px; font-weight: 600; color: var(--text-muted);">Medicine Type</label>
-                        <select id="medicine_type" class="top-search" style="border-radius: var(--rounded-sm);">
+                        <label style="font-size: 13px; font-weight: 600; color: var(--text-muted);">Brand Name *</label>
+                        <input type="text" id="brand_name" class="top-search" style="border-radius: var(--rounded-sm);" required>
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 8px;">
+                        <label style="font-size: 13px; font-weight: 600; color: var(--text-muted);">Medicine Type *</label>
+                        <select id="medicine_type" class="top-search" style="border-radius: var(--rounded-sm);" required>
                             <option>Tablet</option>
                             <option>Capsule</option>
                             <option>Syrup</option>
@@ -251,24 +318,24 @@
                         </select>
                     </div>
                     <div style="display: flex; flex-direction: column; gap: 8px;">
-                        <label style="font-size: 13px; font-weight: 600; color: var(--text-muted);">Category</label>
-                        <input type="text" id="category" class="top-search" style="border-radius: var(--rounded-sm);">
+                        <label style="font-size: 13px; font-weight: 600; color: var(--text-muted);">Category *</label>
+                        <input type="text" id="category" class="top-search" style="border-radius: var(--rounded-sm);" required>
                     </div>
                     <div style="display: flex; flex-direction: column; gap: 8px;">
-                        <label style="font-size: 13px; font-weight: 600; color: var(--text-muted);">Manufacturer</label>
-                        <input type="text" id="manufacturer" class="top-search" style="border-radius: var(--rounded-sm);">
+                        <label style="font-size: 13px; font-weight: 600; color: var(--text-muted);">Manufacturer *</label>
+                        <input type="text" id="manufacturer" class="top-search" style="border-radius: var(--rounded-sm);" required>
                     </div>
                     <div style="display: flex; flex-direction: column; gap: 8px; grid-column: span 2;">
                         <label style="font-size: 13px; font-weight: 600; color: var(--text-muted);">Composition</label>
                         <textarea id="composition" class="top-search" style="border-radius: var(--rounded-sm); resize: vertical; height: 100px;"></textarea>
                     </div>
                     <div style="display: flex; flex-direction: column; gap: 8px;">
-                        <label style="font-size: 13px; font-weight: 600; color: var(--text-muted);">MRP</label>
-                        <input type="text" id="mrp" class="top-search" style="border-radius: var(--rounded-sm);">
+                        <label style="font-size: 13px; font-weight: 600; color: var(--text-muted);">MRP *</label>
+                        <input type="text" id="mrp" class="top-search" style="border-radius: var(--rounded-sm);" required>
                     </div>
                     <div style="display: flex; flex-direction: column; gap: 8px;">
-                        <label style="font-size: 13px; font-weight: 600; color: var(--text-muted);">Selling Price</label>
-                        <input type="text" id="selling_price" class="top-search" style="border-radius: var(--rounded-sm);">
+                        <label style="font-size: 13px; font-weight: 600; color: var(--text-muted);">Selling Price *</label>
+                        <input type="text" id="selling_price" class="top-search" style="border-radius: var(--rounded-sm);" required>
                     </div>
                     <div style="display: flex; flex-direction: column; gap: 8px;">
                         <label style="font-size: 13px; font-weight: 600; color: var(--text-muted);">GST %</label>
@@ -279,8 +346,8 @@
                         <input type="text" id="discount_percentage" class="top-search" style="border-radius: var(--rounded-sm);">
                     </div>
                     <div style="display: flex; flex-direction: column; gap: 8px;">
-                        <label style="font-size: 13px; font-weight: 600; color: var(--text-muted);">Stock Quantity</label>
-                        <input type="text" id="stock_quantity" class="top-search" style="border-radius: var(--rounded-sm);">
+                        <label style="font-size: 13px; font-weight: 600; color: var(--text-muted);">Stock Quantity *</label>
+                        <input type="text" id="stock_quantity" class="top-search" style="border-radius: var(--rounded-sm);" required>
                     </div>
                     <div style="display: flex; flex-direction: column; gap: 8px;">
                         <label style="font-size: 13px; font-weight: 600; color: var(--text-muted);">Minimum Stock Alert</label>
@@ -408,22 +475,323 @@
     </div>
   </div>
 
-  <script src="/js/vendor-dashboard-ui.js?v=1790144849"></script>
-  <script src="/js/vendor-panel-controls.js?v=1790144849"></script>
-  <script src="/js/mdc.js?v=1790144849"></script>
-  <script src="/js/sidebar-toggle.js?v=1790144849"></script>
-  <script src="/js/ui-interactions.js?v=1790144849"></script>
-<div id="pharmacyModalBox" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:9999; justify-content:center; align-items:center;">
-        <div style="background:var(--hk-surface, white); padding:24px; border-radius:12px; width:400px; max-width:90%; color:var(--hk-text-main, black);">
-            <h3 style="margin-top:0;">Add Pharmacy</h3>
-            <form id="pharmacyForm" onsubmit="event.preventDefault(); fetch('/api/vendor/add-pharmacy-basic', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({pharmacy_name:this.pharmacy_name.value})}).then(()=>location.reload())">
-                <input type="text" name="pharmacy_name" placeholder="Pharmacy Name" style="width:100%; margin-bottom:10px; padding:8px;" required>
-                <button type="submit" style="padding:10px; width:100%; background:#2563eb; color:white; border:none; border-radius:8px;">Add</button>
-                <button type="button" onclick="document.getElementById('pharmacyModalBox').style.display='none'" style="padding:10px; width:100%; margin-top:10px;">Cancel</button>
-            </form>
+  <script src="/js/vendor-dashboard-ui.js?v=1790317796794_3"></script>
+  <script src="/js/vendor-panel-controls.js?v=1790317796794_3"></script>
+  <script src="/js/mdc.js?v=1790317796794_3"></script>
+  <script src="/js/sidebar-toggle.js?v=1790317796794_3"></script>
+  <script src="/js/ui-interactions.js?v=1790317796794_3"></script>
+  <!-- ADD PHARMACY MODAL -->
+  <div id="addPharmacyModalBox" style="display:none; position:fixed; inset:0; background:rgba(7,26,61,0.75); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); z-index:999999; align-items:center; justify-content:center; padding:20px; overflow-y:auto;">
+    <div style="width:min(720px, 100%); max-height:90vh; background:var(--hk-card-bg, #fff); border-radius:20px; box-shadow:0 24px 60px rgba(7,26,61,0.3); overflow:hidden; display:flex; flex-direction:column; border:1px solid var(--hk-border, #e2e8f0);">
+      <div style="display:flex; justify-content:space-between; align-items:center; padding:20px 26px; border-bottom:1px solid var(--hk-divider, #e2e8f0); flex-shrink:0; background:var(--hk-surface-soft, #f8faff);">
+        <div>
+          <h3 id="pharmacyModalTitle" style="margin:0; font-size:20px; font-weight:800; font-family:var(--font-heading); color:var(--hk-text-main, #0f172a);">Add Pharmacy</h3>
+          <p style="margin:2px 0 0; font-size:12.5px; color:var(--hk-text-muted, #64748b);">Enter the details for the pharmacy</p>
         </div>
+        <button type="button" onclick="document.getElementById('addPharmacyModalBox').style.display='none'" style="border:none; background:transparent; font-size:24px; cursor:pointer; color:var(--hk-text-muted, #475569); line-height:1;">×</button>
+      </div>
+      <form id="addPharmacyForm" enctype="multipart/form-data" style="padding:24px 26px; display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:18px; overflow-y:auto; max-height:calc(90vh - 92px);">
+        <input type="hidden" id="edit_pharmacy_id" name="edit_pharmacy_id">
+        <div style="display:flex; flex-direction:column; gap:8px;">
+            <label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Pharmacy Name *</label>
+            <input type="text" name="pharmacy_name" class="top-search" style="border-radius: var(--rounded-sm);" required>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:8px;">
+            <label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Owner Name *</label>
+            <input type="text" name="owner_name" class="top-search" style="border-radius: var(--rounded-sm);" required>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:8px;">
+            <label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Contact Number *</label>
+            <input type="text" name="contact_number" class="top-search" style="border-radius: var(--rounded-sm);" required>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:8px;">
+            <label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Email</label>
+            <input type="email" name="email" class="top-search" style="border-radius: var(--rounded-sm);">
+        </div>
+        <div style="display:flex; flex-direction:column; gap:8px;">
+            <label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Alternate Contact</label>
+            <input type="text" name="alternate_contact" class="top-search" style="border-radius: var(--rounded-sm);">
+        </div>
+        <div style="display:flex; flex-direction:column; gap:8px;">
+            <label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Pharmacy Type *</label>
+            <select name="pharmacy_type" class="top-search" style="border-radius: var(--rounded-sm);" required>
+                <option value="Retail">Retail</option>
+                <option value="Wholesale">Wholesale</option>
+                <option value="Retail + Wholesale">Retail + Wholesale</option>
+            </select>
+        </div>
+        <div style="grid-column:1/-1; display:flex; flex-direction:column; gap:8px;">
+            <label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Address *</label>
+            <textarea name="address" class="top-search" style="border-radius: var(--rounded-sm); resize: vertical; height: 60px;" required></textarea>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:8px;">
+            <label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">City *</label>
+            <input type="text" name="city" class="top-search" style="border-radius: var(--rounded-sm);" required>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:8px;">
+            <label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">State *</label>
+            <input type="text" name="state" class="top-search" style="border-radius: var(--rounded-sm);" required>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:8px;">
+            <label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Pincode *</label>
+            <input type="text" name="pincode" class="top-search" style="border-radius: var(--rounded-sm);" required>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:8px;">
+            <label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Google/Map Location (Lat, Lng)</label>
+            <input type="text" name="location" class="top-search" style="border-radius: var(--rounded-sm);">
+        </div>
+        <div style="display:flex; flex-direction:column; gap:8px;">
+            <label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Opening Time *</label>
+            <input type="time" name="opening_time" class="top-search" style="border-radius: var(--rounded-sm);" required>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:8px;">
+            <label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Closing Time *</label>
+            <input type="time" name="closing_time" class="top-search" style="border-radius: var(--rounded-sm);" required>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:8px;">
+            <label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">24×7 Available *</label>
+            <select name="available_24_7" class="top-search" style="border-radius: var(--rounded-sm);" required>
+                <option value="No">No</option>
+                <option value="Yes">Yes</option>
+            </select>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:8px;">
+            <label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Home Delivery *</label>
+            <select name="home_delivery" class="top-search" style="border-radius: var(--rounded-sm);" required>
+                <option value="Yes">Yes</option>
+                <option value="No">No</option>
+            </select>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:8px;">
+            <label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Delivery Radius</label>
+            <input type="text" name="delivery_radius" class="top-search" style="border-radius: var(--rounded-sm);">
+        </div>
+        <div style="display:flex; flex-direction:column; gap:8px;">
+            <label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Status *</label>
+            <select name="status" class="top-search" style="border-radius: var(--rounded-sm);" required>
+                <option value="Pending">Pending</option>
+                <option value="Verified">Verified</option>
+                <option value="Rejected">Rejected</option>
+                <option value="Suspended">Suspended</option>
+            </select>
+        </div>
+        <div style="grid-column:1/-1; margin-top:10px;"><h4 style="margin:0; font-size:15px; color:var(--hk-text-main, #101828);">Media & Documents</h4></div>
+        <div style="display:flex; flex-direction:column; gap:8px;">
+            <label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Pharmacy Logo</label>
+            <input type="file" name="pharmacy_logo" style="font-size: 13px;">
+        </div>
+        <div style="display:flex; flex-direction:column; gap:8px;">
+            <label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Pharmacy Photos</label>
+            <input type="file" name="pharmacy_photos" multiple style="font-size: 13px;">
+        </div>
+        <div style="display:flex; flex-direction:column; gap:8px;">
+            <label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Drug Licence *</label>
+            <input type="file" name="drug_licence" required style="font-size: 13px;">
+        </div>
+        <div style="display:flex; flex-direction:column; gap:8px;">
+            <label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Pharmacist Registration Certificate *</label>
+            <input type="file" name="pharmacist_registration_certificate" required style="font-size: 13px;">
+        </div>
+        <div style="display:flex; flex-direction:column; gap:8px;">
+            <label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Pharmacist Qualification Certificate</label>
+            <input type="file" name="pharmacist_qualification_certificate" style="font-size: 13px;">
+        </div>
+        <div style="display:flex; flex-direction:column; gap:8px;">
+            <label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Shop/Premises Proof *</label>
+            <input type="file" name="shop_proof" required style="font-size: 13px;">
+        </div>
+        <div style="display:flex; flex-direction:column; gap:8px;">
+            <label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Owner KYC *</label>
+            <input type="file" name="owner_kyc" required style="font-size: 13px;">
+        </div>
+        
+        <div style="grid-column:1 / -1; display:flex; justify-content:flex-end; gap:12px; margin-top:8px;">
+            <button type="button" style="padding:10px 18px; border:1px solid var(--hk-border, #cbd5e1); background:var(--hk-surface, #fff); border-radius:10px; cursor:pointer; color:var(--hk-text-main, #101828); font-weight:600;" onclick="document.getElementById('addPharmacyModalBox').style.display='none'">Cancel</button>
+            <button type="submit" style="padding:10px 18px; border:none; background:var(--hk-primary-blue, #2563eb); color:#fff; border-radius:10px; cursor:pointer; font-weight:600;">Save Pharmacy</button>
+        </div>
+      </form>
     </div>
-    <script>document.getElementById('addPharmacyBtn')?.addEventListener('click', () => document.getElementById('pharmacyModalBox').style.display='flex');</script>
+  </div>
+
+  <!-- ADD PHARMACIST MODAL -->
+  <div id="addPharmacistModalBox" style="display:none; position:fixed; inset:0; background:rgba(7,26,61,0.75); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); z-index:999999; align-items:center; justify-content:center; padding:20px; overflow-y:auto;">
+    <div style="width:min(720px, 100%); max-height:90vh; background:var(--hk-card-bg, #fff); border-radius:20px; box-shadow:0 24px 60px rgba(7,26,61,0.3); overflow:hidden; display:flex; flex-direction:column; border:1px solid var(--hk-border, #e2e8f0);">
+      <div style="display:flex; justify-content:space-between; align-items:center; padding:20px 26px; border-bottom:1px solid var(--hk-divider, #e2e8f0); flex-shrink:0; background:var(--hk-surface-soft, #f8faff);">
+        <div>
+          <h3 id="pharmacistModalTitle" style="margin:0; font-size:20px; font-weight:800; font-family:var(--font-heading); color:var(--hk-text-main, #0f172a);">Add Pharmacist</h3>
+          <p style="margin:2px 0 0; font-size:12.5px; color:var(--hk-text-muted, #64748b);">Enter the details for the pharmacist</p>
+        </div>
+        <button type="button" onclick="document.getElementById('addPharmacistModalBox').style.display='none'" style="border:none; background:transparent; font-size:24px; cursor:pointer; color:var(--hk-text-muted, #475569); line-height:1;">×</button>
+      </div>
+      <form id="addPharmacistForm" enctype="multipart/form-data" style="padding:24px 26px; display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:18px; overflow-y:auto; max-height:calc(90vh - 92px);">
+        <input type="hidden" id="edit_pharmacist_id" name="edit_pharmacist_id">
+        <div style="display:flex; flex-direction:column; gap:8px; grid-column:span 2;">
+            <label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Pharmacy (Shop Name) *</label>
+            <select name="pharmacy_name" class="top-search" style="border-radius: var(--rounded-sm);" required>
+                <option value="">Select Pharmacy...</option>
+            </select>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:8px;">
+            <label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Pharmacist Name *</label>
+            <input type="text" name="pharmacist_name" class="top-search" style="border-radius: var(--rounded-sm);" required>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:8px;">
+            <label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Registration Number *</label>
+            <input type="text" name="registration_number" class="top-search" style="border-radius: var(--rounded-sm);" required>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:8px;">
+            <label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Qualification *</label>
+            <select name="qualification" class="top-search" style="border-radius: var(--rounded-sm);" required>
+                <option value="D.Pharm">D.Pharm</option>
+                <option value="B.Pharm">B.Pharm</option>
+                <option value="Pharm.D">Pharm.D</option>
+            </select>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:8px;">
+            <label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">State Pharmacy Council *</label>
+            <input type="text" name="state_pharmacy_council" class="top-search" style="border-radius: var(--rounded-sm);" required>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:8px;">
+            <label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Contact Number *</label>
+            <input type="text" name="contact_number" class="top-search" style="border-radius: var(--rounded-sm);" required>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:8px;">
+            <label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Pharmacist Availability *</label>
+            <select name="availability" class="top-search" style="border-radius: var(--rounded-sm);" required>
+                <option value="Full Time">Full Time</option>
+                <option value="Part Time">Part Time</option>
+            </select>
+        </div>
+        
+        <div style="grid-column:1/-1; margin-top:10px;"><h4 style="margin:0; font-size:15px; color:var(--hk-text-main, #101828);">Documents</h4></div>
+        
+        <div style="display:flex; flex-direction:column; gap:8px;">
+            <label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Registration Certificate *</label>
+            <input type="file" name="registration_certificate_doc" required style="font-size: 13px;">
+        </div>
+        <div style="display:flex; flex-direction:column; gap:8px;">
+            <label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Pharmacist Certificate *</label>
+            <input type="file" name="pharmacist_certificate_doc" required style="font-size: 13px;">
+        </div>
+        <div style="display:flex; flex-direction:column; gap:8px;">
+            <label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Employment/Appointment Proof</label>
+            <input type="file" name="employment_proof" style="font-size: 13px;">
+        </div>
+        
+        <div style="grid-column:1 / -1; display:flex; justify-content:flex-end; gap:12px; margin-top:8px;">
+            <button type="button" style="padding:10px 18px; border:1px solid var(--hk-border, #cbd5e1); background:var(--hk-surface, #fff); border-radius:10px; cursor:pointer; color:var(--hk-text-main, #101828); font-weight:600;" onclick="document.getElementById('addPharmacistModalBox').style.display='none'">Cancel</button>
+            <button type="submit" style="padding:10px 18px; border:none; background:var(--hk-primary-blue, #2563eb); color:#fff; border-radius:10px; cursor:pointer; font-weight:600;">Save Pharmacist</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    document.getElementById('addPharmacyForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const submitBtn = this.querySelector('button[type="submit"]');
+        submitBtn.disabled = true;
+        submitBtn.innerText = 'Saving...';
+
+        try {
+            const formData = new FormData(this);
+            
+            const editId = document.getElementById('edit_pharmacy_id').value;
+            const url = editId ? '/api/update/vendor/pharmacy/' + editId : '/api/vendor/add-pharmacy';
+            const method = editId ? 'PUT' : 'POST';
+            
+            // Convert FormData to JSON since backend PUT expects JSON, or we can just send JSON.
+            // Wait, add-pharmacy might use FormData for files. Let's send FormData for both if PUT supports it.
+            // But PUT endpoint uses req.body. Let's send JSON for PUT.
+            let requestOptions = {};
+            if (editId) {
+                const jsonBody = {};
+                formData.forEach((value, key) => { jsonBody[key] = value; });
+                requestOptions = {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(jsonBody)
+                };
+            } else {
+                requestOptions = {
+                    method: 'POST',
+                    body: formData
+                };
+            }
+            
+            const response = await fetch(url, requestOptions);
+
+                
+            const result = await response.json();
+            
+            if (result.success) {
+                alert(result.message);
+                document.getElementById('addPharmacyModalBox').style.display = 'none';
+                this.reset();
+                if (typeof loadPharmacies === 'function') loadPharmacies();
+                if (typeof populatePharmacyDropdowns === 'function') populatePharmacyDropdowns();
+            } else {
+                alert(result.message || 'Failed to add pharmacy');
+            }
+        } catch (error) {
+            console.error('Error adding pharmacy:', error);
+            alert('An error occurred. Please try again.');
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.innerText = 'Save Pharmacy';
+        }
+    });
+
+    document.getElementById('addPharmacistForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const submitBtn = this.querySelector('button[type="submit"]');
+        submitBtn.disabled = true;
+        submitBtn.innerText = 'Saving...';
+
+        try {
+            const formData = new FormData(this);
+            
+            const editId = document.getElementById('edit_pharmacist_id').value;
+            const url = editId ? '/api/update/vendor/pharmacist/' + editId : '/api/vendor/add-pharmacist';
+            
+            let requestOptions = {};
+            if (editId) {
+                const jsonBody = {};
+                formData.forEach((value, key) => { jsonBody[key] = value; });
+                requestOptions = {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(jsonBody)
+                };
+            } else {
+                requestOptions = {
+                    method: 'POST',
+                    body: formData
+                };
+            }
+            
+            const response = await fetch(url, requestOptions);
+
+                
+            const result = await response.json();
+            
+            if (result.success) {
+                alert(result.message);
+                document.getElementById('addPharmacistModalBox').style.display = 'none';
+                this.reset();
+                if (typeof loadPharmacists === 'function') loadPharmacists();
+            } else {
+                alert(result.message || 'Failed to add pharmacist');
+            }
+        } catch (error) {
+            console.error('Error adding pharmacist:', error);
+            alert('An error occurred. Please try again.');
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.innerText = 'Save Pharmacist';
+        }
+    });
+  </script>
 </body>
 </html>
 

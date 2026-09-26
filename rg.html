@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -27,11 +27,11 @@
     </script>
     
     <!-- Stylesheets -->
-    <link rel="stylesheet" type="text/css" href="/css/base.css?v=1790144849">
-    <link rel="stylesheet" type="text/css" href="/css/modern-ui.css?v=1790144849">
-    <link rel="stylesheet" href="/css/theme-system.css?v=1790144849">
-    <link rel="stylesheet" href="/css/mobile-ui.css?v=1790144849">
-    <link rel="stylesheet" href="/css/rg-animations.css?v=1790144849">
+    <link rel="stylesheet" type="text/css" href="/css/base.css?v=1790154050">
+    <link rel="stylesheet" type="text/css" href="/css/modern-ui.css?v=1790154050">
+    <link rel="stylesheet" href="/css/theme-system.css?v=1790154050">
+    <link rel="stylesheet" href="/css/mobile-ui.css?v=1790154050">
+    <link rel="stylesheet" href="/css/rg-animations.css?v=1790154050">
 
     <style>
         /* ═════════════════════════════════════════════════════════════════════
@@ -1163,6 +1163,11 @@
                 <h2 class="auth-card-title">Welcome back</h2>
                 <p class="auth-card-subtitle">Sign in to manage your Hospikare partner dashboard.</p>
 
+                <div class="error-message" id="loginErrorMsg" style="display: none; background: rgba(239, 68, 68, 0.1); color: #ef4444; padding: 12px; border-radius: 8px; margin-bottom: 20px; font-size: 14px; align-items: center; gap: 8px;">
+                    <i class="fa-solid fa-circle-exclamation"></i>
+                    <span id="loginErrorText" style="flex: 1;"></span>
+                </div>
+
                 <!-- Success Alert -->
                 <div class="success-message" id="loginSuccess" role="alert">
                     <i class="fa-solid fa-circle-check"></i>
@@ -1170,7 +1175,7 @@
                 </div>
 
                 <!-- Login Form -->
-                <form class="auth-form" id="loginFormElement" novalidate>
+                <form class="auth-form" id="loginFormElement" novalidate onsubmit="return false;">
                     <!-- Email / Contact -->
                     <div class="form-group">
                         <label for="loginEmail">Email or Phone</label>
@@ -1647,13 +1652,10 @@
             // Reset errors
             emailInput?.closest('.form-group')?.classList.remove('error');
             passwordInput?.closest('.form-group')?.classList.remove('error');
+            const errorBox = document.getElementById('loginErrorMsg');
+            if (errorBox) errorBox.style.display = 'none';
 
             if (!email || !password) {
-                if (formBox) {
-                    formBox.classList.remove('shake-error');
-                    void formBox.offsetWidth; // Force reflow
-                    formBox.classList.add('shake-error');
-                }
                 if (!email && emailInput) emailInput.closest('.form-group')?.classList.add('error');
                 if (!password && passwordInput) passwordInput.closest('.form-group')?.classList.add('error');
                 return;
@@ -1693,22 +1695,24 @@
                     return;
                 }
 
-                if (formBox) {
-                    formBox.classList.remove('shake-error');
-                    void formBox.offsetWidth;
-                    formBox.classList.add('shake-error');
+                const errorBox = document.getElementById('loginErrorMsg');
+                if (errorBox) {
+                    errorBox.style.display = 'flex';
+                    document.getElementById('loginErrorText').innerText = result.message || 'Login failed. Please check your credentials.';
+                } else {
+                    alert(result.message || 'Login failed. Please check your credentials.');
                 }
-                alert(result.message || 'Login failed. Please check your credentials.');
                 button.disabled = false;
                 button.innerHTML = originalButtonHtml;
             } catch (error) {
                 console.error('Login error:', error);
-                if (formBox) {
-                    formBox.classList.remove('shake-error');
-                    void formBox.offsetWidth;
-                    formBox.classList.add('shake-error');
+                const errorBox = document.getElementById('loginErrorMsg');
+                if (errorBox) {
+                    errorBox.style.display = 'flex';
+                    document.getElementById('loginErrorText').innerText = 'Server connection error. Please try again.';
+                } else {
+                    alert('Server connection error. Please try again.');
                 }
-                alert('Server connection error. Please try again.');
                 button.disabled = false;
                 button.innerHTML = originalButtonHtml;
             }
