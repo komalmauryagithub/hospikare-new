@@ -4454,6 +4454,7 @@ app.post("/api/product-login", async (req, res) => {
       full_name: user.full_name,
       email: user.email,
       phone: user.phone,
+      profile_photo: user.profile_photo,
     };
     req.session.save((err) => {
       if (err) {
@@ -4470,6 +4471,7 @@ app.post("/api/product-login", async (req, res) => {
           full_name: user.full_name,
           email: user.email,
           phone: user.phone,
+          profile_photo: user.profile_photo,
         },
       });
     });

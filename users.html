@@ -15,12 +15,12 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
-    <link rel="stylesheet" href="/css/theme-system.css?v=1790154050">
-    <link rel="stylesheet" href="/css/base.css?v=1790154050">
-    <link rel="stylesheet" href="/css/layout.css?v=1790154050">
-    <link rel="stylesheet" href="/css/components.css?v=1790154050">
-    <link rel="stylesheet" href="/css/users.css?v=1790154050">
-    <link rel="stylesheet" href="/css/mobile-ui.css?v=1790154050">
+    <link rel="stylesheet" href="/css/theme-system.css?v=1790673061">
+    <link rel="stylesheet" href="/css/base.css?v=1790673061">
+    <link rel="stylesheet" href="/css/layout.css?v=1790673061">
+    <link rel="stylesheet" href="/css/components.css?v=1790673061">
+    <link rel="stylesheet" href="/css/users.css?v=1790673061">
+    <link rel="stylesheet" href="/css/mobile-ui.css?v=1790673061">
 </head>
 <body>
 
@@ -29,15 +29,15 @@
             <img src="/assets/logo.png" alt="HospiKare Logo" class="logo-img">
         </div>
         <div class="nav-links">
-            <a href="#heroSection">Home</a>
-            <a href="#featuredHospitalSection">Hospitals</a>
-            <a href="#ambulanceSection">Ambulance</a>
-            <a href="#medicineSection">Pharmacy</a>
-            <a href="#insuranceSection">Insurance</a>
-            <a href="#insuranceClaimsSection">Claims</a>
-            <a href="#labsSection">Lab Reports</a>
-            <a href="#equipmentSection">Medical Equipments</a>
-            <a href="act.html" style="font-weight: 700; color: #1E40AF;">My Orders</a>
+            <a href="users.html#heroSection">Home</a>
+            <a href="users.html#featuredHospitalSection">Hospitals</a>
+            <a href="users.html#ambulanceSection">Ambulance</a>
+            <a href="users.html#medicineSection">Pharmacy</a>
+            <a href="users.html#insuranceSection">Insurance</a>
+            <a href="users.html#insuranceClaimsSection">Claims</a>
+            <a href="users.html#labsSection">Lab Reports</a>
+            <a href="users.html#equipmentSection">Medical Equipments</a>
+            <a href="act.html">My Orders</a>
         </div>
         <div class="navRight flex items-center gap-4">
             
@@ -298,7 +298,7 @@
         </div>
     </section>
 
-    <footer class="footer" style="background: var(--hk-blue); color: white; padding: var(--space-16) 0 var(--space-8); margin-top: var(--space-16);">
+    <footer class="footer" style="background: #0f172a; color: white; padding: 5rem 0 2rem; margin-top: 5rem; border-top: 1px solid #1e293b;">
         <div class="container grid grid-cols-4" style="gap: var(--space-8); margin-bottom: var(--space-12);">
             <!-- Logo + About -->
             <div>
@@ -345,7 +345,24 @@
         </div>
     </footer>
 
-    <div class="modal" id="authOverlay">
+    
+    <!-- Profile Modal -->
+    <div class="modal" id="userProfileModal">
+        <div class="modal-content" style="position: relative; max-width: 350px; text-align: center; border-radius: 24px; padding: 40px 24px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);">
+            <span class="close-modal" id="closeProfileModal" style="position: absolute; top: 16px; right: 20px; font-size: 24px; cursor: pointer; border: none; background: transparent; padding: 0;">&times;</span>
+            <div id="profileModalPicContainer" style="margin: 0 auto 20px auto; width: 120px; height: 120px; border-radius: 50%; padding: 4px; background: linear-gradient(135deg, #3b82f6, #8b5cf6);">
+                <img id="profileModalImg" src="" alt="Profile" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%; border: 4px solid white;">
+            </div>
+            <h2 id="profileModalName" style="margin: 0 0 4px 0; font-size: 22px; font-weight: 800; color: #0f172a;">User Name</h2>
+            <p id="profileModalEmail" style="margin: 0 0 24px 0; font-size: 14px; color: #64748b; font-weight: 500;">user@example.com</p>
+            <div style="display: flex; gap: 12px; flex-direction: column;">
+                <button class="btn btn-primary" onclick="window.location.href='act.html'" style="width: 100%; border-radius: 12px; height: 44px; font-weight: 700; background: #f8fafc; color: #0f172a; border: 1px solid #e2e8f0; box-shadow: none; cursor:pointer;">My Orders / Activity</button>
+                <button class="btn btn-primary" id="modalLogoutBtn" style="width: 100%; border-radius: 12px; height: 44px; font-weight: 700; background: #fee2e2; color: #dc2626; border: none; box-shadow: none; cursor:pointer;">Logout</button>
+            </div>
+        </div>
+    </div>
+
+<div class="modal" id="authOverlay">
         <div class="modal-content" style="max-width: 500px;">
             <div class="modal-header">
                 <h2>Account Access</h2>
@@ -396,7 +413,10 @@
                                 <option>AB+</option><option>AB-</option><option>O+</option><option>O-</option>
                             </select>
                         </div>
-                        <div class="input-group"><input type="file" id="regProfilePhoto" class="hk-input" style="padding-top: 10px;"></div>
+                        <div class="input-group" style="position: relative;">
+                            <label style="position: absolute; top: -8px; left: 10px; background: white; padding: 0 5px; font-size: 11px; color: #64748b; font-weight: 600;">Profile Picture</label>
+                            <input type="file" id="regProfilePhoto" class="hk-input" style="padding-top: 12px;" accept="image/*">
+                        </div>
                         
                         <div class="input-group" style="grid-column: span 2;"><textarea id="regAddress" class="hk-input" placeholder="Address" rows="2" required></textarea></div>
                         <div class="input-group"><input type="text" id="regCity" class="hk-input" placeholder="City" required></div>
@@ -787,7 +807,7 @@
             modal.style.display = 'none';
         }
     </script>
-    <script src="/js/users.js?v=1790154050"></script>
+    <script src="/js/users.js?v=1790673061"></script>
     <script src="/js/main.js"></script>
     <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
     <!-- Floating Emergency Button -->
