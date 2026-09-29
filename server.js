@@ -2623,6 +2623,118 @@ app.get("/api/hospital/availability", async (req, res) => {
 });
 
 //13
+
+app.post(
+  "/api/edit/hospital/:id",
+  upload.fields([
+    { name: "hospital_images", maxCount: 100 },
+    { name: "room_images", maxCount: 100 },
+    { name: "hospital_reg_certificate", maxCount: 1 },
+    { name: "shop_license", maxCount: 1 },
+    { name: "medical_council_registration", maxCount: 1 },
+    { name: "electricity_bill", maxCount: 1 },
+    { name: "bank_cancelled_cheque", maxCount: 1 }
+  ]),
+  async (req, res) => {
+    try {
+      const body = req.body;
+      const hospitalId = req.params.id;
+      if (!req.session.user) return res.json({ success: false, message: "Unauthorized" });
+      const userId = req.session.user.id;
+
+      // Ensure hospital belongs to user
+      const [check] = await pool.query(`SELECT id, hospital_images, rooms FROM hospitals WHERE id = ? AND users_id = ?`, [hospitalId, userId]);
+      if (check.length === 0) return res.json({ success: false, message: "Hospital not found" });
+
+      let hospitalImages = req.files["hospital_images"]?.map((file) => file.filename) || [];
+      if (hospitalImages.length === 0) {
+          hospitalImages = JSON.parse(check[0].hospital_images || "[]");
+      }
+
+      const roomImages = req.files["room_images"]?.map((file) => file.filename) || [];
+      let imagePointer = 0;
+      let parsedRooms = [];
+      try { parsedRooms = JSON.parse(body.rooms || "[]"); } catch(e){}
+      
+      const oldRooms = JSON.parse(check[0].rooms || "[]");
+      parsedRooms.forEach((room, idx) => {
+        const count = parseInt(room.imageCount) || 0;
+        if (count > 0) {
+            room.images = roomImages.slice(imagePointer, imagePointer + count);
+            imagePointer += count;
+        } else {
+            // retain old images if present
+            room.images = oldRooms[idx]?.images || [];
+        }
+      });
+      const finalRoomsJson = JSON.stringify(parsedRooms);
+
+      let updates = [];
+      let values = [];
+      const fields = ['hospital_name', 'address', 'facilities', 'hospital_type', 'hospital_ownership', 'hospital_registration_number'];
+      fields.forEach(f => {
+          if (body[f] !== undefined) {
+              updates.push(`${f} = ?`);
+              values.push(body[f]);
+          }
+      });
+      
+      updates.push(`rooms = ?`);
+      values.push(finalRoomsJson);
+      
+      updates.push(`hospital_images = ?`);
+      values.push(JSON.stringify(hospitalImages));
+
+      const fileFields = ['hospital_reg_certificate', 'shop_license', 'medical_council_registration', 'electricity_bill'];
+      fileFields.forEach(ff => {
+          if (req.files && req.files[ff] && req.files[ff][0]) {
+              updates.push(`${ff} = ?`);
+              values.push(req.files[ff][0].filename);
+          }
+      });
+
+      values.push(hospitalId, userId);
+      await pool.query(`UPDATE hospitals SET ${updates.join(', ')} WHERE id = ? AND users_id = ?`, values);
+
+      // Handle doctors
+      let doctorsArray = [];
+      try { doctorsArray = JSON.parse(body.doctors || "[]"); } catch(e) {}
+      
+      await pool.query(`DELETE FROM hospital_doctors WHERE hospital_id = ?`, [hospitalId]);
+      
+      if (doctorsArray.length > 0) {
+        for (const doc of doctorsArray) {
+          await pool.query(
+            `INSERT INTO hospital_doctors (hospital_id, hospital_name, name, speciality, experience, qualification, available_days, fees, status, gender, dob_age, mobile, email, department, available_time, medical_reg_no) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [
+              hospitalId,
+              body.hospital_name || "",
+              doc.doctor_name || doc.name || "",
+              (doc.specialization || doc.speciality || []).toString() || "",
+              doc.experience || "",
+              doc.qualification || "",
+              doc.available_days || "",
+              doc.consultation_fee || doc.fees || "",
+              doc.status || "Active",
+              doc.gender || "",
+              doc.dob_age || "",
+              doc.mobile || "",
+              doc.email || "",
+              doc.department || "",
+              doc.available_time || "",
+              doc.medical_reg_no || ""
+            ]
+          );
+        }
+      }
+      res.json({ success: true, message: "Hospital Updated" });
+    } catch (error) {
+      console.log(error);
+      res.json({ success: false, message: "Server error" });
+    }
+  }
+);
+
 app.post(
   "/api/add/hospital",
   upload.fields([
@@ -3338,29 +3450,21 @@ app.post(
       const addressProof = req.files.policy_doc
         ? req.files.policy_doc[0].filename
         : null;
+      let finalCompName = safeString(comp_name);
+      if (!finalCompName && req.body.company_id) {
+        const [cRows] = await pool.query('SELECT company_name FROM insurance_companies WHERE id = ?', [req.body.company_id]);
+        if (cRows.length > 0) finalCompName = cRows[0].company_name;
+      }
       await pool.query(
         `INSERT INTO insurances(
-                    users_id, comp_name, comp_type, description, irdai, comp_pan, gst, incorp_cert, offc_add,
-                    add_proof, claim_type, doc_req, claim_time, cust_sup_num, email_sup)
-                VALUES
-                (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) )`,
+            users_id, company_id, comp_name, comp_type, description, irdai, comp_pan, gst, incorp_cert, offc_add,
+            add_proof, claim_type, doc_req, claim_time, cust_sup_num, email_sup
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
         [
-          userId,
-          body.hospital_id || null,
-          safeString(comp_name),
-          safeString(comp_type),
-          safeString(ins_description),
-          safeString(irdai_number),
-          safeString(comp_pan),
-          safeString(gst_number),
-          regDoc,
-          safeString(ins_address),
-          addressProof,
-          safeString(claim_type),
-          safeString(required_docs),
-          safeString(claim_approval_time),
-          safeString(contact_number),
-          safeString(ins_email),
+            userId, req.body.company_id || null, finalCompName, safeString(comp_type), safeString(ins_description), 
+            safeString(irdai_number), safeString(comp_pan), safeString(gst_number), regDoc, safeString(ins_address), 
+            addressProof, safeString(claim_type), safeString(required_docs), safeString(claim_approval_time), 
+            safeString(contact_number), safeString(ins_email)
         ],
       );
       res.json({
@@ -3376,6 +3480,56 @@ app.post(
     }
   },
 );
+
+// Edit Insurance Plan
+app.put("/api/edit/insurance/:id", upload.fields([
+  { name: "reg_doc", maxCount: 1 },
+  { name: "policy_doc", maxCount: 1 }
+]), async (req, res) => {
+  try {
+    if (!req.session.user) return res.json({ success: false, message: "Please Login First" });
+    const userId = req.session.user.id;
+    const { id } = req.params;
+    const b = req.body;
+    const regDoc = req.files && req.files.reg_doc ? req.files.reg_doc[0].filename : null;
+    const policyDoc = req.files && req.files.policy_doc ? req.files.policy_doc[0].filename : null;
+
+    let editCompName = b.comp_name || null;
+    if (!editCompName && b.company_id) {
+        const [cRows] = await pool.query('SELECT company_name FROM insurance_companies WHERE id = ?', [b.company_id]);
+        if (cRows.length > 0) editCompName = cRows[0].company_name;
+    }
+
+    await pool.query(`UPDATE insurances SET
+      company_id = ?, comp_name = ?, comp_type = ?, description = ?, irdai = ?, comp_pan = ?, gst = ?,
+      offc_add = ?, claim_type = ?, doc_req = ?, claim_time = ?, cust_sup_num = ?, email_sup = ?,
+      incorp_cert = COALESCE(?, incorp_cert),
+      add_proof = COALESCE(?, add_proof)
+      WHERE id = ? AND users_id = ?`, [
+      b.company_id || null, editCompName, b.comp_type || null, b.ins_description || null,
+      b.irdai_number || null, b.comp_pan || null, b.gst_number || null,
+      b.ins_address || null, b.claim_type || null, b.required_docs || null,
+      b.claim_approval_time || null, b.contact_number || null, b.ins_email || null,
+      regDoc, policyDoc, id, userId
+    ]);
+    res.json({ success: true, message: "Insurance Plan Updated Successfully" });
+  } catch (error) {
+    console.error(error);
+    res.json({ success: false, message: "Server Error" });
+  }
+});
+
+// Delete Insurance Plan
+app.delete("/api/delete/insurance/:id", async (req, res) => {
+  try {
+    if (!req.session.user) return res.json({ success: false, message: "Please Login First" });
+    await pool.query("DELETE FROM insurances WHERE id = ? AND users_id = ?", [req.params.id, req.session.user.id]);
+    res.json({ success: true, message: "Insurance Plan Deleted Successfully" });
+  } catch (error) {
+    console.error(error);
+    res.json({ success: false, message: "Server Error" });
+  }
+});
 
 //22
 app.get("/api/labs", async (req, res) => {
@@ -3847,10 +4001,11 @@ app.post(
                     delivery_charge,
                     thumbnail_image,
                     product_manual,
-                    product_video
+                    product_video,
+                    supplier_id
                 )
                 VALUES
-                (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 `,
         [
           vendorId,
@@ -3872,6 +4027,7 @@ app.post(
           req.files["thumbnail_image"]?.[0]?.filename || null,
           req.files["product_manual"]?.[0]?.filename || null,
           req.files["product_video"]?.[0]?.filename || null,
+          body.supplier_id || null
         ],
       );
       res.json({
@@ -3892,10 +4048,11 @@ app.get("/api/equipment-products", async (req, res) => {
     const vendorId = req.session.user.id;
     const [products] = await pool.query(
       `
-                    SELECT *
+                    SELECT med_eq_prd.*, equipment_suppliers.supplier_name
                     FROM med_eq_prd
-                    WHERE vendor_id = ?
-                    ORDER BY product_id DESC
+                    LEFT JOIN equipment_suppliers ON med_eq_prd.supplier_id = equipment_suppliers.id
+                    WHERE med_eq_prd.vendor_id = ?
+                    ORDER BY med_eq_prd.product_id DESC
                     `,
       [vendorId],
     );
@@ -3908,6 +4065,207 @@ app.get("/api/equipment-products", async (req, res) => {
     res.json({
       success: false,
     });
+  }
+});
+
+
+app.delete("/api/delete/equipment-product/:id", async (req, res) => {
+  try {
+    if(!req.session.user) return res.json({success: false});
+    const vendorId = req.session.user.id;
+    const { id } = req.params;
+    await pool.query(`DELETE FROM med_eq_prd WHERE product_id = ? AND vendor_id = ?`, [id, vendorId]);
+    res.json({ success: true });
+  } catch (error) {
+    console.log(error);
+    res.json({ success: false });
+  }
+});
+
+app.post("/api/edit/equipment-product/:id", upload.fields([
+    { name: "thumbnail_image", maxCount: 1 },
+    { name: "product_manual", maxCount: 1 },
+    { name: "product_video", maxCount: 1 }
+]), async (req, res) => {
+  try {
+    if(!req.session.user) return res.json({success: false});
+    const vendorId = req.session.user.id;
+    const { id } = req.params;
+    const body = req.body;
+    
+    // Build update query dynamically
+    let updates = [];
+    let values = [];
+    
+    const fields = [
+        "product_name", "brand_name", "category", "sub_category", "model_number", 
+        "manufacturer", "country_of_origin", "product_description", "mrp", 
+        "selling_price", "stock_quantity", "stock_status", "warranty_period", 
+        "delivery_available", "delivery_charge", "supplier_id"
+    ];
+    
+    fields.forEach(f => {
+        if(body[f] !== undefined) {
+            updates.push(`${f} = ?`);
+            values.push(body[f] || null);
+        }
+    });
+    
+    if (req.files) {
+        if (req.files["thumbnail_image"]) {
+            updates.push(`thumbnail_image = ?`);
+            values.push(req.files["thumbnail_image"][0].filename);
+        }
+        if (req.files["product_manual"]) {
+            updates.push(`product_manual = ?`);
+            values.push(req.files["product_manual"][0].filename);
+        }
+        if (req.files["product_video"]) {
+            updates.push(`product_video = ?`);
+            values.push(req.files["product_video"][0].filename);
+        }
+    }
+    
+    if(updates.length > 0) {
+        values.push(id, vendorId);
+        await pool.query(`UPDATE med_eq_prd SET ${updates.join(', ')} WHERE product_id = ? AND vendor_id = ?`, values);
+    }
+    
+    res.json({ success: true });
+  } catch (error) {
+    console.log(error);
+    res.json({ success: false });
+  }
+});
+
+
+app.post("/api/edit/equipment-supplier/:id", upload.fields([
+    { name: "supplier_logo", maxCount: 1 },
+    { name: "gst_cert", maxCount: 1 },
+    { name: "business_reg_cert", maxCount: 1 },
+    { name: "license_reg_doc", maxCount: 1 },
+    { name: "supplier_auth_doc", maxCount: 1 },
+    { name: "cancelled_cheque", maxCount: 1 }
+]), async (req, res) => {
+  try {
+    if(!req.session.user) return res.json({success: false});
+    const vendorId = req.session.user.id;
+    const { id } = req.params;
+    const body = req.body;
+    
+    let updates = [];
+    let values = [];
+    
+    const fields = [
+        "shop_company_name", "supplier_name", "owner_name", "contact_person",
+        "supplier_type", "mobile_number", "alternate_mobile", "email", "full_address", "city", "state", "pincode",
+        "google_maps_location", "equipment_categories", "brands_available", "equipment_available",
+        "new_used_equipment", "warranty_available", "installation_service", "after_sales_service",
+        "gst_number", "business_reg_number", "license_registration", "account_holder_name",
+        "bank_name", "account_number", "ifsc_code", "branch_name", "account_type", "status", "verification_status"
+    ];
+    
+    fields.forEach(f => {
+        if(body[f] !== undefined) {
+            updates.push(`${f} = ?`);
+            values.push(body[f] || null);
+        }
+    });
+    
+    if (req.files) {
+        Object.keys(req.files).forEach(key => {
+            updates.push(`${key} = ?`);
+            values.push(req.files[key][0].filename);
+        });
+    }
+    
+    if(updates.length > 0) {
+        values.push(id, vendorId);
+        await pool.query(`UPDATE equipment_suppliers SET ${updates.join(', ')} WHERE id = ? AND vendor_id = ?`, values);
+    }
+    
+    res.json({ success: true });
+  } catch (error) {
+    console.log(error);
+    res.json({ success: false });
+  }
+});
+
+// Equipment Suppliers APIs
+app.delete("/api/delete/equipment-supplier/:id", async (req, res) => {
+  try {
+    if(!req.session.user) return res.json({success: false});
+    const vendorId = req.session.user.id;
+    const { id } = req.params;
+    await pool.query(`DELETE FROM equipment_suppliers WHERE id = ? AND vendor_id = ?`, [id, vendorId]);
+    res.json({ success: true });
+  } catch (error) {
+    console.log(error);
+    res.json({ success: false });
+  }
+});
+
+app.get("/api/equipment-suppliers", async (req, res) => {
+  try {
+    if(!req.session.user) return res.json({success: false});
+    const vendorId = req.session.user.id;
+    const [suppliers] = await pool.query(
+      `SELECT * FROM equipment_suppliers WHERE vendor_id = ? ORDER BY id DESC`,
+      [vendorId]
+    );
+    res.json({ success: true, suppliers });
+  } catch (error) {
+    console.log(error);
+    res.json({ success: false });
+  }
+});
+
+app.post("/api/add/equipment-supplier", upload.fields([
+    { name: "supplier_logo", maxCount: 1 },
+    { name: "gst_cert", maxCount: 1 },
+    { name: "business_reg_cert", maxCount: 1 },
+    { name: "license_reg_doc", maxCount: 1 },
+    { name: "supplier_auth_doc", maxCount: 1 },
+    { name: "cancelled_cheque", maxCount: 1 }
+]), async (req, res) => {
+  try {
+    if(!req.session.user) return res.json({success: false});
+    const vendorId = req.session.user.id;
+    const body = req.body;
+    
+    let files = {};
+    if (req.files) {
+        Object.keys(req.files).forEach(key => {
+            files[key] = req.files[key][0].filename;
+        });
+    }
+
+    await pool.query(
+        `INSERT INTO equipment_suppliers (
+            vendor_id, shop_company_name, supplier_name, owner_name, contact_person,
+            supplier_type, mobile_number, alternate_mobile, email, full_address, city, state, pincode,
+            google_maps_location, equipment_categories, brands_available, equipment_available,
+            new_used_equipment, warranty_available, installation_service, after_sales_service,
+            gst_number, business_reg_number, license_registration, account_holder_name,
+            bank_name, account_number, ifsc_code, branch_name, account_type, status, verification_status,
+            supplier_logo, gst_cert, business_reg_cert, license_reg_doc, supplier_auth_doc, cancelled_cheque
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+            vendorId, body.shop_company_name, body.supplier_name, body.owner_name, body.contact_person,
+            body.supplier_type, body.mobile_number, body.alternate_mobile, body.email, body.full_address, body.city, body.state, body.pincode,
+            body.google_maps_location, body.equipment_categories, body.brands_available, body.equipment_available,
+            body.new_used_equipment, body.warranty_available, body.installation_service, body.after_sales_service,
+            body.gst_number, body.business_reg_number, body.license_registration, body.account_holder_name,
+            body.bank_name, body.account_number, body.ifsc_code, body.branch_name, body.account_type, 
+            body.status || 'active', body.verification_status || 'Pending',
+            files.supplier_logo || null, files.gst_cert || null, files.business_reg_cert || null,
+            files.license_reg_doc || null, files.supplier_auth_doc || null, files.cancelled_cheque || null
+        ]
+    );
+    res.json({ success: true });
+  } catch (error) {
+    console.log(error);
+    res.json({ success: false });
   }
 });
 
@@ -8789,7 +9147,104 @@ async function startServer() {
     console.error("Insurance claim table setup failed:", error.message);
   }
 
-  app.listen(PORT, () => {
+  
+// --- INSURANCE COMPANIES ROUTES ---
+app.get('/api/vendor/insurance-companies', async (req, res) => {
+    try {
+        if (!req.session.user) return res.json({ success: false, message: 'Unauthorized' });
+        const [rows] = await pool.query('SELECT * FROM insurance_companies WHERE users_id = ?', [req.session.user.id]);
+        res.json({ success: true, data: rows });
+    } catch (e) {
+        console.error(e);
+        res.json({ success: false, message: 'Server error' });
+    }
+});
+
+app.get('/api/all-insurance-companies', async (req, res) => {
+    try {
+        const [rows] = await pool.query('SELECT id, company_name FROM insurance_companies');
+        res.json({ success: true, data: rows });
+    } catch (e) {
+        console.error(e);
+        res.json({ success: false, message: 'Server error' });
+    }
+});
+
+app.post('/api/vendor/add-insurance-company', upload.fields([
+    { name: 'company_registration_cert', maxCount: 1 },
+    { name: 'irdai_registration', maxCount: 1 },
+    { name: 'authorization_doc', maxCount: 1 }
+]), async (req, res) => {
+    try {
+        if (!req.session.user) return res.json({ success: false, message: 'Unauthorized' });
+        const b = req.body;
+        const cert1 = req.files && req.files.company_registration_cert ? req.files.company_registration_cert[0].filename : null;
+        const cert2 = req.files && req.files.irdai_registration ? req.files.irdai_registration[0].filename : null;
+        const cert3 = req.files && req.files.authorization_doc ? req.files.authorization_doc[0].filename : null;
+
+        await pool.query(`INSERT INTO insurance_companies (
+            users_id, company_name, company_type, contact_person, mobile_number, email, website,
+            full_address, city, state, pincode, insurance_tpa_name, policy_types, cashless_available,
+            claim_support, network_hospitals, status, verification_status,
+            company_registration_cert, irdai_registration, authorization_doc
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, [
+            req.session.user.id, b.company_name, b.company_type || null, b.contact_person || null, b.mobile_number || null, b.email || null, b.website || null,
+            b.full_address || null, b.city || null, b.state || null, b.pincode || null, b.insurance_tpa_name || null, b.policy_types || null, b.cashless_available || null,
+            b.claim_support || null, b.network_hospitals ? parseInt(b.network_hospitals) || null : null, b.status || 'Active', b.verification_status || 'Pending',
+            cert1, cert2, cert3
+        ]);
+        res.json({ success: true, message: 'Insurance Company added successfully!' });
+    } catch (e) {
+        console.error(e);
+        res.json({ success: false, message: 'Server error' });
+    }
+});
+
+app.put('/api/vendor/edit-insurance-company/:id', upload.fields([
+    { name: 'company_registration_cert', maxCount: 1 },
+    { name: 'irdai_registration', maxCount: 1 },
+    { name: 'authorization_doc', maxCount: 1 }
+]), async (req, res) => {
+    try {
+        if (!req.session.user) return res.json({ success: false, message: 'Unauthorized' });
+        const b = req.body;
+        const cert1 = req.files && req.files.company_registration_cert ? req.files.company_registration_cert[0].filename : null;
+        const cert2 = req.files && req.files.irdai_registration ? req.files.irdai_registration[0].filename : null;
+        const cert3 = req.files && req.files.authorization_doc ? req.files.authorization_doc[0].filename : null;
+
+        await pool.query(`UPDATE insurance_companies SET 
+            company_name = ?, company_type = ?, contact_person = ?, mobile_number = ?, email = ?, website = ?,
+            full_address = ?, city = ?, state = ?, pincode = ?, insurance_tpa_name = ?, policy_types = ?, 
+            cashless_available = ?, claim_support = ?, network_hospitals = ?, status = ?, verification_status = ?,
+            company_registration_cert = COALESCE(?, company_registration_cert),
+            irdai_registration = COALESCE(?, irdai_registration),
+            authorization_doc = COALESCE(?, authorization_doc)
+            WHERE id = ? AND users_id = ?`, [
+            b.company_name, b.company_type || null, b.contact_person || null, b.mobile_number || null, b.email || null, b.website || null,
+            b.full_address || null, b.city || null, b.state || null, b.pincode || null, b.insurance_tpa_name || null, b.policy_types || null, 
+            b.cashless_available || null, b.claim_support || null, b.network_hospitals ? parseInt(b.network_hospitals) || null : null, b.status || 'Active', b.verification_status || 'Pending',
+            cert1, cert2, cert3, req.params.id, req.session.user.id
+        ]);
+        res.json({ success: true, message: 'Insurance Company updated successfully!' });
+    } catch (e) {
+        console.error(e);
+        res.json({ success: false, message: 'Server error' });
+    }
+});
+
+app.delete('/api/vendor/delete-insurance-company/:id', async (req, res) => {
+    try {
+        if (!req.session.user) return res.json({ success: false });
+        await pool.query('DELETE FROM insurance_companies WHERE id = ? AND users_id = ?', [req.params.id, req.session.user.id]);
+        res.json({ success: true, message: 'Deleted successfully' });
+    } catch (e) {
+        console.error(e);
+        res.json({ success: false, message: 'Server error' });
+    }
+});
+// --- END INSURANCE COMPANIES ROUTES ---
+
+app.listen(PORT, () => {
     console.log(`Server running on port : ${PORT}`);
   });
 }

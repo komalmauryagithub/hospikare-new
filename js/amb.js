@@ -432,15 +432,37 @@ async function fillProfileForm(profile, details = {}) {
     const ifscField = document.getElementById("profileIfsc");
 
     if (nameField) nameField.value = profile.name || "";
-    if (emailField) emailField.value = profile.emailorcontact || "";
+    if (emailField) emailField.value = profile.email || profile.emailorcontact || "";
     if (userTypeField && profile.users_type) userTypeField.value = profile.users_type;
     if (bankField) bankField.value = profile.bank_account || "";
     if (ifscField) ifscField.value = profile.ifsc || "";
 
+    const form = document.getElementById('vendorProfileForm');
+    if (form) {
+        const profileMap = {
+            'company_name': profile.company_name,
+            'name': profile.name,
+            'contact_number': profile.contact_number,
+            'email': profile.email || profile.emailorcontact,
+            'business_address': profile.business_address,
+            'bank_account': profile.bank_account,
+            'ifsc': profile.ifsc,
+            'business_reg_number': profile.business_reg_number,
+            'service_area': profile.service_area,
+            'service_24x7': profile.service_24x7
+        };
+        for (const [key, val] of Object.entries(profileMap)) {
+            const input = form.querySelector('[name="' + key + '"]');
+            if (input && input.type !== 'file') {
+                input.value = val || "";
+            }
+        }
+    }
+
     if (details) {
         for (const [key, value] of Object.entries(details)) {
             const input = document.querySelector('#vendorProfileForm [name="' + key + '"]');
-            if (input && input.type !== 'file') {
+            if (input && input.type !== 'file' && !input.value) {
                 input.value = value || "";
             }
         }
@@ -470,7 +492,7 @@ async function loadUserProfile(){
             const profileNameEl = document.querySelector('.profile-name');
             if (profileNameEl) profileNameEl.innerText = vendorName;
 
-            const isCompleted = Boolean(result.user?.vendor_profile_completed);
+            const isCompleted = Number(result.user?.vendor_profile_completed) === 1;
             const triggerText = document.getElementById('profileTriggerText');
             const triggerIcon = document.getElementById('profileSectionTrigger')?.querySelector('i');
             if (triggerText) {
@@ -2099,10 +2121,12 @@ async function openProfileModal() {
             if (form.elements['service_area']) form.elements['service_area'].value = user.service_area || '';
             if (form.elements['service_24x7']) form.elements['service_24x7'].value = user.service_24x7 || 'Yes';
             if (form.elements['business_address']) form.elements['business_address'].value = user.business_address || '';
+            if (form.elements['bank_account']) form.elements['bank_account'].value = user.bank_account || '';
+            if (form.elements['ifsc']) form.elements['ifsc'].value = user.ifsc || '';
 
             const allInputs = form.querySelectorAll('input, select, textarea');
             const fileInputs = form.querySelectorAll('input[type="file"]');
-            const isCompleted = Boolean(user.vendor_profile_completed);
+            const isCompleted = Number(user.vendor_profile_completed) === 1;
             const isEditAllowed = Boolean(user.edit_allowed);
             const isEditRequested = Boolean(user.edit_requested);
 

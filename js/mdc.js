@@ -54,10 +54,15 @@ async function loadUserProfile(){
                 el.textContent = vendorName;
             });
             fillProfileForm(result.user, result.details || {});
-            const isComplete = Boolean(result.user?.vendor_profile_completed || (result.user?.bank_account && result.user?.ifsc));
+            const isComplete = Number(result.user?.vendor_profile_completed) === 1;
             const triggerText = document.getElementById('profileTriggerText');
+            const triggerIcon = document.getElementById('profileSectionTrigger')?.querySelector('i');
             if (triggerText) {
                 triggerText.innerText = isComplete ? 'Show Profile' : 'Complete Profile';
+            }
+            if (triggerIcon) {
+                triggerIcon.className = isComplete ? 'fa-solid fa-id-card' : 'fa-solid fa-user-pen';
+                triggerIcon.style.color = isComplete ? '#10b981' : '#3b82f6';
             }
             if(window.setProfileMode) {
                 window.setProfileMode(isComplete ? 'view' : 'edit');
@@ -86,27 +91,7 @@ if (profileSectionTrigger) {
 }
 document.getElementById("closeProfileModal")?.addEventListener("click", closeProfileModal);
 document.getElementById("cancelProfileEdit")?.addEventListener("click", closeProfileModal);
-document.getElementById("vendorProfileForm")?.addEventListener("submit", async (event) => {
-    event.preventDefault();
-    const form = event.target;
-    const password = document.getElementById("profilePassword")?.value || "";
-    const confirmPassword = document.getElementById("profileConfirmPassword")?.value || "";
-    if (password && password !== confirmPassword) {
-        alert("Passwords do not match");
-        return;
-    }
-    const formData = new FormData(form);
-    if (!password) formData.delete("password");
-    const response = await fetch('/api/user/profile', { method: 'PUT', credentials: 'include', body: formData });
-    const result = await response.json();
-    if (result.success) {
-        alert("Profile updated successfully");
-        closeProfileModal();
-        await loadUserProfile();
-    } else {
-        alert(result.message || "Profile update failed");
-    }
-});
+
 
 loadUserProfile();
 
@@ -1270,54 +1255,76 @@ window.addEventListener("hk-theme-change", () => {
 
 
 
+
 // ====== NEW PROFILE FLOW LOGIC ======
-function openProfileModal() {
-    const modal = document.getElementById("profileModalBox") || document.getElementById("profileModal");
+async function openProfileModal() {
+    const modal = document.getElementById("profileModal") || document.getElementById("profileModalBox");
     if (modal) modal.style.display = "flex";
     
-    // Fetch entities to populate the dropdown
-    const entityType = document.getElementById('profileEntityType')?.value;
-    if (entityType) {
-        fetch('/api/vendor/my-entities/' + entityType)
-            .then(res => res.json())
-            .then(data => {
-                if (data.success && data.data) {
-                    const select = document.getElementById('entitySelect');
-                    if (select) {
-                        select.innerHTML = '<option value="">Select Pharmacy Name...</option>';
-                        data.data.forEach(ent => {
-                            if (!ent.profile_completed) {
-                                select.innerHTML += '<option value="' + ent.id + '">' + ent.name + '</option>';
-                            }
-                        });
-                        
-                          if (select.options.length === 1) {
-                              select.innerHTML = '<option value="">All profiles completed or no entities added.</option>';
-                          }
-                          
-                          // Auto-fill form when entity is selected
-                          select.addEventListener('change', async (e) => {
-                              const entityId = e.target.value;
-                              if (!entityId) return;
-                              try {
-                                  const res = await fetch('/api/vendor/entity-details/' + entityType + '/' + entityId);
-                                  const result = await res.json();
-                                  if (result.success && result.data) {
-                                      const form = document.getElementById('vendorProfileForm');
-                                      for (const key in result.data) {
-                                          const input = form.querySelector('[name="' + key + '"]');
-                                          if (input && result.data[key]) {
-                                              input.value = result.data[key];
-                                          }
-                                      }
-                                  }
-                              } catch(err) { console.error(err); }
-                          });
-
+    const form = document.getElementById('vendorProfileForm');
+    const actionButtons = document.getElementById('profileModalActionButtons');
+    if (!form) return;
+    
+    try {
+        const res = await fetch('/api/user/profile', { credentials: 'include' });
+        const result = await res.json();
+        if (result.success && result.user) {
+            const user = result.user;
+            
+            // Populate fields if they exist
+            if (form.elements['company_name']) form.elements['company_name'].value = user.company_name || '';
+            if (form.elements['name']) form.elements['name'].value = user.name || '';
+            if (form.elements['business_reg_number']) form.elements['business_reg_number'].value = user.business_reg_number || '';
+            if (form.elements['contact_number']) form.elements['contact_number'].value = user.contact_number || user.emailorcontact || '';
+            if (form.elements['email']) form.elements['email'].value = user.email || (user.emailorcontact && user.emailorcontact.includes('@') ? user.emailorcontact : '');
+            if (form.elements['service_area']) form.elements['service_area'].value = user.service_area || '';
+            if (form.elements['service_24x7']) form.elements['service_24x7'].value = user.service_24x7 || 'Yes';
+            if (form.elements['business_address']) form.elements['business_address'].value = user.business_address || '';
+            
+            const allInputs = form.querySelectorAll('input:not([type="hidden"]), textarea, select');
+            const isCompleted = Number(user.vendor_profile_completed) === 1;
+            const isEditAllowed = Number(user.edit_allowed) === 1;
+            const isEditRequested = Number(user.edit_requested) === 1;
+            
+            if (!isCompleted || isEditAllowed) {
+                allInputs.forEach(inp => { inp.disabled = false; inp.style.backgroundColor = ''; });
+                if (actionButtons) {
+                    actionButtons.innerHTML = `
+                        <button type="button" onclick="closeProfileModal()" style="padding:10px 18px; border:1px solid var(--hk-border, #cbd5e1); background:var(--hk-surface, #fff); border-radius:10px; cursor:pointer; color:var(--hk-text-main, #101828); font-weight:600;">Close</button>
+                        <button type="submit" id="saveProfileBtn" style="padding:10px 18px; border:none; background:var(--hk-primary-blue, #2563eb); color:#fff; border-radius:10px; cursor:pointer; font-weight:600;">Save Profile</button>
+                    `;
+                }
+            } else {
+                allInputs.forEach(inp => { inp.disabled = true; inp.style.backgroundColor = '#f1f5f9'; });
+                if (actionButtons) {
+                    if (!isEditRequested) {
+                        actionButtons.innerHTML = `
+                            <button type="button" onclick="closeProfileModal()" style="padding:10px 18px; border:1px solid var(--hk-border, #cbd5e1); background:var(--hk-surface, #fff); border-radius:10px; cursor:pointer; color:var(--hk-text-main, #101828); font-weight:600;">Close</button>
+                            <button type="button" id="reqAdminBtn" style="padding:10px 18px; border:none; background:#d97706; color:#fff; border-radius:10px; cursor:pointer; font-weight:600;">Request Admin Edit</button>
+                        `;
+                        document.getElementById('reqAdminBtn').onclick = async () => {
+                            try {
+                                // Request edit on user profile (vendor)
+                                const r = await fetch('/api/vendor/request-profile-edit/user/' + user.id, {method:'POST'});
+                                const rD = await r.json();
+                                if(rD.success) {
+                                    alert('Request sent to admin!');
+                                    openProfileModal();
+                                } else {
+                                    alert(rD.message);
+                                }
+                            } catch(e) {}
+                        };
+                    } else {
+                        actionButtons.innerHTML = `
+                            <button type="button" onclick="closeProfileModal()" style="padding:10px 18px; border:1px solid var(--hk-border, #cbd5e1); background:var(--hk-surface, #fff); border-radius:10px; cursor:pointer; color:var(--hk-text-main, #101828); font-weight:600;">Close</button>
+                            <button type="button" disabled style="padding:10px 18px; border:none; background:#94a3b8; color:#fff; border-radius:10px; cursor:not-allowed; font-weight:600;">Edit Requested...</button>
+                        `;
                     }
                 }
-            });
-    }
+            }
+        }
+    } catch(err) { console.error(err); }
 }
 
 function closeProfileModal() {
@@ -1328,45 +1335,41 @@ function closeProfileModal() {
 document.getElementById('vendorProfileForm')?.addEventListener('submit', async (event) => {
     event.preventDefault();
     const form = event.target;
-    const entityId = document.getElementById('entitySelect')?.value;
-    const entityType = document.getElementById('profileEntityType')?.value;
-    
-    if (!entityId) {
-        alert('Please select an entity first.');
-        return;
-    }
     
     const formData = new FormData(form);
     
     const submitBtn = document.getElementById('saveProfileBtn');
+    const origText = submitBtn ? submitBtn.innerHTML : '';
     if (submitBtn) {
         submitBtn.disabled = true;
-        submitBtn.innerText = 'Saving...';
+        submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Saving...';
     }
 
     try {
-        const response = await fetch('/api/vendor/complete-profile/' + entityType + '/' + entityId, { 
-            method: 'POST', 
-            body: formData 
+        const response = await fetch('/api/user/profile', { 
+            method: 'PUT', 
+            body: formData,
+            credentials: 'include'
         });
         const result = await response.json();
         if (result.success) {
-            alert('Profile completed successfully!');
+            alert('Vendor Profile saved successfully!');
             closeProfileModal();
-            form.reset();
+            await loadUserProfile();
         } else {
-            alert(result.message || 'Profile completion failed');
+            alert(result.message || 'Profile save failed');
         }
     } catch (e) {
-        alert('An error occurred.');
+        alert('An error occurred while saving.');
     } finally {
         if (submitBtn) {
             submitBtn.disabled = false;
-            submitBtn.innerText = 'Save Profile';
+            submitBtn.innerHTML = origText || 'Save Profile';
         }
     }
 });
 // ===================================
+
 async function loadPharmacies() {
     document.getElementById("mainContent").innerHTML = `
         <div id="pharmacySection" class="active-section" style="padding: 24px;">

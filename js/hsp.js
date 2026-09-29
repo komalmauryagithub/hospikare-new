@@ -597,7 +597,7 @@ async function loadUserProfile(){
             });
             fillProfileForm(result.user, result.details || {});
             
-            const isCompleted = Boolean(result.user?.vendor_profile_completed);
+            const isCompleted = Number(result.user?.vendor_profile_completed) === 1;
             const triggerText = document.getElementById('profileTriggerText');
             const triggerIcon = document.getElementById('profileSectionTrigger')?.querySelector('i');
             if (triggerText) {
@@ -713,9 +713,11 @@ document.getElementById("hospitalForm")
             formData.append("bank_cancelled_cheque", bankCheque.files[0]);
         }
         try{
+            const editId = document.getElementById("hospitalForm").dataset.editId;
+            const endpoint = editId ? "/api/edit/hospital/" + editId : "/api/add/hospital";
             const response =
                 await fetch(
-                    '/api/add/hospital',
+                    endpoint,
                     {
                         method:'POST',
                         body:formData
@@ -726,7 +728,7 @@ document.getElementById("hospitalForm")
             console.log(result);
             if(result.success){
                 alert(
-                    "Hospital Added Successfully"
+                    editId ? "Hospital Updated Successfully" : "Hospital Added Successfully"
                 );
                 document.getElementById(
                     "hospitalModal"
@@ -924,6 +926,10 @@ async function loadHospitals(){
         const addBtn = document.getElementById("addHospitalBtn");
         if(addBtn){
             addBtn.addEventListener("click", () => {
+                document.getElementById("hospitalForm").reset();
+                delete document.getElementById("hospitalForm").dataset.editId;
+                document.getElementById("roomsContainer").innerHTML = "";
+                document.getElementById("doctorsContainer").innerHTML = "";
                 document.getElementById("hospitalModal").style.display = "flex";
             });
         }
@@ -2052,9 +2058,74 @@ loadUserProfile();
 
 
 // ====== NEW PROFILE FLOW LOGIC ======
-function openProfileModal() {
+async function openProfileModal() {
     const modal = document.getElementById("profileModal") || document.getElementById("profileModalBox");
     if (modal) modal.style.display = "flex";
+    
+    const form = document.getElementById('vendorProfileForm');
+    const actionButtons = document.getElementById('profileModalActionButtons');
+    if (!form) return;
+    
+    try {
+        const res = await fetch('/api/user/profile', { credentials: 'include' });
+        const result = await res.json();
+        if (result.success && result.user) {
+            const user = result.user;
+            
+            // Populate fields if they exist
+            if (form.elements['company_name']) form.elements['company_name'].value = user.company_name || '';
+            if (form.elements['name']) form.elements['name'].value = user.name || '';
+            if (form.elements['business_reg_number']) form.elements['business_reg_number'].value = user.business_reg_number || '';
+            if (form.elements['contact_number']) form.elements['contact_number'].value = user.contact_number || user.emailorcontact || '';
+            if (form.elements['email']) form.elements['email'].value = user.email || (user.emailorcontact && user.emailorcontact.includes('@') ? user.emailorcontact : '');
+            if (form.elements['service_area']) form.elements['service_area'].value = user.service_area || '';
+            if (form.elements['service_24x7']) form.elements['service_24x7'].value = user.service_24x7 || 'Yes';
+            if (form.elements['business_address']) form.elements['business_address'].value = user.business_address || '';
+            
+            const allInputs = form.querySelectorAll('input:not([type="hidden"]), textarea, select');
+            const isCompleted = Number(user.vendor_profile_completed) === 1;
+            const isEditAllowed = Number(user.edit_allowed) === 1;
+            const isEditRequested = Number(user.edit_requested) === 1;
+            
+            if (!isCompleted || isEditAllowed) {
+                allInputs.forEach(inp => { inp.disabled = false; inp.style.backgroundColor = ''; });
+                if (actionButtons) {
+                    actionButtons.innerHTML = `
+                        <button type="button" onclick="closeProfileModal()" style="padding:10px 18px; border:1px solid var(--hk-border, #cbd5e1); background:var(--hk-surface, #fff); border-radius:10px; cursor:pointer; color:var(--hk-text-main, #101828); font-weight:600;">Close</button>
+                        <button type="submit" id="saveProfileBtn" style="padding:10px 18px; border:none; background:var(--hk-primary-blue, #2563eb); color:#fff; border-radius:10px; cursor:pointer; font-weight:600;">Save Profile</button>
+                    `;
+                }
+            } else {
+                allInputs.forEach(inp => { inp.disabled = true; inp.style.backgroundColor = '#f1f5f9'; });
+                if (actionButtons) {
+                    if (!isEditRequested) {
+                        actionButtons.innerHTML = `
+                            <button type="button" onclick="closeProfileModal()" style="padding:10px 18px; border:1px solid var(--hk-border, #cbd5e1); background:var(--hk-surface, #fff); border-radius:10px; cursor:pointer; color:var(--hk-text-main, #101828); font-weight:600;">Close</button>
+                            <button type="button" id="reqAdminBtn" style="padding:10px 18px; border:none; background:#d97706; color:#fff; border-radius:10px; cursor:pointer; font-weight:600;">Request Admin Edit</button>
+                        `;
+                        document.getElementById('reqAdminBtn').onclick = async () => {
+                            try {
+                                // Request edit on user profile (vendor)
+                                const r = await fetch('/api/vendor/request-profile-edit/user/' + user.id, {method:'POST'});
+                                const rD = await r.json();
+                                if(rD.success) {
+                                    alert('Request sent to admin!');
+                                    openProfileModal();
+                                } else {
+                                    alert(rD.message);
+                                }
+                            } catch(e) {}
+                        };
+                    } else {
+                        actionButtons.innerHTML = `
+                            <button type="button" onclick="closeProfileModal()" style="padding:10px 18px; border:1px solid var(--hk-border, #cbd5e1); background:var(--hk-surface, #fff); border-radius:10px; cursor:pointer; color:var(--hk-text-main, #101828); font-weight:600;">Close</button>
+                            <button type="button" disabled style="padding:10px 18px; border:none; background:#94a3b8; color:#fff; border-radius:10px; cursor:not-allowed; font-weight:600;">Edit Requested...</button>
+                        `;
+                    }
+                }
+            }
+        }
+    } catch(err) { console.error(err); }
 }
 function closeProfileModal() {
     const modal = document.getElementById("profileModalBox") || document.getElementById("profileModal");
@@ -2452,9 +2523,69 @@ document.getElementById("hospitalDetailsBtn")?.addEventListener("click", () => {
 });
 
 
-window.editHospitalAction = function(id) {
-    if (typeof openHospitalProfileModal === 'function') {
-        openHospitalProfileModal(id);
+window.editHospitalAction = async function(id) {
+    try {
+        const res = await fetch('/api/hospital/' + id);
+        const result = await res.json();
+        if(result.success) {
+            const h = result.hospital;
+            document.getElementById("hospital_name").value = h.hospital_name || "";
+            document.getElementById("hospital_address").value = h.address || "";
+            document.getElementById("hospital_facilities").value = h.facilities || "";
+            if(document.getElementById("add_hospital_type")) document.getElementById("add_hospital_type").value = h.hospital_type || "";
+            if(document.getElementById("add_hospital_ownership")) document.getElementById("add_hospital_ownership").value = h.hospital_ownership || "";
+            if(document.getElementById("add_hospital_registration_number")) document.getElementById("add_hospital_registration_number").value = h.hospital_registration_number || "";
+            
+            // clear containers
+            document.getElementById("roomsContainer").innerHTML = "";
+            document.getElementById("doctorsContainer").innerHTML = "";
+            
+            // Populate rooms
+            if(h.rooms && h.rooms.length > 0) {
+                h.rooms.forEach(r => {
+                    document.getElementById('addRoomBtn').click();
+                    const boxes = document.querySelectorAll('.roomBox');
+                    const lastBox = boxes[boxes.length - 1];
+                    if(lastBox) {
+                        lastBox.querySelector('.room_type').value = r.room_type || "";
+                        lastBox.querySelector('.room_bed_type').value = r.bed_type || "";
+                        lastBox.querySelector('.room_pricing').value = r.pricing || "";
+                        lastBox.querySelector('.room_total_beds').value = r.total_beds || "";
+                        lastBox.querySelector('.room_details').value = r.details || "";
+                        lastBox.querySelector('.room_availability').value = r.availability || "";
+                    }
+                });
+            }
+            
+            // Populate doctors
+            if(h.doctors && h.doctors.length > 0) {
+                h.doctors.forEach(d => {
+                    document.getElementById('addDoctorBtn').click();
+                    const boxes = document.querySelectorAll('.doctorBox');
+                    const lastBox = boxes[boxes.length - 1];
+                    if(lastBox) {
+                        if(lastBox.querySelector('.doctor_name')) lastBox.querySelector('.doctor_name').value = d.name || d.doctor_name || "";
+                        if(lastBox.querySelector('.doctor_gender')) lastBox.querySelector('.doctor_gender').value = d.gender || "";
+                        if(lastBox.querySelector('.doctor_dob_age')) lastBox.querySelector('.doctor_dob_age').value = d.dob_age || "";
+                        if(lastBox.querySelector('.doctor_mobile')) lastBox.querySelector('.doctor_mobile').value = d.mobile || "";
+                        if(lastBox.querySelector('.doctor_email')) lastBox.querySelector('.doctor_email').value = d.email || "";
+                        if(lastBox.querySelector('.doctor_qualification')) lastBox.querySelector('.doctor_qualification').value = d.qualification || "";
+                        if(lastBox.querySelector('.doctor_reg_no')) lastBox.querySelector('.doctor_reg_no').value = d.medical_reg_no || "";
+                        if(lastBox.querySelector('.doctor_experience')) lastBox.querySelector('.doctor_experience').value = d.experience || "";
+                        if(lastBox.querySelector('.doctor_department')) lastBox.querySelector('.doctor_department').value = d.department || "";
+                        if(lastBox.querySelector('.doctor_fee')) lastBox.querySelector('.doctor_fee').value = d.fees || d.consultation_fee || "";
+                        if(lastBox.querySelector('.doctor_days')) lastBox.querySelector('.doctor_days').value = d.available_days || "";
+                        if(lastBox.querySelector('.doctor_time')) lastBox.querySelector('.doctor_time').value = d.available_time || "";
+                        if(lastBox.querySelector('.doctor_status')) lastBox.querySelector('.doctor_status').value = d.status || "Active";
+                    }
+                });
+            }
+            
+            document.getElementById('hospitalForm').dataset.editId = id;
+            document.getElementById("hospitalModal").style.display = "flex";
+        }
+    } catch(err) {
+        console.error(err);
     }
 };
 window.deleteHospitalAction = async function(id) {

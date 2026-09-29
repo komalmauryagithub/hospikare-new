@@ -11,7 +11,7 @@ module.exports = function(app, pool, upload) {
             else if (type === 'ambulance') { query = "SELECT id, COALESCE(NULLIF(ambulance_service_name, ''), CONCAT(ambulance_type, ' Ambulance (', COALESCE(vehicle_number, id), ')')) as name, profile_completed, edit_allowed FROM ambulances WHERE users_id = ?"; }
             else if (type === 'lab') { query = 'SELECT id, lab_name as name, profile_completed, edit_allowed FROM labs WHERE users_id = ?'; }
             else if (type === 'pharmacy') { query = 'SELECT id, pharmacy_name as name, profile_completed, edit_allowed FROM pharmacies WHERE users_id = ?'; }
-            else if (type === 'equipment_source') { query = 'SELECT id, business_name as name, profile_completed, edit_allowed FROM equipment_sources WHERE users_id = ?'; }
+            else if (type === 'equipment_source') { query = 'SELECT id, COALESCE(shop_company_name, supplier_name) as name, 0 as profile_completed, 1 as edit_allowed FROM equipment_suppliers WHERE vendor_id = ?'; }
             else if (type === 'insurance') { query = 'SELECT id, comp_name as name, profile_completed, edit_allowed FROM insurances WHERE users_id = ?'; }
             else { return res.json({ success: false, message: 'Invalid type' }); }
 
@@ -36,7 +36,7 @@ module.exports = function(app, pool, upload) {
             else if (type === 'ambulance') { query = 'SELECT * FROM ambulances WHERE id = ?'; }
             else if (type === 'lab') { query = 'SELECT * FROM labs WHERE id = ?'; }
             else if (type === 'pharmacy') { query = 'SELECT * FROM pharmacies WHERE id = ?'; }
-            else if (type === 'equipment_source') { query = 'SELECT * FROM equipment_sources WHERE id = ?'; }
+            else if (type === 'equipment_source') { query = 'SELECT * FROM equipment_suppliers WHERE id = ?'; }
             else if (type === 'insurance') { query = 'SELECT * FROM insurances WHERE id = ?'; }
             
             const [rows] = await pool.query(query, [entityId]);
@@ -64,7 +64,7 @@ module.exports = function(app, pool, upload) {
                 ambulance: 'ambulances', 
                 lab: 'labs', 
                 pharmacy: 'pharmacies', 
-                equipment_source: 'equipment_sources', 
+                equipment_source: 'equipment_suppliers', 
                 insurance: 'insurances',
                 vendor_ambulance: 'users',
                 user: 'users',
@@ -91,7 +91,7 @@ module.exports = function(app, pool, upload) {
         try {
             const type = req.params.type;
             const entityId = req.params.id;
-            const tableMap = { hospital: 'hospitals', ambulance: 'ambulances', lab: 'labs', pharmacy: 'pharmacies', equipment_source: 'equipment_sources', insurance: 'insurances', vendor_ambulance: 'users', user: 'users', vendor: 'users' };
+            const tableMap = { hospital: 'hospitals', ambulance: 'ambulances', lab: 'labs', pharmacy: 'pharmacies', equipment_source: 'equipment_suppliers', insurance: 'insurances', vendor_ambulance: 'users', user: 'users', vendor: 'users' };
             const tbl = tableMap[type];
             if (!tbl) return res.json({ success: false, message: 'Invalid entity type' });
 
@@ -112,7 +112,7 @@ module.exports = function(app, pool, upload) {
         try {
             const type = req.params.type;
             const entityId = req.params.id;
-            const tableMap = { hospital: 'hospitals', ambulance: 'ambulances', lab: 'labs', pharmacy: 'pharmacies', equipment_source: 'equipment_sources', insurance: 'insurances', vendor_ambulance: 'users', user: 'users', vendor: 'users' };
+            const tableMap = { hospital: 'hospitals', ambulance: 'ambulances', lab: 'labs', pharmacy: 'pharmacies', equipment_source: 'equipment_suppliers', insurance: 'insurances', vendor_ambulance: 'users', user: 'users', vendor: 'users' };
             const tbl = tableMap[type];
             if (!tbl) return res.json({ success: false, message: 'Invalid entity type' });
 
@@ -133,7 +133,7 @@ module.exports = function(app, pool, upload) {
         try {
             const type = req.params.type;
             const entityId = req.params.id;
-            const tableMap = { hospital: 'hospitals', ambulance: 'ambulances', lab: 'labs', pharmacy: 'pharmacies', equipment_source: 'equipment_sources', insurance: 'insurances', vendor_ambulance: 'users', user: 'users', vendor: 'users' };
+            const tableMap = { hospital: 'hospitals', ambulance: 'ambulances', lab: 'labs', pharmacy: 'pharmacies', equipment_source: 'equipment_suppliers', insurance: 'insurances', vendor_ambulance: 'users', user: 'users', vendor: 'users' };
             const tbl = tableMap[type];
             if (!tbl) return res.json({ success: false, message: 'Invalid entity type' });
 
@@ -159,7 +159,7 @@ module.exports = function(app, pool, upload) {
                 pool.query(`SELECT p.id, p.pharmacy_name as name, 'pharmacy' as type, p.users_id, u.name as vendor_name, u.emailorcontact, p.created_at FROM pharmacies p JOIN users u ON p.users_id = u.id WHERE p.edit_requested = 1`),
                 pool.query(`SELECT e.id, e.business_name as name, 'equipment_source' as type, e.users_id, u.name as vendor_name, u.emailorcontact, e.created_at FROM equipment_sources e JOIN users u ON e.users_id = u.id WHERE e.edit_requested = 1`),
                 pool.query(`SELECT i.id, i.comp_name as name, 'insurance' as type, i.users_id, u.name as vendor_name, u.emailorcontact, i.created_at FROM insurances i JOIN users u ON i.users_id = u.id WHERE i.edit_requested = 1`),
-                pool.query(`SELECT u.id, COALESCE(NULLIF(u.company_name, ''), u.name) as name, 'vendor_ambulance' as type, u.id as users_id, u.name as vendor_name, u.emailorcontact, u.created_at FROM users u WHERE u.users_type = 'ambulance' AND u.edit_requested = 1`)
+                pool.query(`SELECT u.id, COALESCE(NULLIF(u.company_name, ''), u.name) as name, 'user' as type, u.id as users_id, u.name as vendor_name, u.emailorcontact, u.created_at FROM users u WHERE u.edit_requested = 1`)
             ];
             const results = await Promise.allSettled(queries);
             let allPending = [];
@@ -292,9 +292,15 @@ module.exports = function(app, pool, upload) {
                 const doc2 = getFile('pharmacist_registration_cert');
                 const doc3 = getFile('pan_card');
                 const doc4 = getFile('authorized_person_id_proof');
+                const cancelled_cheque_file = getFile('cancelled_cheque_file');
+                const profile_photo = getFile('profile_photo');
                 
                 await pool.query(
                     `UPDATE pharmacies SET 
+                        full_name = ?, email_address = ?,
+                        bank_account_number = ?, bank_name = ?, account_holder_name = ?, ifsc_code = ?,
+                        profile_photo = COALESCE(?, profile_photo), cancelled_cheque_file = COALESCE(?, cancelled_cheque_file),
+                        profile_status = COALESCE(?, profile_status), verification_status = COALESCE(?, verification_status),
                         drug_license_number = ?, contact_number = ?, address = ?, 
                         pharmacist_name = ?, home_delivery = ?,
                         drug_license_doc = COALESCE(?, drug_license_doc),
@@ -303,32 +309,52 @@ module.exports = function(app, pool, upload) {
                         authorized_person_id_proof = COALESCE(?, authorized_person_id_proof),
                         profile_completed = TRUE, edit_allowed = 0, edit_requested = 0
                     WHERE id = ? AND users_id = ?`,
-                    [body.drug_license_number, body.contact_number, body.address, 
-                     body.pharmacist_name, body.home_delivery,
-                     doc1, doc2, doc3, doc4, entityId, userId]
+                    [
+                        body.full_name, body.email_address,
+                        body.bank_account_number, body.bank_name, body.account_holder_name, body.ifsc_code,
+                        profile_photo, cancelled_cheque_file,
+                        body.profile_status, body.verification_status,
+                        body.drug_license_number, body.contact_number, body.address, 
+                        body.pharmacist_name, body.home_delivery,
+                        doc1, doc2, doc3, doc4, entityId, userId
+                    ]
                 );
             }
             else if (type === 'equipment_source') {
-                const doc1 = getFile('business_registration_proof');
-                const doc2 = getFile('gst_certificate');
-                const doc3 = getFile('pan_card');
-                const doc4 = getFile('authorized_person_id_proof');
-                const doc5 = getFile('manufacturer_authorization');
+                const profile_photo = getFile('profile_photo');
+                const pan_card_file = getFile('pan_card_file');
+                const aadhaar_card_file = getFile('aadhaar_card_file');
+                const address_proof_file = getFile('address_proof_file');
+                const medical_device_license_file = getFile('medical_device_license_file');
+                const manufacturer_authorization_file = getFile('manufacturer_authorization_file');
+                const cancelled_cheque_file = getFile('cancelled_cheque_file');
                 
                 await pool.query(
-                    `UPDATE equipment_sources SET 
-                        business_registration_number = ?, contact_number = ?, address = ?, 
-                        equipment_category = ?, sale_rental = ?,
-                        business_registration_cert = COALESCE(?, business_registration_cert),
-                        gst_certificate = COALESCE(?, gst_certificate),
-                        pan_card = COALESCE(?, pan_card),
-                        authorized_person_id_proof = COALESCE(?, authorized_person_id_proof),
-                        manufacturer_authorization = COALESCE(?, manufacturer_authorization),
+                    `UPDATE equipment_suppliers SET 
+                        full_name = ?, mobile_number = ?, email_address = ?,
+                        residential_address = ?, city = ?, state = ?, pincode = ?,
+                        ownership_type = ?, designation = ?, gst_number = ?, business_registration_number = ?,
+                        account_holder_name = ?, bank_name = ?, account_number = ?, ifsc_code = ?,
+                        verification_status = COALESCE(?, verification_status), profile_status = COALESCE(?, profile_status),
+                        profile_photo = COALESCE(?, profile_photo),
+                        pan_card_file = COALESCE(?, pan_card_file),
+                        aadhaar_card_file = COALESCE(?, aadhaar_card_file),
+                        address_proof_file = COALESCE(?, address_proof_file),
+                        medical_device_license_file = COALESCE(?, medical_device_license_file),
+                        manufacturer_authorization_file = COALESCE(?, manufacturer_authorization_file),
+                        cancelled_cheque_file = COALESCE(?, cancelled_cheque_file),
                         profile_completed = TRUE, edit_allowed = 0, edit_requested = 0
-                    WHERE id = ? AND users_id = ?`,
-                    [body.business_registration_number, body.contact_number, body.address, 
-                     body.equipment_category, body.sale_rental,
-                     doc1, doc2, doc3, doc4, doc5, entityId, userId]
+                    WHERE id = ? AND vendor_id = ?`,
+                    [
+                        body.full_name, body.mobile_number, body.email_address,
+                        body.residential_address, body.city, body.state, body.pincode,
+                        body.ownership_type, body.designation, body.gst_number, body.business_registration_number,
+                        body.account_holder_name, body.bank_name, body.account_number, body.ifsc_code,
+                        body.verification_status, body.profile_status,
+                        profile_photo, pan_card_file, aadhaar_card_file, address_proof_file,
+                        medical_device_license_file, manufacturer_authorization_file, cancelled_cheque_file,
+                        entityId, userId
+                    ]
                 );
             }
             else if (type === 'insurance') {
@@ -353,6 +379,9 @@ module.exports = function(app, pool, upload) {
                 );
             }
 
+            // Also mark the vendor's main user profile as completed
+            await pool.query('UPDATE users SET vendor_profile_completed = 1 WHERE id = ?', [userId]);
+            
             res.json({ success: true, message: 'Profile completed successfully' });
         } catch (e) {
             console.error(e);

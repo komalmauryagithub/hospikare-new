@@ -419,7 +419,7 @@ async function fillProfileForm(profile, details = {}) {
         contact_number: profile.emailorcontact,
         business_address: profile.business_address,
         bank_account: profile.bank_account,
-        ifsc_code: profile.ifsc
+        ifsc: profile.ifsc
     };
     for (const key in m) {
         const input = form.querySelector(`[name="${key}"]`);
@@ -436,9 +436,9 @@ async function fillProfileForm(profile, details = {}) {
     }
     
     // Check lock status from the users table
-    const isCompleted = profile.vendor_profile_completed || (profile.bank_account && profile.ifsc);
-    const isAllowed = profile.edit_allowed;
-    const isRequested = profile.edit_requested;
+    const isCompleted = Number(profile.vendor_profile_completed) === 1;
+    const isAllowed = Number(profile.edit_allowed) === 1;
+    const isRequested = Number(profile.edit_requested) === 1;
     
     const allInputs = form.querySelectorAll('input, select, textarea');
     const actionBtns = document.getElementById('profileModalActionButtons');
@@ -456,36 +456,22 @@ async function fillProfileForm(profile, details = {}) {
             input.disabled = true;
             input.style.backgroundColor = '#f1f5f9';
         });
-        
-        let statusHtml = '';
-        if (!isRequested) {
-            statusHtml = `
-            <div style="background:rgba(16, 185, 129, 0.1); color:#059669; padding:12px 16px; border-radius:10px; margin-bottom:10px; display:flex; align-items:center; gap:12px; border:1px solid rgba(16, 185, 129, 0.2);">
-                <i class="fa-solid fa-circle-check"></i>
-                <div style="font-size:13px; display:flex; justify-content:space-between; align-items:center; width:100%;">
-                    <div>
-                        <strong style="display:block; margin-bottom:2px;">Profile Verified</strong>
-                        Your profile is active.
-                    </div>
-                    <button type="button" onclick="requestVendorProfileEdit(${profile.id})" style="background:#059669; color:#fff; border:none; padding:8px 14px; border-radius:8px; cursor:pointer; font-size:12px; font-weight:600; display:inline-flex; align-items:center; gap:6px;">
-                        Request Edit <i class="fa-solid fa-pen-to-square"></i>
-                    </button>
-                </div>
-            </div>`;
-        } else {
-            statusHtml = `
-            <div style="padding:12px 16px; background:#fffbeb; border:1px solid #fde68a; border-radius:10px; font-size:13px; color:#92400e; font-weight:500; display:flex; align-items:center; gap:10px; margin-bottom:10px;">
-                <i class="fa-solid fa-shield-halved" style="color:#d97706; font-size:18px;"></i>
-                <div style="flex:1;">
-                    <strong>Edit Requested.</strong> Pending admin approval to update profile.
-                </div>
-            </div>`;
-        }
-        bannerContainer.innerHTML = statusHtml;
-        
+        bannerContainer.innerHTML = '';
         if (actionBtns) {
-            actionBtns.innerHTML = `<button type="button" onclick="closeProfileModal()" style="padding:10px 18px; border:1px solid var(--hk-border, #cbd5e1); background:var(--hk-surface, #fff); border-radius:10px; cursor:pointer; color:var(--hk-text-main, #101828); font-weight:600;">Close</button>`;
+            if (!isRequested) {
+                actionBtns.innerHTML = `
+                    <button type="button" onclick="closeProfileModal()" style="padding:10px 18px; border:1px solid var(--hk-border, #cbd5e1); background:var(--hk-surface, #fff); border-radius:10px; cursor:pointer; color:var(--hk-text-main, #101828); font-weight:600;">Close</button>
+                    <button type="button" id="reqAdminBtn" style="padding:10px 18px; border:none; background:#d97706; color:#fff; border-radius:10px; cursor:pointer; font-weight:600;">Request Admin Edit</button>
+                `;
+                document.getElementById('reqAdminBtn').onclick = () => requestVendorProfileEdit(profile.id);
+            } else {
+                actionBtns.innerHTML = `
+                    <button type="button" onclick="closeProfileModal()" style="padding:10px 18px; border:1px solid var(--hk-border, #cbd5e1); background:var(--hk-surface, #fff); border-radius:10px; cursor:pointer; color:var(--hk-text-main, #101828); font-weight:600;">Close</button>
+                    <button type="button" disabled style="padding:10px 18px; border:none; background:#9ca3af; color:#fff; border-radius:10px; cursor:not-allowed; font-weight:600;">Edit Requested...</button>
+                `;
+            }
         }
+
     } else {
         allInputs.forEach(input => {
             input.disabled = false;
@@ -538,10 +524,15 @@ async function loadUserProfile(){
             window.currentUserProfile = result.user;
             window.currentUserDetails = result.details || {};
             fillProfileForm(result.user, result.details || {});
-            const isComplete = Boolean(result.user?.vendor_profile_completed || (result.user?.bank_account && result.user?.ifsc));
-            const triggerText = document.getElementById("profileTriggerText");
+            const isComplete = Number(result.user?.vendor_profile_completed) === 1;
+            const triggerText = document.getElementById('profileTriggerText');
+            const triggerIcon = document.getElementById('profileSectionTrigger')?.querySelector('i');
             if (triggerText) {
                 triggerText.innerText = isComplete ? 'Show Profile' : 'Complete Profile';
+            }
+            if (triggerIcon) {
+                triggerIcon.className = isComplete ? 'fa-solid fa-id-card' : 'fa-solid fa-user-pen';
+                triggerIcon.style.color = isComplete ? '#10b981' : '#3b82f6';
             }
             if(window.setProfileMode) {
                 window.setProfileMode(isComplete ? 'view' : 'edit');
@@ -565,27 +556,7 @@ if (profileSectionTrigger) {
 }
 document.getElementById("closeProfileModal")?.addEventListener("click", closeProfileModal);
 document.getElementById("cancelProfileEdit")?.addEventListener("click", closeProfileModal);
-document.getElementById("vendorProfileForm")?.addEventListener("submit", async (event) => {
-    event.preventDefault();
-    const form = event.target;
-    const password = document.getElementById("profilePassword")?.value || "";
-    const confirmPassword = document.getElementById("profileConfirmPassword")?.value || "";
-    if (password && password !== confirmPassword) {
-        alert("Passwords do not match");
-        return;
-    }
-    const formData = new FormData(form);
-    if (!password) formData.delete("password");
-    const response = await fetch('/api/user/profile', { method: 'PUT', credentials: 'include', body: formData });
-    const result = await response.json();
-    if (result.success) {
-        alert("Profile updated successfully");
-        closeProfileModal();
-        await loadUserProfile();
-    } else {
-        alert(result.message || "Profile update failed");
-    }
-});
+
 
 loadUserProfile();
 
@@ -2277,15 +2248,9 @@ function openLabEntityModal() {
                     const select = document.getElementById('entitySelect');
                     if (select) {
                         select.innerHTML = '<option value="">Select Lab Name...</option>';
-                        data.data.forEach(ent => {
-                            if (!ent.profile_completed) {
-                                select.innerHTML += '<option value="' + ent.id + '">' + ent.name + '</option>';
-                            }
-                        });
+                        data.data.forEach(ent => { select.innerHTML += '<option value=\"' + ent.id + '\">' + ent.name + '</option>'; });
                         
-                          if (select.options.length === 1) {
-                              select.innerHTML = '<option value="">All profiles completed or no entities added.</option>';
-                          }
+                          if (select.options.length === 1) { select.innerHTML = '<option value=\"\">No entities added yet.</option>'; }
                           
                           // Auto-fill form when entity is selected
                           select.addEventListener('change', async (e) => {
@@ -2654,9 +2619,9 @@ window.editLabDetails = async function(id) {
                     if(form.elements['home_coll'] && result.data.home_coll) form.elements['home_coll'].value = result.data.home_coll;
                     
                     // Lock logic
-                    const isCompleted = result.data.profile_completed;
-                    const isAllowed = result.data.edit_allowed;
-                    const isRequested = result.data.edit_requested;
+                    const isCompleted = Number(result.data.profile_completed) === 1;
+                    const isAllowed = Number(result.data.edit_allowed) === 1;
+                    const isRequested = Number(result.data.edit_requested) === 1;
                     
                     const allInputs = form.querySelectorAll('input, select, textarea');
                     const actionBtns = document.getElementById('profileModalActionButtons') || form.querySelector('#profileModalActionButtons'); // Watch out for duplicate ID
@@ -2676,36 +2641,22 @@ window.editLabDetails = async function(id) {
                                 input.style.backgroundColor = '#f1f5f9';
                             }
                         });
-                        
-                        let statusHtml = '';
-                        if (!isRequested) {
-                            statusHtml = `
-                            <div style="background:rgba(16, 185, 129, 0.1); color:#059669; padding:12px 16px; border-radius:10px; margin-bottom:10px; display:flex; align-items:center; gap:12px; border:1px solid rgba(16, 185, 129, 0.2);">
-                                <i class="fa-solid fa-circle-check"></i>
-                                <div style="font-size:13px; display:flex; justify-content:space-between; align-items:center; width:100%;">
-                                    <div>
-                                        <strong style="display:block; margin-bottom:2px;">Lab Details Verified</strong>
-                                        Lab details are verified.
-                                    </div>
-                                    <button type="button" onclick="requestLabEntityEdit(${id})" style="background:#059669; color:#fff; border:none; padding:8px 14px; border-radius:8px; cursor:pointer; font-size:12px; font-weight:600; display:inline-flex; align-items:center; gap:6px;">
-                                        Request Edit <i class="fa-solid fa-pen-to-square"></i>
-                                    </button>
-                                </div>
-                            </div>`;
-                        } else {
-                            statusHtml = `
-                            <div style="padding:12px 16px; background:#fffbeb; border:1px solid #fde68a; border-radius:10px; font-size:13px; color:#92400e; font-weight:500; display:flex; align-items:center; gap:10px; margin-bottom:10px;">
-                                <i class="fa-solid fa-shield-halved" style="color:#d97706; font-size:18px;"></i>
-                                <div style="flex:1;">
-                                    <strong>Edit Requested.</strong> Pending admin approval to update details.
-                                </div>
-                            </div>`;
-                        }
-                        bannerContainer.innerHTML = statusHtml;
-                        
-                        if (actionBtns) {
-                            actionBtns.innerHTML = `<button type="button" onclick="closeLabEntityModal()" style="padding:10px 18px; border:1px solid var(--hk-border, #cbd5e1); background:var(--hk-surface, #fff); border-radius:10px; cursor:pointer; color:var(--hk-text-main, #101828); font-weight:600;">Close</button>`;
-                        }
+                          bannerContainer.innerHTML = '';
+                          if (actionBtns) {
+                              if (!isRequested) {
+                                  actionBtns.innerHTML = `
+                                      <button type="button" onclick="closeLabEntityModal()" style="padding:10px 18px; border:1px solid var(--hk-border, #cbd5e1); background:var(--hk-surface, #fff); border-radius:10px; cursor:pointer; color:var(--hk-text-main, #101828); font-weight:600;">Close</button>
+                                      <button type="button" id="reqLabAdminBtn" style="padding:10px 18px; border:none; background:#d97706; color:#fff; border-radius:10px; cursor:pointer; font-weight:600;">Request Admin Edit</button>
+                                  `;
+                                  document.getElementById('reqLabAdminBtn').onclick = () => requestLabEntityEdit(id);
+                              } else {
+                                  actionBtns.innerHTML = `
+                                      <button type="button" onclick="closeLabEntityModal()" style="padding:10px 18px; border:1px solid var(--hk-border, #cbd5e1); background:var(--hk-surface, #fff); border-radius:10px; cursor:pointer; color:var(--hk-text-main, #101828); font-weight:600;">Close</button>
+                                      <button type="button" disabled style="padding:10px 18px; border:none; background:#9ca3af; color:#fff; border-radius:10px; cursor:not-allowed; font-weight:600;">Edit Requested...</button>
+                                  `;
+                              }
+                          }
+
                     } else {
                         allInputs.forEach(input => {
                             input.disabled = false;
@@ -2812,3 +2763,42 @@ window.deletePatient = async function(id) {
         alert('Error deleting patient');
     }
 };
+
+
+document.getElementById('vendorProfileForm')?.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const form = event.target;
+    
+    const formData = new FormData(form);
+    
+    const submitBtn = document.getElementById('saveProfileBtn') || form.querySelector('button[type="submit"]');
+    const origText = submitBtn ? submitBtn.innerHTML : '';
+    if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Saving...';
+    }
+
+    try {
+        const response = await fetch('/api/user/profile', { 
+            method: 'PUT', 
+            body: formData,
+            credentials: 'include'
+        });
+        const result = await response.json();
+        if (result.success) {
+            alert('Vendor Profile saved successfully!');
+            closeProfileModal();
+            await loadUserProfile();
+        } else {
+            alert(result.message || 'Profile save failed');
+        }
+    } catch (err) {
+        console.error("Error saving profile:", err);
+        alert('An error occurred while saving profile');
+    } finally {
+        if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = origText;
+        }
+    }
+});

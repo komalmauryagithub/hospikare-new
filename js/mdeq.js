@@ -111,9 +111,15 @@ async function loadUserProfile(){
                 el.textContent = vendorName;
             });
             fillProfileForm(result.user, result.details || {});
-            const isComplete = Boolean(result.user?.vendor_profile_completed || (result.user?.bank_account && result.user?.ifsc));
+            const isComplete = Number(result.user?.vendor_profile_completed) === 1;
+            const triggerText = document.getElementById('profileTriggerText');
+            const triggerIcon = document.getElementById('profileSectionTrigger')?.querySelector('i');
             if (triggerText) {
                 triggerText.innerText = isComplete ? 'Show Profile' : 'Complete Profile';
+            }
+            if (triggerIcon) {
+                triggerIcon.className = isComplete ? 'fa-solid fa-id-card' : 'fa-solid fa-user-pen';
+                triggerIcon.style.color = isComplete ? '#10b981' : '#3b82f6';
             }
             if(window.setProfileMode) {
                 window.setProfileMode(isComplete ? 'view' : 'edit');
@@ -137,27 +143,7 @@ if (profileSectionTrigger) {
 }
 document.getElementById("closeProfileModal")?.addEventListener("click", closeProfileModal);
 document.getElementById("cancelProfileEdit")?.addEventListener("click", closeProfileModal);
-document.getElementById("vendorProfileForm")?.addEventListener("submit", async (event) => {
-    event.preventDefault();
-    const form = event.target;
-    const password = document.getElementById("profilePassword")?.value || "";
-    const confirmPassword = document.getElementById("profileConfirmPassword")?.value || "";
-    if (password && password !== confirmPassword) {
-        alert("Passwords do not match");
-        return;
-    }
-    const formData = new FormData(form);
-    if (!password) formData.delete("password");
-    const response = await fetch('/api/user/profile', { method: 'PUT', credentials: 'include', body: formData });
-    const result = await response.json();
-    if (result.success) {
-        alert("Profile updated successfully");
-        closeProfileModal();
-        await loadUserProfile();
-    } else {
-        alert(result.message || "Profile update failed");
-    }
-});
+
 loadUserProfile();
 equipmentDashboardUi?.setupDateFilter();
 window.setupVendorTopSearch?.();
@@ -208,6 +194,9 @@ navItems.forEach(item => {
         if(text.includes("dashboard")){
             loadDashboard();
         }
+        else if(text.includes("supplier")){
+            loadSuppliers();
+        }
         else if(text.includes("products")){
             loadProducts();
         }
@@ -237,10 +226,7 @@ document.getElementById(
 ).addEventListener(
     "click",
     () => {
-        document.getElementById(
-            "productModal"
-        ).style.display =
-            "flex";
+        window.openAddProductModal();
     }
 );
 
@@ -256,147 +242,28 @@ document.getElementById(
     }
 );
 
-document.getElementById(
-    "productForm"
-)
-.addEventListener(
-    "submit",
-    async(e) => {
-        e.preventDefault();
-        const formData =
-            new FormData();
-        formData.append(
-            "product_name",
-            document.getElementById(
-                "product_name"
-            ).value
-        );
-        formData.append(
-            "brand_name",
-            document.getElementById(
-                "brand_name"
-            ).value
-        );
-        formData.append(
-            "category",
-            document.getElementById(
-                "category"
-            ).value
-        );
-        formData.append(
-            "sub_category",
-            document.getElementById(
-                "sub_category"
-            ).value
-        );
-        formData.append(
-            "model_number",
-            document.getElementById(
-                "model_number"
-            ).value
-        );
-        formData.append(
-            "manufacturer",
-            document.getElementById(
-                "manufacturer"
-            ).value
-        );
-        formData.append(
-            "country_of_origin",
-            document.getElementById(
-                "country_of_origin"
-            ).value
-        );
-        formData.append(
-            "product_description",
-            document.getElementById(
-                "product_description"
-            ).value
-        );
-        formData.append(
-            "mrp",
-            document.getElementById(
-                "mrp"
-            ).value
-        );
-        formData.append(
-            "selling_price",
-            document.getElementById(
-                "selling_price"
-            ).value
-        );
-        formData.append(
-            "stock_quantity",
-            document.getElementById(
-                "stock_quantity"
-            ).value
-        );
-        formData.append(
-            "stock_status",
-            document.getElementById(
-                "stock_status"
-            ).value
-        );
-        formData.append(
-            "warranty_period",
-            document.getElementById(
-                "warranty_period"
-            ).value
-        );
-        formData.append(
-            "delivery_available",
-            document.getElementById(
-                "delivery_available"
-            ).value
-        );
-        formData.append(
-            "delivery_charge",
-            document.getElementById(
-                "delivery_charge"
-            ).value
-        );
-        formData.append(
-            "thumbnail_image",
-            document.getElementById(
-                "thumbnail_image"
-            ).files[0]
-        );
-        formData.append(
-            "product_manual",
-            document.getElementById(
-                "product_manual"
-            ).files[0]
-        );
-        formData.append(
-            "product_video",
-            document.getElementById(
-                "product_video"
-            ).files[0]
-        );
-        try{
-            const response = await fetch('/api/add/equipment-product',{
-                        method:'POST',
-                        body:formData
-                    }
-                );
-            const result =
-                await response.json();
-            if(result.success){
-                alert(
-                    "Product Added"
-                );
-                document.getElementById(
-                    "productModal"
-                ).style.display =
-                    "none";
-                loadProducts();
-            }
+document.getElementById("productForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    const editId = document.getElementById("edit_product_id").value;
+    
+    const url = editId ? '/api/edit/equipment-product/' + editId : '/api/add/equipment-product';
+    
+    try {
+        const res = await fetch(url, { method: "POST", body: formData });
+        const data = await res.json();
+        if (data.success) {
+            alert(editId ? "Product updated successfully!" : "Product added successfully!");
+            document.getElementById("productModal").style.display = "none";
+            loadProducts();
+        } else {
+            alert("Error saving product!");
         }
-        catch(error){
-            console.log(error);
-        }
+    } catch (error) {
+        console.error(error);
+        alert("An error occurred");
     }
-);
+});
 
 async function loadProducts() {
     try {
@@ -429,6 +296,7 @@ async function loadProducts() {
                             <th>Price</th>
                             <th>Stock</th>
                             <th>Status</th>
+                            <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -475,6 +343,10 @@ async function loadProducts() {
                                 <i class="fa-solid ${isInStock ? 'fa-check' : 'fa-xmark'}"></i>
                                 ${product.stock_status || (isInStock ? 'In Stock' : 'Out of Stock')}
                             </span>
+                        </td>
+                        <td style="padding:16px;">
+                            <button onclick="editProduct(${product.product_id})" style="background:none; border:none; color:#2563eb; cursor:pointer; margin-right:10px;" title="Edit Product"><i class="fa-solid fa-pen"></i></button>
+                            <button onclick="deleteProduct(${product.product_id})" style="background:none; border:none; color:#ef4444; cursor:pointer;" title="Delete Product"><i class="fa-solid fa-trash"></i></button>
                         </td>
                     </tr>
                     `;
@@ -523,7 +395,7 @@ async function loadProducts() {
 
         if (addBtn) {
             addBtn.addEventListener("click", () => {
-                document.getElementById("productModal").style.display = "flex";
+                window.openAddProductModal();
             });
         }
 
@@ -1238,54 +1110,76 @@ window.addEventListener("hk-theme-change", () => {
 
 
 
+
 // ====== NEW PROFILE FLOW LOGIC ======
-function openProfileModal() {
-    const modal = document.getElementById("profileModalBox") || document.getElementById("profileModal");
+async function openProfileModal() {
+    const modal = document.getElementById("profileModal") || document.getElementById("profileModalBox");
     if (modal) modal.style.display = "flex";
     
-    // Fetch entities to populate the dropdown
-    const entityType = document.getElementById('profileEntityType')?.value;
-    if (entityType) {
-        fetch('/api/vendor/my-entities/' + entityType)
-            .then(res => res.json())
-            .then(data => {
-                if (data.success && data.data) {
-                    const select = document.getElementById('entitySelect');
-                    if (select) {
-                        select.innerHTML = '<option value="">Select Equipment Source...</option>';
-                        data.data.forEach(ent => {
-                            if (!ent.profile_completed) {
-                                select.innerHTML += '<option value="' + ent.id + '">' + ent.name + '</option>';
-                            }
-                        });
-                        
-                          if (select.options.length === 1) {
-                              select.innerHTML = '<option value="">All profiles completed or no entities added.</option>';
-                          }
-                          
-                          // Auto-fill form when entity is selected
-                          select.addEventListener('change', async (e) => {
-                              const entityId = e.target.value;
-                              if (!entityId) return;
-                              try {
-                                  const res = await fetch('/api/vendor/entity-details/' + entityType + '/' + entityId);
-                                  const result = await res.json();
-                                  if (result.success && result.data) {
-                                      const form = document.getElementById('vendorProfileForm');
-                                      for (const key in result.data) {
-                                          const input = form.querySelector('[name="' + key + '"]');
-                                          if (input && result.data[key]) {
-                                              input.value = result.data[key];
-                                          }
-                                      }
-                                  }
-                              } catch(err) { console.error(err); }
-                          });
-
+    const form = document.getElementById('vendorProfileForm');
+    const actionButtons = document.getElementById('profileModalActionButtons');
+    if (!form) return;
+    
+    try {
+        const res = await fetch('/api/user/profile', { credentials: 'include' });
+        const result = await res.json();
+        if (result.success && result.user) {
+            const user = result.user;
+            
+            // Populate fields if they exist
+            if (form.elements['company_name']) form.elements['company_name'].value = user.company_name || '';
+            if (form.elements['name']) form.elements['name'].value = user.name || '';
+            if (form.elements['business_reg_number']) form.elements['business_reg_number'].value = user.business_reg_number || '';
+            if (form.elements['contact_number']) form.elements['contact_number'].value = user.contact_number || user.emailorcontact || '';
+            if (form.elements['email']) form.elements['email'].value = user.email || (user.emailorcontact && user.emailorcontact.includes('@') ? user.emailorcontact : '');
+            if (form.elements['service_area']) form.elements['service_area'].value = user.service_area || '';
+            if (form.elements['service_24x7']) form.elements['service_24x7'].value = user.service_24x7 || 'Yes';
+            if (form.elements['business_address']) form.elements['business_address'].value = user.business_address || '';
+            
+            const allInputs = form.querySelectorAll('input:not([type="hidden"]), textarea, select');
+            const isCompleted = Number(user.vendor_profile_completed) === 1;
+            const isEditAllowed = Number(user.edit_allowed) === 1;
+            const isEditRequested = Number(user.edit_requested) === 1;
+            
+            if (!isCompleted || isEditAllowed) {
+                allInputs.forEach(inp => { inp.disabled = false; inp.style.backgroundColor = ''; });
+                if (actionButtons) {
+                    actionButtons.innerHTML = `
+                        <button type="button" onclick="closeProfileModal()" style="padding:10px 18px; border:1px solid var(--hk-border, #cbd5e1); background:var(--hk-surface, #fff); border-radius:10px; cursor:pointer; color:var(--hk-text-main, #101828); font-weight:600;">Close</button>
+                        <button type="submit" id="saveProfileBtn" style="padding:10px 18px; border:none; background:var(--hk-primary-blue, #2563eb); color:#fff; border-radius:10px; cursor:pointer; font-weight:600;">Save Profile</button>
+                    `;
+                }
+            } else {
+                allInputs.forEach(inp => { inp.disabled = true; inp.style.backgroundColor = '#f1f5f9'; });
+                if (actionButtons) {
+                    if (!isEditRequested) {
+                        actionButtons.innerHTML = `
+                            <button type="button" onclick="closeProfileModal()" style="padding:10px 18px; border:1px solid var(--hk-border, #cbd5e1); background:var(--hk-surface, #fff); border-radius:10px; cursor:pointer; color:var(--hk-text-main, #101828); font-weight:600;">Close</button>
+                            <button type="button" id="reqAdminBtn" style="padding:10px 18px; border:none; background:#d97706; color:#fff; border-radius:10px; cursor:pointer; font-weight:600;">Request Admin Edit</button>
+                        `;
+                        document.getElementById('reqAdminBtn').onclick = async () => {
+                            try {
+                                // Request edit on user profile (vendor)
+                                const r = await fetch('/api/vendor/request-profile-edit/user/' + user.id, {method:'POST'});
+                                const rD = await r.json();
+                                if(rD.success) {
+                                    alert('Request sent to admin!');
+                                    openProfileModal();
+                                } else {
+                                    alert(rD.message);
+                                }
+                            } catch(e) {}
+                        };
+                    } else {
+                        actionButtons.innerHTML = `
+                            <button type="button" onclick="closeProfileModal()" style="padding:10px 18px; border:1px solid var(--hk-border, #cbd5e1); background:var(--hk-surface, #fff); border-radius:10px; cursor:pointer; color:var(--hk-text-main, #101828); font-weight:600;">Close</button>
+                            <button type="button" disabled style="padding:10px 18px; border:none; background:#94a3b8; color:#fff; border-radius:10px; cursor:not-allowed; font-weight:600;">Edit Requested...</button>
+                        `;
                     }
                 }
-            });
-    }
+            }
+        }
+    } catch(err) { console.error(err); }
 }
 
 function closeProfileModal() {
@@ -1296,42 +1190,261 @@ function closeProfileModal() {
 document.getElementById('vendorProfileForm')?.addEventListener('submit', async (event) => {
     event.preventDefault();
     const form = event.target;
-    const entityId = document.getElementById('entitySelect')?.value;
-    const entityType = document.getElementById('profileEntityType')?.value;
-    
-    if (!entityId) {
-        alert('Please select an entity first.');
-        return;
-    }
     
     const formData = new FormData(form);
     
     const submitBtn = document.getElementById('saveProfileBtn');
+    const origText = submitBtn ? submitBtn.innerHTML : '';
     if (submitBtn) {
         submitBtn.disabled = true;
-        submitBtn.innerText = 'Saving...';
+        submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Saving...';
     }
 
     try {
-        const response = await fetch('/api/vendor/complete-profile/' + entityType + '/' + entityId, { 
-            method: 'POST', 
-            body: formData 
+        const response = await fetch('/api/user/profile', { 
+            method: 'PUT', 
+            body: formData,
+            credentials: 'include'
         });
         const result = await response.json();
         if (result.success) {
-            alert('Profile completed successfully!');
+            alert('Vendor Profile saved successfully!');
             closeProfileModal();
-            form.reset();
+            await loadUserProfile();
         } else {
-            alert(result.message || 'Profile completion failed');
+            alert(result.message || 'Profile save failed');
         }
     } catch (e) {
-        alert('An error occurred.');
+        alert('An error occurred while saving.');
     } finally {
         if (submitBtn) {
             submitBtn.disabled = false;
-            submitBtn.innerText = 'Save Profile';
+            submitBtn.innerHTML = origText || 'Save Profile';
         }
     }
 });
 // ===================================
+
+
+
+// ==================== SUPPLIERS LOGIC ====================
+
+window.openAddSupplierModal = function() {
+    document.getElementById('supplierForm').reset();
+    document.getElementById('edit_supplier_id').value = '';
+    const modal = document.getElementById('addSupplierModal');
+    if (modal) {
+        const title = modal.querySelector('h2');
+        if (title) title.innerText = 'Add Equipment Supplier';
+        modal.style.display = 'flex';
+    }
+};
+
+window.loadSuppliers = async function() {
+    const html = `
+        <div id="suppliersSection">
+            <div class="topBar" style="display: flex; justify-content: flex-end; margin-bottom: 20px;">
+                <button onclick="openAddSupplierModal()" style="padding: 10px 16px; background: #2563eb; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">
+                    <i class="fa-solid fa-plus"></i>
+                    Add Supplier
+                </button>
+            </div>
+            <div class="tableContainer" style="overflow-x: auto; background: white; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
+                <table id="suppliersTable" style="width:100%; border-collapse: collapse; text-align: left;">
+                    <thead>
+                        <tr style="border-bottom: 1px solid #e2e8f0; background: #f8fafc;">
+                            <th style="padding: 16px; font-weight: 600; color: #475569;">ID</th>
+                            <th style="padding: 16px; font-weight: 600; color: #475569;">Logo</th>
+                            <th style="padding: 16px; font-weight: 600; color: #475569;">Company</th>
+                            <th style="padding: 16px; font-weight: 600; color: #475569;">Supplier Name</th>
+                            <th style="padding: 16px; font-weight: 600; color: #475569;">Type</th>
+                            <th style="padding: 16px; font-weight: 600; color: #475569;">Contact</th>
+                            <th style="padding: 16px; font-weight: 600; color: #475569;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="suppliersTableBody">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    `;
+    
+    document.getElementById("mainContent").innerHTML = html;
+    
+    try {
+        const res = await fetch('/api/equipment-suppliers');
+        const data = await res.json();
+        if(data.success) {
+            const tbody = document.getElementById('suppliersTableBody');
+            tbody.innerHTML = '';
+            
+            // Also populate the supplier dropdown in the add product modal if it exists
+            const supplierSelect = document.getElementById('supplier_id');
+            if (supplierSelect) {
+                supplierSelect.innerHTML = '<option value="">Select Supplier</option>';
+            }
+
+            data.suppliers.forEach(sup => {
+                if (supplierSelect) {
+                    supplierSelect.innerHTML += `<option value="${sup.id}">${sup.shop_company_name || sup.supplier_name}</option>`;
+                }
+
+                const tr = document.createElement('tr');
+                tr.style.borderBottom = '1px solid #e2e8f0';
+                
+                const logo = sup.supplier_logo ? `<img src="/uploads/${sup.supplier_logo}" style="width:40px; height:40px; border-radius:50%; object-fit:cover;">` : `<div style="width:40px; height:40px; border-radius:50%; background:#e2e8f0; display:flex; align-items:center; justify-content:center;"><i class="fa-solid fa-building"></i></div>`;
+                
+                tr.innerHTML = `
+                    <td style="padding:16px;">#${sup.id}</td>
+                    <td style="padding:16px;">${logo}</td>
+                    <td style="padding:16px; font-weight:600;">${sup.shop_company_name || '-'}</td>
+                    <td style="padding:16px;">${sup.supplier_name || '-'}</td>
+                    <td style="padding:16px;">${sup.supplier_type || '-'}</td>
+                    <td style="padding:16px;">${sup.mobile_number || '-'}</td>
+                    <td style="padding:16px;">
+                        <button onclick="editSupplier(${sup.id})" style="background:none; border:none; color:#2563eb; cursor:pointer; margin-right:10px;"><i class="fa-solid fa-pen"></i></button>
+                        <button onclick="deleteSupplier(${sup.id})" style="background:none; border:none; color:#ef4444; cursor:pointer;"><i class="fa-solid fa-trash"></i></button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+    } catch(e) {
+        console.error(e);
+    }
+};
+
+document.getElementById('supplierForm')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    const editId = document.getElementById('edit_supplier_id').value;
+    
+    const url = editId ? '/api/edit/equipment-supplier/' + editId : '/api/add/equipment-supplier';
+    
+    try {
+        const res = await fetch(url, { method: 'POST', body: formData });
+        const data = await res.json();
+        if(data.success) {
+            alert('Supplier saved successfully!');
+            document.getElementById('addSupplierModal').style.display = 'none';
+            if (window.loadSuppliers) window.loadSuppliers();
+        } else {
+            alert('Error saving supplier');
+        }
+    } catch(e) {
+        console.error(e);
+    }
+});
+
+window.deleteSupplier = async function(id) {
+    if(!confirm('Delete this supplier?')) return;
+    try {
+        const res = await fetch('/api/delete/equipment-supplier/' + id, { method: 'DELETE' });
+        const data = await res.json();
+        if(data.success) {
+            if (window.loadSuppliers) window.loadSuppliers();
+        }
+    } catch(e) {
+        console.error(e);
+    }
+};
+
+window.editSupplier = async function(id) {
+    try {
+        const res = await fetch('/api/equipment-suppliers');
+        const data = await res.json();
+        if(data.success) {
+            const sup = data.suppliers.find(s => s.id === id);
+            if(sup) {
+                const form = document.getElementById('supplierForm');
+                form.reset();
+                
+                document.getElementById('edit_supplier_id').value = sup.id;
+                
+                const fields = ['supplier_name', 'shop_company_name', 'supplier_type', 'owner_name', 'contact_person', 'mobile_number', 'alternate_mobile', 'email', 'full_address', 'city', 'state', 'pincode', 'google_maps_location', 'equipment_categories', 'brands_available', 'equipment_available', 'new_used_equipment', 'warranty_available', 'installation_service', 'after_sales_service'];
+                
+                fields.forEach(f => {
+                    if (form.elements[f]) form.elements[f].value = sup[f] || '';
+                });
+                
+                const modal = document.getElementById('addSupplierModal');
+                if (modal) {
+                    const title = modal.querySelector('h2');
+                    if (title) title.innerText = 'Edit Equipment Supplier';
+                    modal.style.display = 'flex';
+                }
+            }
+        }
+    } catch(e) {
+        console.error(e);
+    }
+};
+// ==================== END SUPPLIERS LOGIC ====================
+
+
+window.openAddProductModal = function(isEdit = false) {
+    if(!isEdit) {
+        document.getElementById("productForm").reset();
+        document.getElementById("edit_product_id").value = "";
+        if(document.querySelector("#productModal h2")) document.querySelector("#productModal h2").innerText = "Add Product";
+    } else {
+        if(document.querySelector("#productModal h2")) document.querySelector("#productModal h2").innerText = "Edit Product";
+    }
+    document.getElementById("productModal").style.display = "flex";
+};
+
+window.editProduct = async function(id) {
+    try {
+        const res = await fetch('/api/equipment-products');
+        const data = await res.json();
+        if(data.success) {
+            const product = data.products.find(p => p.product_id === id);
+            if(product) {
+                const form = document.getElementById("productForm");
+                form.reset();
+                document.getElementById("edit_product_id").value = product.product_id;
+                
+                const fields = [
+                    "product_name", "brand_name", "category", "sub_category", "model_number", 
+                    "manufacturer", "country_of_origin", "product_description", "mrp", 
+                    "selling_price", "stock_quantity", "stock_status", "warranty_period", 
+                    "delivery_available", "delivery_charge", "supplier_id"
+                ];
+                
+                fields.forEach(f => {
+                    if (form.elements[f]) form.elements[f].value = product[f] || "";
+                });
+                
+                window.openAddProductModal(true);
+            }
+        }
+    } catch(e) {
+        console.error(e);
+    }
+};
+
+window.deleteProduct = async function(id) {
+    if(!confirm('Are you sure you want to delete this product?')) return;
+    try {
+        const res = await fetch('/api/delete/equipment-product/' + id, { method: 'DELETE' });
+        const data = await res.json();
+        if(data.success) {
+            loadProducts();
+        } else {
+            alert('Error deleting product');
+        }
+    } catch(e) {
+        console.error(e);
+    }
+};
+
+
+document.getElementById('closeSupplierModal')?.addEventListener('click', () => {
+    const modal = document.getElementById('addSupplierModal');
+    if (modal) modal.style.display = 'none';
+});
+
+document.getElementById('closeViewSupplierModal')?.addEventListener('click', () => {
+    const modal = document.getElementById('viewSupplierModal');
+    if (modal) modal.style.display = 'none';
+});
