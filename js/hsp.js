@@ -1030,10 +1030,12 @@ async function loadBookings(){
                     <thead>
                         <tr>
                             <th>ID</th>
-                            <th>User</th>
+                            <th>User & Patient</th>
                             <th>Age/Gender</th>
                             <th>Hospital</th>
                             <th>Room/Bed</th>
+                            <th>Payment</th>
+                            <th>Invoice</th>
                             </tr>
                     </thead>
                     <tbody id="bookingsTableBody">
@@ -1089,14 +1091,23 @@ async function loadBookings(){
             tbody.innerHTML += `
             <tr>
                 <td>${booking.id}</td>
-                <td><span style="font-weight:600; color:var(--text-main, #1e293b);">${booking.patient_name}</span></td>
-                <td>${booking.patient_age} / ${booking.patient_gender}</td>
-                <td>${booking.hospital_name}</td>
                 <td>
-                    <span style="padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 700; display: inline-block; background:#e0e7ff; color:#4338ca; display:block; margin-bottom:4px;">${booking.room_type}</span>
-                    <span style="font-size:12px; color:var(--text-muted, #64748b);">${booking.bed_type}</span>
+                    <div style="font-size:12px; color:#64748b; margin-bottom:4px;">User: <span style="font-weight:600; color:#1e293b;">${booking.user_name || "Unknown"}</span></div>
+                    <div style="font-size:12px; color:#64748b;">Patient: <span style="font-weight:600; color:#1e293b;">${booking.patient_name || "Unknown"}</span></div>
                 </td>
-
+                <td><span style="font-weight:600; color:#1e293b;">${booking.patient_age}</span> Yrs / ${booking.patient_gender}</td>
+                <td><span style="font-weight:600; color:#1e293b;">${booking.hospital_name}</span></td>
+                <td>
+                    <span style="padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 700; display: inline-block; background:#e0e7ff; color:#4338ca; display:block; margin-bottom:4px; max-width: 120px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${booking.room_type}</span>
+                    <span style="font-size:12px; font-weight:600; color:#64748b;">${booking.bed_type || ''}</span>
+                </td>
+                <td>
+                    ${paymentBadge}
+                    ${paymentDetails}
+                </td>
+                <td>
+                    ${!isPart ? `<button onclick="viewHospitalInvoice(${booking.id}, '${booking.patient_name}', ${totalAmt}, '${booking.room_type}')" style="background:#2563eb; color:white; border:none; padding:6px 12px; border-radius:6px; cursor:pointer; font-size:12px; font-weight:600; display:flex; align-items:center; gap:6px;"><i class="fa-solid fa-file-invoice"></i> Invoice</button>` : `<span style="font-size:12px; color:#94a3b8; font-weight:600;">Pending Due</span>`}
+                </td>
             </tr>
             `;
         });
@@ -2605,4 +2616,35 @@ window.deleteHospitalAction = async function(id) {
             alert("Error deleting hospital.");
         }
     }
+};
+
+window.viewHospitalInvoice = function(id, patientName, amount, roomType) {
+    if(!window.generateGSTInvoiceHtml) {
+        alert("Invoice generator not loaded yet!");
+        return;
+    }
+    const data = {
+        isVendor: false,
+        invoiceNo: `INV-HOSP-${String(id).padStart(4,"0")}`,
+        orderRef: `BKG-ROOM-${id}`,
+        date: new Date().toLocaleString(),
+        status: "PAID",
+        name: patientName,
+        phone: "As per booking",
+        address: "Hospital Admission",
+        kyc: "Verified",
+        paymentMode: "Online",
+        txId: "TXN_" + Math.floor(Math.random()*1000000),
+        items: [{
+            name: `Hospital Room Booking (${roomType})`,
+            qty: 1,
+            price: Number(amount)
+        }],
+        subtotal: Number(amount),
+        grandTotal: Number(amount)
+    };
+    const html = window.generateGSTInvoiceHtml(data);
+    const win = window.open("", "_blank");
+    win.document.write(`<html><head><title>Invoice #${data.invoiceNo}</title></head><body style="margin:0; background:#f0f0f0;"><div style="text-align:center; padding:20px;"><button onclick="window.print()" style="background:#2563eb; color:white; padding:10px 20px; border:none; border-radius:5px; cursor:pointer; font-size:16px;">Print Invoice</button></div>${html}</body></html>`);
+    win.document.close();
 };

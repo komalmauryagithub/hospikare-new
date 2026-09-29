@@ -329,3 +329,27 @@ body {
 .roomImg:hover {
     transform: scale(1.05);
 }
+
+.back-btn-float {
+    position: absolute;
+    top: 24px;
+    left: 24px;
+    z-index: 50;
+    background: rgba(255,255,255,0.2);
+    color: white;
+    border: 1px solid rgba(255,255,255,0.4);
+    padding: 10px 24px;
+    border-radius: 9999px;
+    font-weight: 600;
+    cursor: pointer;
+    backdrop-filter: blur(8px);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: 'Inter', sans-serif;
+    transition: all 0.3s ease;
+}
+.back-btn-float:hover {
+    background: white;
+    color: #0f172a;
+}

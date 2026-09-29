@@ -28,7 +28,7 @@ loadOrders();
 /* ================= UTILITIES ================= */
 
 function getUserIdQuery() {
-    const userStr = localStorage.getItem("hk_user");
+    const userStr = localStorage.getItem("productUser") || localStorage.getItem("hk_user");
     if (userStr) {
         try {
             const userObj = JSON.parse(userStr);
@@ -360,7 +360,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     document.getElementById("userProfileModal").style.display = "none";
                     document.getElementById("userProfileModal").classList.remove("active");
                 };
-                document.getElementById("modalLogoutBtn").onclick = () => {
+                document.getElementById("modalLogoutBtn").onclick = async () => {
+                    try { await fetch('/api/user/logout', { method: 'POST', credentials: 'include' }); } catch(e) {}
                     localStorage.removeItem("productUser");
                     window.location.href = "users.html";
                 };
@@ -368,7 +369,8 @@ document.addEventListener('DOMContentLoaded', () => {
             if (logoutBtn) {
                 logoutBtn.hidden = false;
                 logoutBtn.innerHTML = '<i class="fa-solid fa-arrow-right-from-bracket"></i> Logout';
-                logoutBtn.onclick = () => {
+                logoutBtn.onclick = async () => {
+                    try { await fetch('/api/user/logout', { method: 'POST', credentials: 'include' }); } catch(e) {}
                     localStorage.removeItem('productUser');
                     window.location.href = 'users.html';
                 };
@@ -387,7 +389,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     document.getElementById("userProfileModal").style.display = "none";
                     document.getElementById("userProfileModal").classList.remove("active");
                 };
-                document.getElementById("modalLogoutBtn").onclick = () => {
+                document.getElementById("modalLogoutBtn").onclick = async () => {
+                    try { await fetch('/api/user/logout', { method: 'POST', credentials: 'include' }); } catch(e) {}
                     localStorage.removeItem("productUser");
                     window.location.href = "users.html";
                 };

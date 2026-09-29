@@ -94,6 +94,9 @@ async function loadHospitalDetails() {
         document.body.insertAdjacentHTML('afterbegin', `
             <div class="hero-section" style="background-image: url('${coverImage}')">
                 <div class="hero-overlay"></div>
+                <button onclick="window.history.length > 1 ? window.history.back() : window.location.href='/users.html'" class="back-btn-float">
+                    <i class="fa-solid fa-arrow-left"></i> Back
+                </button>
                 <div class="hero-content">
                     <h1>${hospital.hospital_name}</h1>
                     <p><i class="fa-solid fa-location-dot"></i> ${hospital.address}</p>
@@ -133,17 +136,17 @@ async function loadHospitalDetails() {
         // Inject Modal HTML into DOM if not exists
                 if(!document.getElementById("imageViewerModal")) {
             const viewerHTML = `
-            <div class="modal" id="imageViewerModal" style="z-index: 10000; background: rgba(15, 23, 42, 0.9);">
-                <div class="modal-content" style="max-width: 800px; background: transparent; box-shadow: none; padding: 0;">
-                    <span class="close-modal" onclick="document.getElementById('imageViewerModal').classList.remove('active')" style="color: white; top: -40px; right: 0; font-size: 40px;">&times;</span>
-                    <img id="viewerImage" src="" style="width: 100%; border-radius: 12px; max-height: 85vh; object-fit: contain;">
+            <div class="modal" id="imageViewerModal" style="z-index: 10000; background: rgba(15, 23, 42, 0.95); position: fixed; inset: 0; display: none; align-items: center; justify-content: center;">
+                <span onclick="document.getElementById('imageViewerModal').style.display='none'; document.getElementById('imageViewerModal').classList.remove('active');" style="position: absolute; top: 20px; right: 40px; color: white; font-size: 60px; font-weight: 300; cursor: pointer; z-index: 10001; line-height: 1;">&times;</span>
+                <div style="max-width: 90vw; max-height: 90vh; display: flex; align-items: center; justify-content: center;">
+                    <img id="viewerImage" src="" style="max-width: 100%; max-height: 90vh; border-radius: 12px; object-fit: contain; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);">
                 </div>
             </div>`;
             document.body.insertAdjacentHTML('beforeend', viewerHTML);
             
             window.openImageViewer = function(src) {
                 document.getElementById("viewerImage").src = src;
-                document.getElementById("imageViewerModal").classList.add("active");
+                document.getElementById("imageViewerModal").style.display="flex"; document.getElementById("imageViewerModal").classList.add("active");
             };
         }
 
@@ -170,8 +173,6 @@ async function loadHospitalDetails() {
                         <div class="form-group">
                             <label>Service Type</label>
                             <select id="bookingService" onchange="handleServiceChange()" style="font-weight: 700; background: #f8fafc;">
-                                <option value="General Appointment">General Appointment</option>
-                                <option value="Consultation">Doctor Consultation</option>
                                 <option value="Room Booking">Room Booking</option>
                             </select>
                         </div>
@@ -254,8 +255,8 @@ window.openAppointmentModal = function(serviceName = 'General Appointment', pric
             document.getElementById("roomTypeGroup").style.display = "block";
             document.getElementById("bookingRoomType").value = serviceName;
         } else {
-            document.getElementById("bookingService").value = type === 'consultation' ? "Consultation" : "General Appointment";
-            document.getElementById("roomTypeGroup").style.display = "none";
+            document.getElementById("bookingService").value = "Room Booking";
+            document.getElementById("roomTypeGroup").style.display = "block";
             document.getElementById("bookingRoomType").value = "";
         }
         
