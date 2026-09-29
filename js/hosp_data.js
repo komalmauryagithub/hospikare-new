@@ -1,581 +1,410 @@
 const params = new URLSearchParams(window.location.search);
 const hospitalId = params.get("id");
 
-async function loadHospitalDetails(){
-    try{
+async function loadHospitalDetails() {
+    try {
         const response = await fetch(`/api/hospital/${hospitalId}`);
         const data = await response.json();
-        if(!data.success){
+        if (!data.success) {
             alert("Hospital not found");
             return;
         }
+        
         const hospital = data.hospital;
-        const container = document.getElementById(
-            "hospitalDetailsContainer"
-        );
+        const container = document.getElementById("hospitalDetailsContainer");
+        
+        // 1. Hero Images
+        let coverImage = "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?q=80&w=2053&auto=format&fit=crop";
+        if (hospital.hospital_images && hospital.hospital_images.length > 0) {
+            coverImage = `/uploads/${hospital.hospital_images[0]}`;
+        }
+        
+        // 2. Facilities
         let facilitiesHTML = '';
-        if(hospital.facilities){
-            hospital.facilities
-            .split(',')
-            .forEach(facility => {
-                facilitiesHTML += `
-                    <span>
-                        ${facility.trim()}
-                    </span>
-                `;
+        if (hospital.facilities) {
+            hospital.facilities.split(',').forEach(facility => {
+                facilitiesHTML += `<span>${facility.trim()}</span>`;
             });
         }
+        
+        // 3. Rooms
         let roomsHTML = '';
-        if(hospital.rooms.length > 0){
+        if (hospital.rooms && hospital.rooms.length > 0) {
             hospital.rooms.forEach(room => {
+                const isAvailable = room.availability === 'Available';
+                
                 let roomImagesHTML = '';
                 if(room.images && room.images.length > 0){
                     roomImagesHTML = `<div class="roomImageGallery">`;
                     room.images.forEach(img => {
-                        roomImagesHTML += `<img src="/uploads/${img}" alt="${room.room_type} room" class="roomImg" onclick="openRoomImage(this.src)">`;
+                        roomImagesHTML += `<img src="/uploads/${img}" alt="${room.room_type}" class="roomImg" onclick="openImageViewer(this.src)">`;
                     });
                     roomImagesHTML += `</div>`;
                 }
+                
+                const bedText = room.bed_type && room.bed_type !== "undefined" ? room.bed_type : "Standard";
+
                 roomsHTML += `
-                    <div class="roomCard">
-                        <div class="roomLeft" style="width: 100%;">
-                            <div style="display: flex; justify-content: space-between; align-items: center;">
-                                <h3>
-                                    ${room.room_type}
-                                </h3>
-                                <div class="
-                                    availability
-                                    ${room.availability === 'Available'
-                                        ? 'available'
-                                        : 'unavailable'
-                                    }
-                                ">
-                                    ${room.availability}
-                                </div>
+                    <div class="roomCard" style="display:flex; flex-direction:column; gap:20px; padding: 24px; text-align: left;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; width: 100%;">
+                            <div class="roomInfo">
+                                <h3 style="font-size: 20px; color: #0f172a; margin-bottom: 6px;">${room.room_type}</h3>
+                                <p style="font-size: 14px; color: #64748b; margin-bottom: 8px;">
+                                    ${bedText} <span style="margin: 0 8px; color: #cbd5e1;">|</span> 
+                                    ${isAvailable ? '<span style="color:#166534; font-weight: 600;"><i class="fa-solid fa-circle-check"></i> Available</span>' : '<span style="color:#991b1b; font-weight: 600;"><i class="fa-solid fa-circle-xmark"></i> Unavailable</span>'}
+                                </p>
+                                <div class="roomPrice" style="font-size: 22px; font-weight: 800; color: #2563eb;">Rs. ${room.pricing}<span style="font-size:14px; color:#64748b; font-weight:500;">/day</span></div>
                             </div>
-                            <p>
-                                ₹${room.pricing}/day
-                            </p>
-                            ${roomImagesHTML}
+                            <div class="roomAction">
+                                <button class="btn" onclick="openAppointmentModal('${room.room_type}', ${room.pricing || 1000}, 'room')" ${!isAvailable ? 'disabled style="opacity:0.5;cursor:not-allowed; background:#f1f5f9; color:#94a3b8;"' : 'style="padding: 12px 28px;"'}>Select Room</button>
+                            </div>
                         </div>
+                        ${roomImagesHTML}
                     </div>
                 `;
             });
         }
+        
+        // 4. Doctors
         let doctorsHTML = '';
-        if(hospital.doctors.length > 0){
+        if (hospital.doctors && hospital.doctors.length > 0) {
             hospital.doctors.forEach(doctor => {
+                const docName = doctor.name || doctor.doctor_name || "Doctor";
+                const imgHTML = doctor.image 
+                    ? `<img src="/uploads/${doctor.image}" alt="${docName}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">` 
+                    : `<i class="fa-solid fa-user-doctor"></i>`;
+                
                 doctorsHTML += `
                     <div class="doctorCard">
-                        <div class="doctorIcon" style="overflow: hidden; display: flex; align-items: center; justify-content: center; background-color: #f1f5f9;">
-                            ${doctor.image 
-                                ? `<img src="/uploads/${doctor.image}" alt="${doctor.doctor_name}" style="width: 100%; height: 100%; object-fit: cover;">` 
-                                : `<i class="fa-solid fa-user-doctor"></i>`
-                            }
+                        <div class="doctorHeader">
+                            <div class="doctorIcon">${imgHTML}</div>
+                            <div class="doctorContent">
+                                <h3>${docName}</h3>
+                                <p>${doctor.specialization || doctor.speciality || doctor.qualification || 'General'}</p>
+                                <span>Exp: ${doctor.experience || 'N/A'}</span>
+                            </div>
                         </div>
-                        <div class="doctorContent">
-                            <h3>
-                                ${doctor.doctor_name}
-                            </h3>
-                            <p>
-                                ${doctor.qualification}
-                            </p>
-                            <span>
-                                Experience:
-                                ${doctor.experience}
-                            </span>
-                        </div>
+                        <button class="btn" onclick="openAppointmentModal('Consultation: ${docName}', ${doctor.fees || doctor.consultation_fee || 500}, 'consultation')" style="background:#eff6ff; color:#2563eb; padding:8px 16px; border:none; border-radius:8px; font-weight:700; cursor:pointer; width:100%;">Book Consult</button>
                     </div>
                 `;
             });
         }
-        let imagesHTML = '';
-        if(hospital.hospital_images.length > 0){
-            hospital.hospital_images.forEach(image => {
-                imagesHTML += `
-                    <img src="/uploads/${image}" alt="">
-                `;
-            });
-        }
-        container.innerHTML = `
-            <div class="hospitalBanner">
-                <div class="bannerImages">
-                    ${imagesHTML}
-                </div>
-                <div class="bannerContent">
-                    <div>
-                        <h1>
-                            ${hospital.hospital_name}
-                        </h1>
-                        <p class="hospitalAddress">
-                            <i class="fa-solid fa-location-dot"></i>
-                            ${hospital.address}
-                        </p>
-                    </div>
-                    <button class="bookBtn" onclick="openAppointmentModal()">
-                        Book Appointment
-                    </button>
+        
+        // Inject Layout
+        document.body.insertAdjacentHTML('afterbegin', `
+            <div class="hero-section" style="background-image: url('${coverImage}')">
+                <div class="hero-overlay"></div>
+                <div class="hero-content">
+                    <h1>${hospital.hospital_name}</h1>
+                    <p><i class="fa-solid fa-location-dot"></i> ${hospital.address}</p>
                 </div>
             </div>
+        `);
+        
+        container.innerHTML = `
             <div class="mainGrid">
                 <div class="leftSide">
                     <div class="sectionCard">
-                        <h2>
-                            Facilities
-                        </h2>
-                        <div class="facilityContainer">
-                            ${facilitiesHTML}
-                        </div>
+                        <h2>Facilities</h2>
+                        <div class="facilityContainer">${facilitiesHTML || '<i>No facilities listed</i>'}</div>
                     </div>
+                    
                     <div class="sectionCard">
-                        <h2>
-                            Rooms Available
-                        </h2>
-                        <div class="roomsContainer">
-                            ${roomsHTML}
-                        </div>
+                        <h2>Rooms Available</h2>
+                        <div class="roomsContainer">${roomsHTML || '<i>No rooms available</i>'}</div>
+                    </div>
+                    
+                    <div class="sectionCard">
+                        <h2>Our Specialists</h2>
+                        <div class="doctorContainer">${doctorsHTML || '<i>No doctors listed</i>'}</div>
                     </div>
                 </div>
+                
                 <div class="rightSide">
-                    <div class="sectionCard">
-                        <h2>
-                            Doctors
-                        </h2>
-                        <div class="doctorContainer">
-                            ${doctorsHTML}
-                        </div>
+                    <div class="bookingWidget">
+                        <h3>Ready to book?</h3>
+                        <p>Get instant confirmation for your appointment or room booking.</p>
+                        <button class="bookBtn" onclick="openAppointmentModal('General Appointment')">Book Appointment</button>
                     </div>
                 </div>
             </div>
+        `;
+        
+        // Inject Modal HTML into DOM if not exists
+                if(!document.getElementById("imageViewerModal")) {
+            const viewerHTML = `
+            <div class="modal" id="imageViewerModal" style="z-index: 10000; background: rgba(15, 23, 42, 0.9);">
+                <div class="modal-content" style="max-width: 800px; background: transparent; box-shadow: none; padding: 0;">
+                    <span class="close-modal" onclick="document.getElementById('imageViewerModal').classList.remove('active')" style="color: white; top: -40px; right: 0; font-size: 40px;">&times;</span>
+                    <img id="viewerImage" src="" style="width: 100%; border-radius: 12px; max-height: 85vh; object-fit: contain;">
+                </div>
+            </div>`;
+            document.body.insertAdjacentHTML('beforeend', viewerHTML);
+            
+            window.openImageViewer = function(src) {
+                document.getElementById("viewerImage").src = src;
+                document.getElementById("imageViewerModal").classList.add("active");
+            };
+        }
 
-            <div class="appointmentModal" id="appointmentModal">
-                <div class="appointmentBox">
-                    <div class="appointmentTop">
-                        <h2>
-                            Book Appointment
-                        </h2>
-                        <button class="closeModalBtn" onclick="closeAppointmentModal()">
-                            <i class="fa-solid fa-xmark"></i>
-                        </button>
-                    </div>
-                    <form class="appointmentForm" id="appointmentForm">
-                        <div class="inputGroup">
-                            <label>Patient Name</label>
-                            <input type="text"
-                            id="patientName"
-                            required>
-                        </div>
-                        <div class="inputGroup">
-                            <label>Patient Age</label>
-                            <input type="number"
-                            id="patientAge"
-                            required>
-                        </div>
-                        <div class="inputGroup">
-                            <label>Gender</label>
-                            <select id="patientGender" required>
-                                <option value="">
-                                    Select Gender
-                                </option>
-                                <option value="Male">
-                                    Male
-                                </option>
-                                <option value="Female">
-                                    Female
-                                </option>
-                                <option value="Other">
-                                    Other
-                                </option>
+        
+        let roomOptionsHTML = '<option value="">-- Select a Room --</option>';
+        if (hospital.rooms && hospital.rooms.length > 0) {
+            hospital.rooms.forEach(r => {
+                if(r.availability === 'Available') {
+                    roomOptionsHTML += `<option value="${r.room_type}" data-price="${r.pricing}">${r.room_type} (Rs. ${r.pricing}/day)</option>`;
+                }
+            });
+        }
+
+        if(!document.getElementById("appointmentModal")) {
+            const modalHTML = `
+            <div class="modal" id="appointmentModal" style="z-index: 9999; background: rgba(15, 23, 42, 0.7);">
+                <div class="modal-content" style="max-width: 500px; padding: 40px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.3);">
+                    <span class="close-modal" onclick="closeAppointmentModal()">&times;</span>
+                    <h2 style="font-size: 26px; font-weight: 800; margin-bottom: 24px; color: #0f172a;">Complete Booking</h2>
+                    
+                    <form id="appointmentForm" onsubmit="submitAppointment(event)">
+                        <input type="hidden" id="bookingBasePrice" value="0">
+                        
+                        <div class="form-group">
+                            <label>Service Type</label>
+                            <select id="bookingService" onchange="handleServiceChange()" style="font-weight: 700; background: #f8fafc;">
+                                <option value="General Appointment">General Appointment</option>
+                                <option value="Consultation">Doctor Consultation</option>
+                                <option value="Room Booking">Room Booking</option>
                             </select>
                         </div>
-
-                        <div class="inputGroup">
+                        
+                        <div class="form-group" id="roomTypeGroup" style="display:none;">
                             <label>Room Type</label>
-                            <select id="roomType" required>
-                                ${hospital.rooms.map(room => `
-                                    <option value="${room.room_type}">
-                                        ${room.room_type}
-                                    </option>
-                                `).join('')}
+                            <select id="bookingRoomType" onchange="updateBookingAmount()">
+                                ${roomOptionsHTML}
                             </select>
                         </div>
-                        <div class="inputGroup">
-                            <label>Bed Type</label>
-                            <select id="bedType" required>
-                                <option value="Single Bed">Single Bed</option>
-                                <option value="Twin Bed">Twin Bed</option>
-                                <option value="Double Bed">Double Bed</option>
-                                <option value="Electric/Hospital Bed">Electric/Hospital Bed</option>
-                                <option value="ICU Bed">ICU Bed</option>
+                        
+                        <div class="form-group">
+                            <label>Patient Full Name</label>
+                            <input type="text" id="bookingName" required placeholder="Enter full name">
+                        </div>
+                        
+                        <div style="display:flex; gap:16px;">
+                            <div class="form-group" style="flex:1;">
+                                <label>Age</label>
+                                <input type="number" id="bookingAge" required placeholder="Years" min="0" max="120">
+                            </div>
+                            <div class="form-group" style="flex:1;">
+                                <label>Gender</label>
+                                <select id="bookingGender" required style="font-weight:600; background:#f8fafc;">
+                                    <option value="">Select Gender</option>
+                                    <option value="Male">Male</option>
+                                    <option value="Female">Female</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Contact Number</label>
+                            <input type="tel" id="bookingPhone" required placeholder="10-digit number" pattern="[0-9]{10}">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Date of Admission / Appointment</label>
+                            <input type="date" id="bookingDate" required>
+                        </div>
+                        
+                        <div class="form-group" id="paymentModeGroup">
+                            <label>Payment Options</label>
+                            <select id="bookingPaymentMode" required onchange="updateBookingAmount()">
+                                <option value="Full">Full Payment (100%)</option>
+                                <option value="Part">Part Payment (Advance 40%)</option>
                             </select>
                         </div>
-                        <div class="priceBox">
-                            <h3>
-                                Room Price:
-                                <span id="roomPrice">
-                                    ₹0
-                                </span>
-                            </h3>
-                            <h3>
-                                Total Amount:
-                                <span id="totalAmount">
-                                    ₹0
-                                </span>
-                            </h3>
-                        </div>
-                        <div class="inputGroup" style="margin-top:12px;">
-                            <label style="font-weight:600;">Payment Type</label>
-                            <div style="display:flex; gap:16px; margin-top:8px;">
-                                <label style="display:flex; align-items:center; gap:6px; cursor:pointer; font-weight:500;">
-                                    <input type="radio" name="paymentType" value="full" checked style="accent-color:#2563eb; width:18px; height:18px;"> Full Payment
-                                </label>
-                                <label style="display:flex; align-items:center; gap:6px; cursor:pointer; font-weight:500;">
-                                    <input type="radio" name="paymentType" value="part" style="accent-color:#2563eb; width:18px; height:18px;"> Part Payment
-                                </label>
+                        
+                        <div style="background: #f8fafc; border: 1px solid #cbd5e1; padding: 16px; border-radius: 12px; margin-top: 24px; margin-bottom: 24px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <span style="font-weight: 600; color: #64748b;">Amount to Pay:</span>
+                                <span id="bookingAmountDisplay" style="font-size: 24px; font-weight: 800; color: #2563eb;">Rs. 0</span>
                             </div>
                         </div>
-                        <div id="partPaymentSection" style="display:none; margin-top:12px; padding:12px; background:var(--surface-alt, #f8fafc); border-radius:8px; border:1px solid var(--border-color, #e2e8f0);">
-                            <div class="inputGroup" style="margin-bottom:8px;">
-                                <label style="font-weight:600;">Enter Amount to Pay Now</label>
-                                <input type="number" id="partPayAmount" placeholder="Enter amount" min="0" style="width:100%; padding:10px; border:1px solid #d1d5db; border-radius:8px; font-size:14px;">
-                                <small id="partPayError" style="color:#ef4444; display:none; margin-top:4px;">Minimum 50% of total amount is required</small>
-                            </div>
-                            <div style="display:flex; justify-content:space-between; font-size:13px; color:var(--text-muted, #64748b); margin-top:8px;">
-                                <span>Paying Now: <strong id="payingNowDisplay">₹0</strong></span>
-                                <span>Remaining: <strong id="remainingDisplay">₹0</strong></span>
-                            </div>
-                        </div>
-                        <button type="submit"
-                        class="submitAppointmentBtn">
-                            Confirm Booking
-                        </button>
+                        
+                        <button type="submit" class="bookBtn" style="width: 100%; font-size: 18px; padding: 18px;">Proceed to Pay</button>
                     </form>
                 </div>
-            </div>
-        `;
+            </div>`;
+            document.body.insertAdjacentHTML('beforeend', modalHTML);
+        }
 
-const roomTypeSelect =
-document.getElementById(
-    "roomType"
-);
 
-const roomPrice =
-document.getElementById(
-    "roomPrice"
-);
-
-const totalAmount =
-document.getElementById(
-    "totalAmount"
-);
-
-function updateRoomPrice(){
-
-    const selectedRoom =
-    hospital.rooms.find(
-        room =>
-        room.room_type ===
-        roomTypeSelect.value
-    );
-
-    if(!selectedRoom){
-        return;
+    } catch (e) {
+        console.error(e);
+        alert("Failed to load hospital details");
     }
-
-    const roomCost =
-    Number(selectedRoom.pricing);
-
-    roomPrice.innerText =
-    `₹${roomCost}`;
-
-    totalAmount.innerText =
-    `₹${roomCost}`;
-
 }
 
-roomTypeSelect.addEventListener(
-    "change",
-    updateRoomPrice
-);
 
-updateRoomPrice();
-
-// Payment type toggle logic
-const paymentTypeRadios = document.querySelectorAll('input[name="paymentType"]');
-const partPaymentSection = document.getElementById('partPaymentSection');
-const partPayAmountInput = document.getElementById('partPayAmount');
-const partPayError = document.getElementById('partPayError');
-const payingNowDisplay = document.getElementById('payingNowDisplay');
-const remainingDisplay = document.getElementById('remainingDisplay');
-
-paymentTypeRadios.forEach(radio => {
-    radio.addEventListener('change', function() {
-        if (this.value === 'part') {
-            partPaymentSection.style.display = 'block';
-            partPayAmountInput.value = '';
-            payingNowDisplay.innerText = '₹0';
-            remainingDisplay.innerText = totalAmount.innerText;
+window.openAppointmentModal = function(serviceName = 'General Appointment', price = 500, type = 'consultation') {
+    const modal = document.getElementById("appointmentModal");
+    if(modal) {
+        document.getElementById("bookingBasePrice").value = price || 500;
+        
+        if(type === 'room') {
+            document.getElementById("bookingService").value = "Room Booking";
+            document.getElementById("roomTypeGroup").style.display = "block";
+            document.getElementById("bookingRoomType").value = serviceName;
         } else {
-            partPaymentSection.style.display = 'none';
-            partPayError.style.display = 'none';
-        }
-    });
-});
-
-if (partPayAmountInput) {
-    partPayAmountInput.addEventListener('input', function() {
-        const total = Number(totalAmount.innerText.replace('₹',''));
-        const entered = Number(this.value) || 0;
-        const minRequired = Math.ceil(total / 2);
-        
-        if (entered > 0 && entered < minRequired) {
-            partPayError.style.display = 'block';
-            partPayError.innerText = 'Minimum ' + minRequired + ' (50% of total) is required';
-        } else if (entered > total) {
-            partPayError.style.display = 'block';
-            partPayError.innerText = 'Amount cannot exceed total ' + total;
-        } else {
-            partPayError.style.display = 'none';
+            document.getElementById("bookingService").value = type === 'consultation' ? "Consultation" : "General Appointment";
+            document.getElementById("roomTypeGroup").style.display = "none";
+            document.getElementById("bookingRoomType").value = "";
         }
         
-        payingNowDisplay.innerText = '₹' + entered;
-        remainingDisplay.innerText = '₹' + Math.max(0, total - entered);
-    });
-}
-
-const appointmentForm =
-document.getElementById("appointmentForm");
-appointmentForm.addEventListener(
-    "submit",
-    async function(e){
-        e.preventDefault();
-
-        
-
-        const savedUser =
-        JSON.parse(
-            localStorage.getItem(
-                "productUser"
-            )
-        );
-
-        if(!savedUser){
-
-            alert(
-                "Please login first"
-            );
-
-            return;
-
-        }
-
-const formData = {
-
-    user_id:savedUser.id,
-
-    hospital_id:hospitalId,
-
-    patient_name:
-    document.getElementById(
-        "patientName"
-    ).value,
-
-    patient_age:
-    document.getElementById(
-        "patientAge"
-    ).value,
-
-    patient_gender:
-    document.getElementById(
-        "patientGender"
-    ).value,
-
-    room_type:
-    document.getElementById(
-        "roomType"
-    ).value,
-
-    bed_type:
-    document.getElementById(
-        "bedType"
-    ).value,
-
-    total_amount:
-    totalAmount.innerText
-    .replace("₹","")
-
+        document.getElementById("bookingDate").valueAsDate = new Date();
+        updateBookingAmount();
+        modal.classList.add("active");
+    }
 };
-try{
-    const fullTotal = Number(totalAmount.innerText.replace("₹",""));
-    const selectedPayType = document.querySelector('input[name="paymentType"]:checked')?.value || 'Full';
-    let amount = fullTotal;
+
+window.handleServiceChange = function() {
+    const service = document.getElementById("bookingService").value;
+    if(service === "Room Booking") {
+        document.getElementById("roomTypeGroup").style.display = "block";
+    } else {
+        document.getElementById("roomTypeGroup").style.display = "none";
+        document.getElementById("bookingBasePrice").value = 500; // Default consult fee
+    }
+    updateBookingAmount();
+};
+
+window.updateBookingAmount = function() {
+    let basePrice = parseFloat(document.getElementById("bookingBasePrice").value) || 0;
     
-    if (selectedPayType === 'Part' || selectedPayType === 'part') {
-        const partVal = Number(document.getElementById('partPayAmount')?.value || 0);
-        const minRequired = Math.ceil(fullTotal / 2);
-        if (partVal < minRequired) {
-            alert('Minimum payment is ₹' + minRequired + ' (50% of total amount)');
-            return;
+    // If it's a room booking, get price from the selected room option
+    if(document.getElementById("bookingService").value === "Room Booking") {
+        const roomSelect = document.getElementById("bookingRoomType");
+        if(roomSelect.selectedIndex > 0) {
+            const selectedOption = roomSelect.options[roomSelect.selectedIndex];
+            basePrice = parseFloat(selectedOption.getAttribute("data-price")) || 0;
+        } else {
+            basePrice = 0; // No room selected yet
         }
-        if (partVal > fullTotal) {
-            alert('Payment amount cannot exceed total amount');
-            return;
-        }
-        amount = partVal;
     }
     
-    formData.payment_type = selectedPayType === 'part' ? 'Part' : (selectedPayType === 'full' ? 'Full' : selectedPayType);
-    formData.paid_amount = amount;
-    formData.amount_remaining = fullTotal - amount;
+    const mode = document.getElementById("bookingPaymentMode").value;
+    let finalPrice = basePrice;
     
-    const orderResponse =
-    await fetch("/api/create-order",
-        {
-            method:"POST",
-            headers:{
-                "Content-Type":
-                "application/json"
-            },
-            body:JSON.stringify({
-                amount
-            })
-        }
-    );
+    if(mode === "Part") {
+        finalPrice = basePrice * 0.40; // 40% advance
+    }
+    
+    document.getElementById("bookingAmountDisplay").textContent = "Rs. " + Math.round(finalPrice);
+};
 
-    const orderData =
-    await orderResponse.json();
+window.closeAppointmentModal = function() {
+    const modal = document.getElementById("appointmentModal");
+    if(modal) modal.classList.remove("active");
+};
 
-    if(!orderData.success){
-
-        alert("Order creation failed");
-
+window.submitAppointment = async function(event) {
+    event.preventDefault();
+    
+    // Check user authentication
+    let userStr = localStorage.getItem("productUser") || localStorage.getItem("hk_user");
+    if(!userStr) {
+        alert("Please login first to book an appointment!");
+        if(typeof showAuthModal === "function") showAuthModal();
         return;
-
     }
-
-    const pendingData = {
-        ...formData,
-        razorpay_order_id: orderData.order.id,
-        razorpay_payment_id: "pending",
-        razorpay_signature: "pending"
-    };
-
-    try {
-        await fetch("/api/book-hospital", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify(pendingData)
-        });
-    } catch(err) {
-        console.error("Failed to save pending booking", err);
-    }
-
-    const options = {
-
-        key:orderData.key,
-
-        amount:
-        orderData.order.amount,
-
-        currency:"INR",
-
-        name:"Hospital Booking",
-        description:"Hospital Room Booking Payment",
-        order_id:orderData.order.id,
-        handler:async function(response){
-            const paymentData = {
-                ...formData,
-                razorpay_order_id:
-                response.razorpay_order_id,
-                razorpay_payment_id:
-                response.razorpay_payment_id,
-                razorpay_signature:
-                response.razorpay_signature
-            };
-            const bookingResponse =
-            await fetch("/api/book-hospital", {
-                    method:"POST",
-                    headers:{
-                        "Content-Type":
-                        "application/json"
-                    },
-                    body:JSON.stringify(paymentData)
-                }
-            );
-            const bookingData = await bookingResponse.json();
-            if(bookingData.success){
-                alert("Payment Successful & Booking Confirmed");
-                closeAppointmentModal();
-                appointmentForm.reset();
-            }
-            else{
-                alert(bookingData.message);
-            }
-        },
-        prefill:{
-            name:
-            formData.patient_name
-        },
-        theme:{
-            color:"#2563eb"
-        }
-    };
-    const razorpay =
-    new Razorpay(options);
-    razorpay.open();
+    const user = JSON.parse(userStr);
     
-    alert("Your booking is accepted! Complete the payment to fully confirm it.");
-    closeAppointmentModal();
-    appointmentForm.reset();
-}
-catch(error){
-    console.log(error);
-}
+    // Gather form data
+    const patient_name = document.getElementById("bookingName").value;
+    const patient_age = document.getElementById("bookingAge").value;
+    const patient_gender = document.getElementById("bookingGender").value;
+    const admission_date = document.getElementById("bookingDate").value;
+    const payment_type = document.getElementById("bookingPaymentMode").value;
+    
+    const serviceType = document.getElementById("bookingService").value;
+    let room_type = "Consultation";
+    if(serviceType === "Room Booking") {
+        const roomSelect = document.getElementById("bookingRoomType");
+        room_type = roomSelect.options[roomSelect.selectedIndex]?.value || "";
+    }
+    const bed_type = "Standard"; // Can be dynamic if needed
+    
+    let basePrice = parseFloat(document.getElementById("bookingBasePrice").value) || 0;
+    if(serviceType === "Room Booking") {
+        const roomSelect = document.getElementById("bookingRoomType");
+        if(roomSelect.selectedIndex > 0) {
+            const selectedOption = roomSelect.options[roomSelect.selectedIndex];
+            basePrice = parseFloat(selectedOption.getAttribute("data-price")) || 0;
+        }
+    }
+    
+    let paid_amount = basePrice;
+    if(payment_type === "Part") paid_amount = basePrice * 0.40;
+    
+    // 1. Create Order
+    const orderRes = await fetch("/api/create-order", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ amount: paid_amount })
+    });
+    const orderData = await orderRes.json();
+    
+    if(!orderData.success) {
+        alert("Failed to initialize payment");
+        return;
+    }
+    
+    // 2. Razorpay Options
+    const options = {
+        key: orderData.key,
+        amount: orderData.order.amount,
+        currency: "INR",
+        name: "HospiKare",
+        description: "Hospital Booking Payment",
+        order_id: orderData.order.id,
+        handler: async function (response) {
+            // 3. Verify & Save Booking
+            const bookingRes = await fetch("/api/book-hospital", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    user_id: user.id,
+                    hospital_id: hospitalId, // global var
+                    patient_name,
+                    patient_age,
+                    patient_gender,
+                    room_type,
+                    bed_type,
+                    total_amount: basePrice,
+                    payment_type,
+                    paid_amount,
+                    razorpay_order_id: response.razorpay_order_id,
+                    razorpay_payment_id: response.razorpay_payment_id,
+                    razorpay_signature: response.razorpay_signature
+                })
+            });
+            const bookingData = await bookingRes.json();
+            if(bookingData.success) {
+                alert("Booking Confirmed Successfully!");
+                closeAppointmentModal();
+                window.location.href = "act.html";
+            } else {
+                alert("Booking saving failed: " + bookingData.message);
+            }
+        },
+        prefill: {
+            name: patient_name,
+            email: user.email || "",
+            contact: user.phone || ""
+        },
+        theme: { color: "#2563eb" }
+    };
+    
+    const rzp = new window.Razorpay(options);
+    rzp.open();
+};
 
-    }
-);
-    }
-    catch(error){
-        console.log(error);
-    }
-}
 loadHospitalDetails();
-
-function openAppointmentModal(){
-    document
-    .getElementById("appointmentModal")
-    .classList.add("active");
-}
-
-function closeAppointmentModal(){
-    document
-    .getElementById("appointmentModal")
-    .classList.remove("active");
-}
-
-function openRoomImage(src){
-    let overlay = document.getElementById('roomImageOverlay');
-    if(!overlay){
-        overlay = document.createElement('div');
-        overlay.id = 'roomImageOverlay';
-        overlay.className = 'roomImageOverlay';
-        overlay.innerHTML = `
-            <button class="roomOverlayClose" onclick="closeRoomImage()">&times;</button>
-            <img id="roomOverlayImg" src="" alt="Room Image">
-        `;
-        overlay.addEventListener('click', function(e){
-            if(e.target === overlay) closeRoomImage();
-        });
-        document.body.appendChild(overlay);
-    }
-    document.getElementById('roomOverlayImg').src = src;
-    overlay.classList.add('active');
-}
-
-function closeRoomImage(){
-    const overlay = document.getElementById('roomImageOverlay');
-    if(overlay) overlay.classList.remove('active');
-}
-

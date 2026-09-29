@@ -1,4 +1,5 @@
-* {
+with open('css/hosp_data.css', 'w', encoding='utf-8') as f:
+    f.write("""* {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
@@ -109,9 +110,9 @@ body {
 }
 .roomCard {
     display: flex;
-    flex-direction: column;
-    align-items: stretch;
-    padding: 24px;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
     border-radius: 16px;
     border: 1px solid #e2e8f0;
     background: #ffffff;
@@ -256,17 +257,7 @@ body {
     max-width: 450px;
     position: relative;
     box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
-    max-height: 85vh;
-    overflow-y: auto;
 }
-.modal-content::-webkit-scrollbar {
-    width: 8px;
-}
-.modal-content::-webkit-scrollbar-thumb {
-    background: #cbd5e1;
-    border-radius: 4px;
-}
-
 .close-modal {
     position: absolute;
     top: 20px;
@@ -301,31 +292,5 @@ body {
     background: white;
     box-shadow: 0 0 0 3px rgba(59,130,246,0.1);
 }
-
-.roomImageGallery {
-    display: flex;
-    margin-top: 12px;
-    gap: 12px;
-    margin-top: 4px;
-    overflow-x: auto;
-    padding-bottom: 8px;
-}
-.roomImageGallery::-webkit-scrollbar {
-    height: 6px;
-}
-.roomImageGallery::-webkit-scrollbar-thumb {
-    background: #cbd5e1;
-    border-radius: 4px;
-}
-.roomImg {
-    width: 160px;
-    height: 110px;
-    border-radius: 10px;
-    object-fit: cover;
-    cursor: pointer;
-    border: 1px solid #e2e8f0;
-    transition: transform 0.2s ease;
-}
-.roomImg:hover {
-    transform: scale(1.05);
-}
+""")
+print("Replaced hosp_data.css with ultra-premium layout!")
