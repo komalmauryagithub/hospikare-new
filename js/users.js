@@ -787,9 +787,12 @@
                                 <div class="equipmentPrice">
                                     <h4>${formatMoney(price)}</h4>
                                 </div>
-                                <button class="addEquipmentBtn" type="button" aria-label="Add to cart" data-action="add-cart" data-type="equipment" data-id="${escapeAttr(equipment.product_id)}" data-name="${escapeAttr(name)}" data-brand="${escapeAttr(brand)}" data-price="${escapeAttr(price)}">
-                                    <i class="fa-solid fa-cart-plus"></i> Add to Cart
-                                </button>
+                                <div style="display:flex; gap:8px;">
+                                    ${equipment.product_video ? `<button type="button" onclick="openVideoModal('/uploads/${escapeAttr(equipment.product_video)}')" style="padding: 8px 12px; background: #64748b; color: white; border: none; cursor: pointer; border-radius: var(--rounded-md, 8px); text-decoration: none; font-size: 14px; font-weight: 600; display:flex; align-items:center; gap:6px; transition: all 0.3s;"><i class="fa-solid fa-play"></i> Video</button>` : ''}
+                                    <button class="addEquipmentBtn" type="button" aria-label="Add to cart" data-action="add-cart" data-type="equipment" data-id="${escapeAttr(equipment.product_id)}" data-name="${escapeAttr(name)}" data-brand="${escapeAttr(brand)}" data-price="${escapeAttr(price)}">
+                                        <i class="fa-solid fa-cart-plus"></i> Add to Cart
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </article>
