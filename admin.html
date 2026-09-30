@@ -91,10 +91,18 @@
               <i class="fa-solid fa-boxes-stacked"></i>
               <span>Products</span>
           </div>
+
+          <div class="menu-category">INSURANCE</div>
+          <div class="menuItem" id="adminInsuranceBtn">
+              <i class="fa-solid fa-shield-heart"></i>
+              <span>Insurance</span>
+          </div>
+
           <div class="menuItem" style="color: var(--trend-down); margin-top: auto;" onclick="logout()">
               <i class="fa-solid fa-right-from-bracket"></i>
               <span>Logout</span>
           </div>
+
       </div>
   </aside>
 
@@ -1256,7 +1264,127 @@
               </div>
           </div>
 
+          <!-- ================= ADMIN INSURANCE SECTION ================= -->
+          <div id="adminInsuranceSection" style="display:none;">
+            <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; margin-bottom:24px;">
+              <h2 style="font-family:var(--font-heading); margin:0; font-size:22px; font-weight:800;">
+                <i class="fa-solid fa-shield-heart" style="color:#3b82f6; margin-right:8px;"></i> Insurance Management
+              </h2>
+              <button onclick="loadAdminInsurance()" style="background:#eff6ff; color:#1e40af; border:1px solid #bfdbfe; border-radius:8px; padding:8px 16px; font-size:12px; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:6px;">
+                <i class="fa-solid fa-arrows-rotate"></i> Refresh
+              </button>
+            </div>
+
+            <!-- Summary Cards -->
+            <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:16px; margin-bottom:24px;">
+              <div style="background:var(--card-bg,#fff); border:1px solid var(--border-color,#e2e8f0); border-radius:12px; padding:16px 20px; box-shadow:0 2px 8px rgba(0,0,0,0.04);">
+                <div style="font-size:11px; text-transform:uppercase; color:var(--text-muted,#64748b); font-weight:700; margin-bottom:6px; letter-spacing:0.5px;">Total Policies</div>
+                <div id="adminInsTotalPolicies" style="font-size:26px; font-weight:900; color:#1e293b;">0</div>
+              </div>
+              <div style="background:var(--card-bg,#fff); border:1px solid var(--border-color,#e2e8f0); border-radius:12px; padding:16px 20px; box-shadow:0 2px 8px rgba(0,0,0,0.04);">
+                <div style="font-size:11px; text-transform:uppercase; color:var(--text-muted,#64748b); font-weight:700; margin-bottom:6px; letter-spacing:0.5px;">Active Policies</div>
+                <div id="adminInsActivePolicies" style="font-size:26px; font-weight:900; color:#10b981;">0</div>
+              </div>
+              <div style="background:var(--card-bg,#fff); border:1px solid var(--border-color,#e2e8f0); border-radius:12px; padding:16px 20px; box-shadow:0 2px 8px rgba(0,0,0,0.04);">
+                <div style="font-size:11px; text-transform:uppercase; color:var(--text-muted,#64748b); font-weight:700; margin-bottom:6px; letter-spacing:0.5px;">Total Claims</div>
+                <div id="adminInsTotalClaims" style="font-size:26px; font-weight:900; color:#f59e0b;">0</div>
+              </div>
+              <div style="background:var(--card-bg,#fff); border:1px solid var(--border-color,#e2e8f0); border-radius:12px; padding:16px 20px; box-shadow:0 2px 8px rgba(0,0,0,0.04);">
+                <div style="font-size:11px; text-transform:uppercase; color:var(--text-muted,#64748b); font-weight:700; margin-bottom:6px; letter-spacing:0.5px;">Pending Claims</div>
+                <div id="adminInsPendingClaims" style="font-size:26px; font-weight:900; color:#ef4444;">0</div>
+              </div>
+            </div>
+
+            <!-- Sub Tabs -->
+            <div class="ins-subtabs-bar">
+              <button id="insTab_policies" class="ins-subtab-btn active" onclick="switchInsuranceTab('policies')">
+                <i class="fa-solid fa-file-shield"></i> Policies
+              </button>
+              <button id="insTab_claims" class="ins-subtab-btn" onclick="switchInsuranceTab('claims')">
+                <i class="fa-solid fa-receipt"></i> Claims
+              </button>
+              <button id="insTab_renewals" class="ins-subtab-btn" onclick="switchInsuranceTab('renewals')">
+                <i class="fa-solid fa-arrows-rotate"></i> Renewals
+              </button>
+            </div>
+
+
+            <!-- POLICIES TAB -->
+            <div id="insPane_policies">
+              <div class="table-container">
+                <table class="adminTable">
+                  <thead>
+                    <tr>
+                      <th>#</th>
+                      <th>Patient Name</th>
+                      <th>Insurance Company</th>
+                      <th>Plan Name</th>
+                      <th>Policy Number</th>
+                      <th>Coverage Amount</th>
+                      <th>Premium</th>
+                      <th>Expiry Date</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody id="adminInsPoliciesBody">
+                    <tr><td colspan="9" style="text-align:center; padding:32px; color:var(--text-muted,#64748b);">Loading...</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- CLAIMS TAB -->
+            <div id="insPane_claims" style="display:none;">
+              <div class="table-container">
+                <table class="adminTable">
+                  <thead>
+                    <tr>
+                      <th>Claim ID</th>
+                      <th>Patient Name</th>
+                      <th>Policy Number</th>
+                      <th>Hospital / Treatment</th>
+                      <th>Claim Amount</th>
+                      <th>Approved Amount</th>
+                      <th>Status</th>
+                      <th>Documents</th>
+                    </tr>
+                  </thead>
+                  <tbody id="adminInsClaimsBody">
+                    <tr><td colspan="8" style="text-align:center; padding:32px; color:var(--text-muted,#64748b);">Loading...</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+
+            <!-- RENEWALS TAB -->
+            <div id="insPane_renewals" style="display:none;">
+              <div class="table-container">
+                <table class="adminTable">
+                  <thead>
+                    <tr>
+                      <th>#</th>
+                      <th>Patient Name</th>
+                      <th>Insurance Company</th>
+                      <th>Policy Number</th>
+                      <th>Start Date</th>
+                      <th>Expiry Date</th>
+                      <th>Renewal Premium</th>
+                      <th>Payment Status</th>
+                      <th>Policy Status</th>
+                    </tr>
+                  </thead>
+                  <tbody id="adminInsRenewalsBody">
+                    <tr><td colspan="9" style="text-align:center; padding:32px; color:var(--text-muted,#64748b);">Loading...</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+          <!-- ================= END ADMIN INSURANCE SECTION ================= -->
+
           <!-- ================= REVENUE ================= -->
+
           <div id="revenueSection" style="display:none;">
             <div class="saas-activity-grid" style="margin-bottom: 24px;">
                 <div class="dashCard">
@@ -1370,7 +1498,7 @@
 
   <script src="/js/vendor-panel-controls.js?v=1790154050"></script>
   <script src="/js/ui-interactions.js?v=1790154050"></script>
-  <script src="/js/admin.js?v=1790154050"></script>
+  <script src="/js/admin.js?v=1790752000"></script>
   <script src="/js/sidebar-toggle.js?v=1790154050"></script>
     <div id="adminOrderModal" class="modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9999; align-items:center; justify-content:center;">
         <div style="background:var(--card-bg, #ffffff); color:var(--text-main, #1e293b); width:90%; max-width:600px; border-radius:12px; padding:24px; max-height:90vh; overflow-y:auto; position:relative; border: 1px solid var(--border-color, #e2e8f0); box-shadow: 0 4px 20px rgba(0,0,0,0.1);">
@@ -1379,8 +1507,43 @@
             <div id="adminOrderModalContent" style="margin-top:20px;"></div>
         </div>
     </div>
+
+  <!-- ================= ADMIN CLAIM ACTION MODAL ================= -->
+  <div id="adminClaimActionModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.55); z-index:10000; align-items:center; justify-content:center;">
+    <div style="background:var(--card-bg,#fff); color:var(--text-main,#1e293b); width:94%; max-width:480px; border-radius:16px; padding:28px; position:relative; box-shadow:0 8px 40px rgba(0,0,0,0.18); border:1px solid var(--border-color,#e2e8f0);">
+      <button onclick="document.getElementById('adminClaimActionModal').style.display='none'" style="position:absolute;top:16px;right:16px;background:none;border:none;font-size:20px;cursor:pointer;color:var(--text-muted,#64748b);"><i class="fa-solid fa-xmark"></i></button>
+      <h3 style="margin:0 0 6px; font-size:16px; font-weight:800;">Update Claim</h3>
+      <div id="adminClaimModalInfo" style="font-size:12px; color:var(--text-muted,#64748b); margin-bottom:20px;"></div>
+      <input type="hidden" id="adminClaimModalId">
+      <div style="display:flex; flex-direction:column; gap:14px;">
+        <div>
+          <label style="font-size:12px; font-weight:700; color:var(--text-muted,#64748b); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:4px; display:block;">Status</label>
+          <select id="adminClaimStatusSelect" style="width:100%; padding:10px 12px; border:1px solid var(--border-color,#e2e8f0); border-radius:8px; font-size:13px; background:var(--card-bg,#fff); color:var(--text-main,#1e293b);">
+            <option value="pending">⏳ Pending</option>
+            <option value="approved">✅ Approved</option>
+            <option value="rejected">❌ Rejected</option>
+            <option value="settled">💰 Settled</option>
+          </select>
+        </div>
+        <div>
+          <label style="font-size:12px; font-weight:700; color:var(--text-muted,#64748b); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:4px; display:block;">Approved Amount (₹)</label>
+          <input type="number" id="adminClaimApprovedAmount" placeholder="Enter approved amount" min="0" style="width:100%; padding:10px 12px; border:1px solid var(--border-color,#e2e8f0); border-radius:8px; font-size:13px; background:var(--card-bg,#fff); color:var(--text-main,#1e293b); box-sizing:border-box;">
+        </div>
+        <div>
+          <label style="font-size:12px; font-weight:700; color:var(--text-muted,#64748b); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:4px; display:block;">Admin Remarks</label>
+          <textarea id="adminClaimRemarks" rows="3" placeholder="Optional remarks..." style="width:100%; padding:10px 12px; border:1px solid var(--border-color,#e2e8f0); border-radius:8px; font-size:13px; background:var(--card-bg,#fff); color:var(--text-main,#1e293b); resize:vertical; box-sizing:border-box;"></textarea>
+        </div>
+        <div id="adminClaimModalError" style="color:#ef4444; font-size:12px; display:none;"></div>
+        <button onclick="submitAdminClaimUpdate()" style="background:#1e40af; color:#fff; border:none; border-radius:10px; padding:12px; font-size:14px; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px; width:100%;">
+          <i class="fa-solid fa-floppy-disk"></i> Save Changes
+        </button>
+      </div>
+    </div>
+  </div>
+
 </body>
 </html>
+
 
 
 

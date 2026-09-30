@@ -25,7 +25,7 @@
     <link rel="stylesheet" type="text/css" href="/css/theme-system.css?v=1790154050">
     <link rel="stylesheet" type="text/css" href="/css/enhancements.css?v=1790154050">
     <link rel="stylesheet" type="text/css" href="/css/mobile-ui.css?v=1790154050">
-    <link rel="stylesheet" type="text/css" href="/css/ins.css?v=1790154050">
+    <link rel="stylesheet" type="text/css" href="/css/ins.css?v=1790754000">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
@@ -41,44 +41,48 @@
       <div id="menu">
           <div class="menu-category">MAIN</div>
           <div class="menuItem active" id="dashboardBtn">
-              <i class="fa-solid fa-border-all"></i>
+              <i class="fa-solid fa-chart-pie"></i>
               <span>Dashboard</span>
           </div>
 
-          <div class="menu-category">INSURANCE</div>
-          
-            <div class="menuItem" id="companiesBtn">
-                <i class="fa-solid fa-building"></i>
-                <span>Insurance Companies</span>
-            </div>
-            <div class="menuItem" id="plansBtn">
-
+          <div class="menu-category">INSURANCE MANAGEMENT</div>
+          <div class="menuItem" id="policiesBtn">
               <i class="fa-solid fa-shield-heart"></i>
-              <span>Insurance Plans</span>
-          </div>
-          <div class="menuItem" id="bookingsBtn">
-              <i class="fa-solid fa-calendar-check"></i>
-              <span>Bookings</span>
-          </div>
-          <div class="menuItem" id="customersBtn">
-              <i class="fa-solid fa-users"></i>
-              <span>Customers</span>
+              <span>Policies</span>
           </div>
           <div class="menuItem" id="claimsBtn">
               <i class="fa-solid fa-file-medical"></i>
               <span>Claims</span>
           </div>
-
-          <div class="menu-category">FINANCE</div>
+          <div class="menuItem" id="renewalsBtn">
+              <i class="fa-solid fa-arrows-rotate"></i>
+              <span>Renewals</span>
+          </div>
           <div class="menuItem" id="paymentsBtn">
               <i class="fa-solid fa-credit-card"></i>
               <span>Payments</span>
           </div>
+          <div class="menuItem" id="customersBtn">
+              <i class="fa-solid fa-user-gear"></i>
+              <span>Customer Details</span>
+          </div>
+
+          <div class="menu-category">CATALOG</div>
+          <div class="menuItem" id="plansBtn">
+              <i class="fa-solid fa-list-check"></i>
+              <span>Insurance Plans</span>
+          </div>
+          <div class="menuItem" id="companiesBtn">
+              <i class="fa-solid fa-building"></i>
+              <span>Companies</span>
+          </div>
+
           <div class="menuItem" style="color: #EF4B5F; margin-top: auto;" onclick="logout(event)">
               <i class="fa-solid fa-right-from-bracket"></i>
               <span>Logout</span>
           </div>
       </div>
+
   </aside>
 
   <!-- MAIN WRAPPER -->
@@ -415,29 +419,112 @@
     <div style="width:min(720px, 100%); max-height:90vh; background:var(--hk-card-bg, #fff); border-radius:20px; box-shadow:0 24px 60px rgba(7,26,61,0.3); overflow:hidden; display:flex; flex-direction:column; border:1px solid var(--hk-border, #e2e8f0);">
       <div style="display:flex; justify-content:space-between; align-items:center; padding:20px 26px; border-bottom:1px solid var(--hk-divider, #e2e8f0); flex-shrink:0; background:var(--hk-surface-soft, #f8faff);">
         <div>
-          <h3 style="margin:0; font-size:20px; font-weight:800; font-family:var(--font-heading); color:var(--hk-text-main, #0f172a);">Profile Details</h3>
-          <p style="margin:2px 0 0; font-size:12.5px; color:var(--hk-text-muted, #64748b);">Manage your insurance company registration and policy parameters</p>
+          <h3 style="margin:0; font-size:20px; font-weight:800; font-family:var(--font-heading); color:var(--hk-text-main, #0f172a);">Insurance Vendor Profile</h3>
+          <p style="margin:2px 0 0; font-size:12.5px; color:var(--hk-text-muted, #64748b);">Manage your vendor credentials and verification documents</p>
         </div>
-        <button type="button" id="closeProfileModal" style="border:none; background:transparent; font-size:24px; cursor:pointer; color:var(--hk-text-muted, #475569); line-height:1;">�</button>
+        <button type="button" id="closeProfileModal" style="border:none; background:transparent; font-size:24px; cursor:pointer; color:var(--hk-text-muted, #475569); line-height:1;" onclick="document.getElementById('profileModal').style.display='none'">×</button>
       </div>
       <form id="vendorProfileForm" enctype="multipart/form-data" style="padding:24px 26px; display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:18px; overflow-y:auto; max-height:calc(90vh - 92px);">
-        <input type="hidden" id="profileEntityType" value="insurance">
-        <div style="grid-column:1/-1; display:flex; flex-direction:column; gap:8px;">
-            <label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Select Insurance Company to Complete Profile</label>
-            <select id="entitySelect" name="entity_id" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px; background:var(--hk-surface, #fff); color:var(--hk-text-main, #101828);" required>
-                <option value="">Select Insurance Company...</option>
-            </select>
-        </div><div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">IRDAI Registration Number</label><input type="text" name="irdai_registration_number" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px; background:var(--hk-surface, #fff); color:var(--hk-text-main, #101828);" required></div><div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Registered Office Address</label><input type="text" name="registered_office_address" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px; background:var(--hk-surface, #fff); color:var(--hk-text-main, #101828);" required></div><div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Contact Number</label><input type="text" name="contact_number" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px; background:var(--hk-surface, #fff); color:var(--hk-text-main, #101828);" required></div><div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Insurance Plans/Types</label><input type="text" name="insurance_plans" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px; background:var(--hk-surface, #fff); color:var(--hk-text-main, #101828);" required></div><div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Website</label><input type="text" name="website" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px; background:var(--hk-surface, #fff); color:var(--hk-text-main, #101828);" required></div><div style="grid-column:1/-1; margin-top:10px;"><h4 style="margin:0; font-size:15px; color:var(--hk-text-main, #101828);">Documents (Upload)</h4></div><div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">IRDAI Registration/License</label><input type="file" name="irdai_license_doc" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px; background:var(--hk-surface, #fff); color:var(--hk-text-main, #101828);" required></div><div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Company Registration Certificate</label><input type="file" name="company_registration_cert" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px; background:var(--hk-surface, #fff); color:var(--hk-text-main, #101828);" required></div><div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">PAN Card</label><input type="file" name="pan_card" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px; background:var(--hk-surface, #fff); color:var(--hk-text-main, #101828);" required></div><div style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Authorized Person ID Proof</label><input type="file" name="authorized_person_id_proof" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px; background:var(--hk-surface, #fff); color:var(--hk-text-main, #101828);" required></div><div style="grid-column:1 / -1; display:flex; justify-content:flex-end; gap:12px; margin-top:8px;" id="profileModalActionButtons">
-        <button type="button" id="closeProfileBtn" style="padding:10px 18px; border:1px solid var(--hk-border, #cbd5e1); background:var(--hk-surface, #fff); border-radius:10px; cursor:pointer; color:var(--hk-text-main, #101828); font-weight:600;" onclick="document.getElementById('profileModalBox').style.display='none'">Close</button>
-        <button type="submit" id="saveProfileBtn" style="padding:10px 18px; border:none; background:var(--hk-primary-blue, #2563eb); color:#fff; border-radius:10px; cursor:pointer; font-weight:600;">Save Profile</button>
-    </div>
-    </form>
+        <input type="hidden" name="is_vendor_profile" value="1">
+        <div id="profileStatusBannerContainer" style="grid-column:1/-1;"></div>
+        
+        <div style="display:flex; flex-direction:column; gap:8px;">
+            <label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Company / Agency Name *</label>
+            <input type="text" name="company_name" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px; background:var(--hk-surface, #fff); color:var(--hk-text-main, #101828);" required>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:8px;">
+            <label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Contact Person Name *</label>
+            <input type="text" name="name" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px; background:var(--hk-surface, #fff); color:var(--hk-text-main, #101828);" required>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:8px;">
+            <label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Mobile Number *</label>
+            <input type="text" name="contact_number" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px; background:var(--hk-surface, #fff); color:var(--hk-text-main, #101828);" required>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:8px;">
+            <label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Email Address *</label>
+            <input type="email" name="email" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px; background:var(--hk-surface, #fff); color:var(--hk-text-main, #101828);" required>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:8px; grid-column:1/-1;">
+            <label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Business Address *</label>
+            <input type="text" name="business_address" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px; background:var(--hk-surface, #fff); color:var(--hk-text-main, #101828);" required>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:8px; grid-column:1/-1;">
+            <label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">License / Registration Number *</label>
+            <input type="text" name="business_reg_number" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px; background:var(--hk-surface, #fff); color:var(--hk-text-main, #101828);" required>
+        </div>
+        
+        <div style="grid-column:1/-1; margin-top:10px; border-top:1px solid var(--hk-divider, #e2e8f0); padding-top:14px;">
+            <h4 style="margin:0 0 4px 0; font-size:15px; color:var(--hk-text-main, #101828); font-weight:700;"><i class="fa-solid fa-file-shield" style="color:var(--hk-primary-blue, #2563eb); margin-right:6px;"></i> Verification Documents (Upload)</h4>
+            <p style="margin:0; font-size:12px; color:var(--hk-text-muted, #64748b);">Upload essential vendor verification documents.</p>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:8px;">
+            <label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Insurance / Agency License ⭐ *</label>
+            <input type="file" name="insurance_license_doc" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px; background:var(--hk-surface, #fff); color:var(--hk-text-main, #101828);">
+        </div>
+        <div style="display:flex; flex-direction:column; gap:8px;">
+            <label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">PAN Card *</label>
+            <input type="file" name="pan_card" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px; background:var(--hk-surface, #fff); color:var(--hk-text-main, #101828);">
+        </div>
+        <div style="display:flex; flex-direction:column; gap:8px;">
+            <label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">GST Certificate (if applicable)</label>
+            <input type="file" name="gst_cert" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px; background:var(--hk-surface, #fff); color:var(--hk-text-main, #101828);">
+        </div>
+        <div style="display:flex; flex-direction:column; gap:8px;">
+            <label style="font-size:13px; font-weight:600; color:var(--hk-text-main, #334155);">Bank / Cancelled Cheque</label>
+            <input type="file" name="cancelled_cheque" style="padding:10px 12px; border:1px solid var(--hk-border, #cbd5e1); border-radius:10px; background:var(--hk-surface, #fff); color:var(--hk-text-main, #101828);">
+        </div>
+
+        <div style="grid-column:1 / -1; display:flex; justify-content:flex-end; gap:12px; margin-top:16px;" id="profileModalActionButtons">
+            <button type="button" id="closeProfileBtn" style="padding:10px 18px; border:1px solid var(--hk-border, #cbd5e1); background:var(--hk-surface, transparent); border-radius:10px; cursor:pointer; color:var(--hk-text-main, #ffffff); font-weight:600;" onclick="document.getElementById('profileModal').style.display='none'">Close</button>
+            <button type="button" id="enableProfileEditBtn" style="display:none; padding:10px 20px; border:none; background:#d97706; color:#ffffff; border-radius:10px; cursor:pointer; font-weight:700; font-size:14px; box-shadow: 0 4px 12px rgba(217, 119, 6, 0.3);">Request Admin Edit</button>
+            <button type="button" id="cancelProfileEdit" style="display:none; padding:10px 18px; border:1px solid var(--hk-border, #cbd5e1); background:var(--hk-surface, transparent); border-radius:10px; cursor:pointer; color:var(--hk-text-main, #ffffff); font-weight:600;">Cancel</button>
+            <button type="submit" id="saveProfileBtn" style="padding:10px 18px; border:none; background:var(--hk-primary-blue, #2563eb); color:#fff; border-radius:10px; cursor:pointer; font-weight:600;">Save Profile</button>
+        </div>
+      </form>
     </div>
   </div>
 
-  <script src="/js/vendor-dashboard-ui.js?v=1790154050"></script>
-  <script src="/js/vendor-panel-controls.js?v=1790154050"></script>
-  <script src="/js/ins.js?v=1790154050"></script>
+    <!-- VENDOR CLAIM ACTION MODAL -->
+    <div id="vendorClaimActionModal" style="display:none; position:fixed; inset:0; background:rgba(15,23,42,0.6); backdrop-filter:blur(4px); z-index:99999; align-items:center; justify-content:center; padding:20px;">
+        <div style="background:var(--surface, #fff); border-radius:16px; width:100%; max-width:520px; padding:24px; box-shadow:0 10px 25px rgba(0,0,0,0.15); border:1px solid var(--border, #e2e8f0);">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; padding-bottom:12px; border-bottom:1px solid var(--border, #e2e8f0);">
+                <h3 style="margin:0; font-size:18px; font-weight:800; color:var(--text, #0f172a);">Update Claim Status</h3>
+                <button type="button" onclick="document.getElementById('vendorClaimActionModal').style.display='none'" style="background:transparent; border:none; font-size:20px; cursor:pointer; color:#64748b;"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div id="vendorClaimModalInfo" style="font-size:13px; color:#475569; margin-bottom:16px; background:#f8fafc; padding:10px 14px; border-radius:8px; border:1px solid #e2e8f0;"></div>
+            <form id="vendorClaimForm" onsubmit="event.preventDefault(); submitVendorClaimUpdate();">
+                <input type="hidden" id="vendorClaimModalId">
+                <div style="display:flex; flex-direction:column; gap:12px;">
+                    <div>
+                        <label style="font-size:12px; font-weight:700; color:#334155; display:block; margin-bottom:4px;">Claim Status</label>
+                        <select id="vendorClaimStatusSelect" class="top-search" style="width:100%; border-radius:8px; padding:8px 12px;" required>
+                            <option value="pending">Pending</option>
+                            <option value="approved">Approved</option>
+                            <option value="settled">Settled</option>
+                            <option value="rejected">Rejected</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label style="font-size:12px; font-weight:700; color:#334155; display:block; margin-bottom:4px;">Approved Amount (₹)</label>
+                        <input type="number" id="vendorClaimApprovedAmount" class="top-search" style="width:100%; border-radius:8px; padding:8px 12px;" placeholder="e.g. 50000" min="0">
+                    </div>
+                    <div>
+                        <label style="font-size:12px; font-weight:700; color:#334155; display:block; margin-bottom:4px;">Vendor Remarks / Request Documents</label>
+                        <textarea id="vendorClaimRemarks" class="top-search" style="width:100%; border-radius:8px; padding:8px 12px; height:80px;" placeholder="Add remarks or request specific documents..."></textarea>
+                    </div>
+                    <div id="vendorClaimModalError" style="display:none; color:#ef4444; font-size:12px; font-weight:600;"></div>
+                    <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:8px;">
+                        <button type="button" onclick="document.getElementById('vendorClaimActionModal').style.display='none'" style="padding:8px 16px; border:1px solid #cbd5e1; background:#fff; border-radius:8px; cursor:pointer; font-weight:600;">Cancel</button>
+                        <button type="submit" style="padding:8px 20px; border:none; background:#2563eb; color:#fff; border-radius:8px; cursor:pointer; font-weight:700;">Save Update</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="/js/vendor-dashboard-ui.js?v=1790154050"></script>
+  <script src="/js/vendor-panel-controls.js?v=1790754600"></script>
+  <script src="/js/ins.js?v=1790754800"></script>
   <script src="/js/sidebar-toggle.js?v=1790154050"></script>
   <script src="/js/ui-interactions.js?v=1790154050"></script>
 <div id="insCompModalBox" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:9999; justify-content:center; align-items:center;">

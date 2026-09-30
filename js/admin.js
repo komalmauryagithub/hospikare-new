@@ -1831,6 +1831,18 @@
         });
     }
 
+    const adminInsuranceBtn = document.getElementById("adminInsuranceBtn");
+    if (adminInsuranceBtn) {
+        adminInsuranceBtn.addEventListener("click", () => {
+            hideAllSections();
+            document.getElementById("adminInsuranceSection").style.display = "block";
+            document.querySelectorAll(".menuItem").forEach(item => item.classList.remove("active"));
+            adminInsuranceBtn.classList.add("active");
+            updateHeaderNav("Insurance Management", "Insurance");
+            loadAdminInsurance();
+        });
+    }
+
 
     async function loadProducts(){
 
@@ -1968,6 +1980,9 @@
         document.getElementById(
             "dashboardSection"
         ).style.display = "none";
+
+        const insSection = document.getElementById("adminInsuranceSection");
+        if (insSection) insSection.style.display = "none";
 
     }
 
@@ -3952,6 +3967,218 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 });
+
+
+// ==================== ADMIN INSURANCE MANAGEMENT ====================
+
+let _adminInsPolicies = [];
+let _adminInsClaims = [];
+let _adminInsRenewals = [];
+
+async function loadAdminInsurance() {
+    try {
+        const [polRes, clRes] = await Promise.all([
+            fetch('/api/admin/insurance-policies', { credentials: 'include' }).then(r => r.json()),
+            fetch('/api/admin/insurance-claims', { credentials: 'include' }).then(r => r.json())
+        ]);
+
+        _adminInsPolicies = (polRes.success && Array.isArray(polRes.policies)) ? polRes.policies : [];
+        _adminInsClaims = (clRes.success && Array.isArray(clRes.claims)) ? clRes.claims : [];
+        _adminInsRenewals = [..._adminInsPolicies];
+
+        const setEl = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+        setEl('adminInsTotalPolicies', _adminInsPolicies.length);
+        setEl('adminInsActivePolicies', _adminInsPolicies.filter(p => String(p.insurance_status||'').toLowerCase() === 'active').length);
+        setEl('adminInsTotalClaims', _adminInsClaims.length);
+        setEl('adminInsPendingClaims', _adminInsClaims.filter(c => String(c.claim_status||'').toLowerCase() === 'pending').length);
+
+        renderAdminInsPolicies();
+        renderAdminInsClaims();
+        renderAdminInsRenewals();
+    } catch(e) {
+        console.error('loadAdminInsurance error:', e);
+    }
+}
+
+function switchInsuranceTab(tab) {
+    const tabs = ['policies', 'claims', 'renewals'];
+    tabs.forEach(t => {
+        const pane = document.getElementById('insPane_' + t);
+        const btn = document.getElementById('insTab_' + t);
+        if (pane) pane.style.display = (t === tab) ? 'block' : 'none';
+        if (btn) {
+            if (t === tab) {
+                btn.classList.add('active');
+                btn.style.background = 'linear-gradient(135deg, #2563eb, #1d4ed8)';
+                btn.style.color = '#ffffff';
+                btn.style.boxShadow = '0 4px 12px rgba(37, 99, 235, 0.3)';
+            } else {
+                btn.classList.remove('active');
+                btn.style.background = 'transparent';
+                btn.style.color = 'var(--text-muted, #64748b)';
+                btn.style.boxShadow = 'none';
+            }
+        }
+    });
+}
+
+function _adminCodeBadge(text) {
+    if (!text || text === '—') return '<span style="color:var(--text-muted,#94a3b8);">-</span>';
+    return `<code style="font-size:12px; font-weight:700; background:rgba(37,99,235,0.15); color:#3b82f6; border:1px solid rgba(59,130,246,0.3); padding:3px 8px; border-radius:6px; font-family:monospace; display:inline-block; letter-spacing:0.5px;">${_aesc(text)}</code>`;
+}
+
+function _adminStatusPill(status) {
+    const s = String(status || 'pending').toLowerCase();
+    const map = {
+        active:   { bg: '#ecfdf5', color: '#10b981', border: '#a7f3d0', icon: 'fa-circle-check' },
+        expired:  { bg: '#fef2f2', color: '#ef4444', border: '#fecaca', icon: 'fa-circle-xmark' },
+        approved: { bg: '#ecfdf5', color: '#10b981', border: '#a7f3d0', icon: 'fa-circle-check' },
+        settled:  { bg: '#eff6ff', color: '#3b82f6', border: '#bfdbfe', icon: 'fa-coins' },
+        rejected: { bg: '#fef2f2', color: '#ef4444', border: '#fecaca', icon: 'fa-circle-xmark' },
+        pending:  { bg: '#fffbeb', color: '#f59e0b', border: '#fef3c7', icon: 'fa-clock' },
+        paid:     { bg: '#ecfdf5', color: '#10b981', border: '#a7f3d0', icon: 'fa-circle-check' },
+        unpaid:   { bg: '#fffbeb', color: '#f59e0b', border: '#fef3c7', icon: 'fa-clock' },
+    };
+    const st = map[s] || map.pending;
+    return `<span style="display:inline-flex;align-items:center;gap:4px;background:${st.bg};color:${st.color};border:1px solid ${st.border};padding:3px 8px;border-radius:999px;font-size:11px;font-weight:800;text-transform:uppercase;white-space:nowrap;"><i class="fa-solid ${st.icon}"></i> ${status || 'Pending'}</span>`;
+}
+
+function _adminFmtDate(d) {
+    if (!d) return '—';
+    try { return new Date(d).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }); } catch(e) { return d; }
+}
+function _adminFmtMoney(v) {
+    const n = parseFloat(String(v || '').replace(/,/g, ''));
+    if (isNaN(n)) return '—';
+    return '₹' + n.toLocaleString('en-IN');
+}
+function _aesc(s) {
+    return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function renderAdminInsPolicies() {
+    const tbody = document.getElementById('adminInsPoliciesBody');
+    if (!tbody) return;
+    if (!_adminInsPolicies.length) {
+        tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:32px;color:var(--text-muted,#64748b);">No policies found.</td></tr>';
+        return;
+    }
+    tbody.innerHTML = _adminInsPolicies.map((p, i) => `
+        <tr>
+            <td style="font-weight:700;">${i+1}</td>
+            <td>
+                <div style="font-weight:700;font-size:13px;">${_aesc(p.patient_name || '—')}</div>
+                <div style="font-size:11px;color:var(--text-muted,#64748b);">${_aesc(p.patient_email || '')}</div>
+            </td>
+            <td>${_aesc(p.insurance_company || p.plan_name || '—')}</td>
+            <td>${_aesc(p.plan_name || '—')}</td>
+            <td>${_adminCodeBadge(p.policy_number)}</td>
+            <td style="font-weight:700;">${_adminFmtMoney(p.coverage_amount)}</td>
+            <td>${_adminFmtMoney(p.premium_amount)}</td>
+            <td>${_adminFmtDate(p.expiry_date)}</td>
+            <td>${_adminStatusPill(p.insurance_status)}</td>
+        </tr>
+    `).join('');
+}
+
+function renderAdminInsClaims() {
+    const tbody = document.getElementById('adminInsClaimsBody');
+    if (!tbody) return;
+    if (!_adminInsClaims.length) {
+        tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:32px;color:var(--text-muted,#64748b);">No claims found.</td></tr>';
+        return;
+    }
+    tbody.innerHTML = _adminInsClaims.map(c => `
+        <tr>
+            <td style="font-weight:800;">#${c.id}</td>
+            <td>
+                <div style="font-weight:700;font-size:13px;">${_aesc(c.patient_name || '—')}</div>
+                <div style="font-size:11px;color:var(--text-muted,#64748b);">${_aesc(c.patient_email || '')}</div>
+            </td>
+            <td>${_adminCodeBadge(c.policy_number)}</td>
+            <td>
+                <div style="font-size:13px;font-weight:600;">${_aesc(c.hospital_name || '—')}</div>
+                <div style="font-size:11px;color:var(--text-muted,#64748b);">${_aesc(c.treatment_type || c.claim_reason || '')}</div>
+            </td>
+            <td style="font-weight:700;">${_adminFmtMoney(c.claim_amount)}</td>
+            <td style="color:${c.approved_amount ? '#10b981' : 'var(--text-muted,#64748b)'};font-weight:${c.approved_amount ? '800' : '400'};">${c.approved_amount ? _adminFmtMoney(c.approved_amount) : '—'}</td>
+            <td>${_adminStatusPill(c.claim_status)}</td>
+            <td>
+                ${c.medical_documents
+                    ? `<a href="/uploads/${_aesc(c.medical_documents)}" target="_blank" style="color:#3b82f6;font-size:12px;font-weight:700;display:inline-flex;align-items:center;gap:4px;text-decoration:none;"><i class="fa-solid fa-file-medical"></i> View</a>`
+                    : '<span style="color:var(--text-muted,#94a3b8);font-size:12px;">None</span>'}
+            </td>
+        </tr>
+    `).join('');
+}
+
+function renderAdminInsRenewals() {
+    const tbody = document.getElementById('adminInsRenewalsBody');
+    if (!tbody) return;
+    if (!_adminInsRenewals.length) {
+        tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:32px;color:var(--text-muted,#64748b);">No renewals found.</td></tr>';
+        return;
+    }
+    tbody.innerHTML = _adminInsRenewals.map((p, i) => `
+        <tr>
+            <td style="font-weight:700;">${i+1}</td>
+            <td>
+                <div style="font-weight:700;font-size:13px;">${_aesc(p.patient_name || '—')}</div>
+                <div style="font-size:11px;color:var(--text-muted,#64748b);">${_aesc(p.patient_email || '')}</div>
+            </td>
+            <td>${_aesc(p.insurance_company || p.plan_name || '—')}</td>
+            <td>${_adminCodeBadge(p.policy_number)}</td>
+            <td>${_adminFmtDate(p.start_date)}</td>
+            <td style="font-weight:700;">${_adminFmtDate(p.expiry_date)}</td>
+            <td style="font-weight:700;">${_adminFmtMoney(p.premium_amount)}</td>
+            <td>${_adminStatusPill(p.payment_status || 'unpaid')}</td>
+            <td>${_adminStatusPill(p.insurance_status || 'active')}</td>
+        </tr>
+    `).join('');
+}
+
+function openAdminClaimModal(claimId, patientName, policyNum, currentStatus, approvedAmt, remarks) {
+    document.getElementById('adminClaimModalId').value = claimId;
+    document.getElementById('adminClaimModalInfo').innerHTML =
+        `Claim #${claimId} &bull; <strong>${_aesc(patientName)}</strong> &bull; Policy: ${_adminCodeBadge(policyNum)}`;
+
+    document.getElementById('adminClaimStatusSelect').value = currentStatus || 'pending';
+    document.getElementById('adminClaimApprovedAmount').value = approvedAmt > 0 ? approvedAmt : '';
+    document.getElementById('adminClaimRemarks').value = remarks || '';
+    document.getElementById('adminClaimModalError').style.display = 'none';
+    document.getElementById('adminClaimActionModal').style.display = 'flex';
+}
+
+async function submitAdminClaimUpdate() {
+    const claimId = document.getElementById('adminClaimModalId').value;
+    const status = document.getElementById('adminClaimStatusSelect').value;
+    const approvedAmount = document.getElementById('adminClaimApprovedAmount').value;
+    const adminRemarks = document.getElementById('adminClaimRemarks').value;
+    const errEl = document.getElementById('adminClaimModalError');
+    errEl.style.display = 'none';
+    try {
+        const res = await fetch('/api/admin/insurance-claims/status', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ claim_id: claimId, status, approved_amount: approvedAmount || null, admin_remarks: adminRemarks || null })
+        });
+        const data = await res.json();
+        if (data.success) {
+            document.getElementById('adminClaimActionModal').style.display = 'none';
+            loadAdminInsurance();
+        } else {
+            errEl.textContent = data.message || 'Failed to update claim.';
+            errEl.style.display = 'block';
+        }
+    } catch(e) {
+        errEl.textContent = 'Network error. Please try again.';
+        errEl.style.display = 'block';
+    }
+}
+
+// ==================== END ADMIN INSURANCE MANAGEMENT ====================
+
 
 
 

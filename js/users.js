@@ -13,6 +13,8 @@
         formData.append("insurance_purchase_id", valueOf("claim_purchase_id"));
         formData.append("claim_amount", valueOf("claim_amount"));
         formData.append("claim_reason", valueOf("claim_reason"));
+        formData.append("hospital_name", valueOf("claim_hospital_name") || "");
+        formData.append("treatment_type", valueOf("claim_treatment_type") || "");
 
         const documentInput = $("#claim_documents");
         if (documentInput?.files?.[0]) {
@@ -37,6 +39,7 @@
             closeModal("insuranceClaimModal");
             $("#insuranceClaimForm")?.reset();
             loadUserInsuranceDashboard();
+            loadInsurances();
         } catch (error) {
             console.error(error);
             toast("Claim could not be submitted");
@@ -102,6 +105,7 @@
                 closeModal("insuranceRenewalModal");
                 $("#insuranceRenewalForm")?.reset();
                 loadUserInsuranceDashboard();
+                loadInsurances();
             }
         });
     }
@@ -301,7 +305,8 @@
     }
 
     function updateCartUI() {
-        const count = state.cart.reduce((sum, item) => sum + item.qty, 0);
+        const user = getSavedUser();
+        const count = user ? state.cart.reduce((sum, item) => sum + item.qty, 0) : 0;
         $$(".cartCount").forEach(el => {
             el.textContent = String(count);
         });
@@ -369,17 +374,30 @@
     }
 
     function getCart() {
+        const user = getSavedUser();
+        if (!user) {
+            try { localStorage.removeItem(CART_KEY); } catch(e) {}
+            return [];
+        }
         try {
-            const rawCart = localStorage.getItem(CART_KEY);
+            const userCartKey = user.id ? `${CART_KEY}_${user.id}` : CART_KEY;
+            const rawCart = localStorage.getItem(userCartKey) || localStorage.getItem(CART_KEY);
             const parsed = rawCart ? JSON.parse(rawCart) : [];
             return Array.isArray(parsed) ? parsed : [];
         } catch (error) {
-            localStorage.removeItem(CART_KEY);
+            try { localStorage.removeItem(CART_KEY); } catch(e) {}
             return [];
         }
     }
 
     function saveCart() {
+        const user = getSavedUser();
+        if (!user) {
+            return;
+        }
+        if (user.id) {
+            localStorage.setItem(`${CART_KEY}_${user.id}`, JSON.stringify(state.cart));
+        }
         localStorage.setItem(CART_KEY, JSON.stringify(state.cart));
     }
 
@@ -635,51 +653,213 @@
     });
 
     async function loadUserInsuranceDashboard() {
-        const userPoliciesContainer = $("#userPoliciesContainer");
-        const userClaimsContainer = $("#userClaimsContainer");
-        if (!userPoliciesContainer || !userClaimsContainer) return;
+        const container = $("#userPoliciesContainer");
+        if (!container) return;
 
         const currentUser = getSavedUser();
         if (!currentUser) {
-            userPoliciesContainer.innerHTML = '<div class="emptyState">Login to view your insurance policies.</div>';
-            userClaimsContainer.innerHTML = '<div class="emptyState">Login to view your claim history.</div>';
+            container.innerHTML = `
+                <div style="background: #ffffff; border: 1px dashed #cbd5e1; border-radius: 12px; padding: 32px 20px; text-align: center;">
+                    <i class="fa-solid fa-shield-heart" style="font-size: 36px; color: #94a3b8; margin-bottom: 12px; display: block;"></i>
+                    <h4 style="font-size: 16px; font-weight: 700; color: #1e293b; margin-bottom: 6px;">Login to View Your Policies & Claims</h4>
+                    <p style="font-size: 13px; color: #64748b; margin-bottom: 16px;">Access your active health insurance policies, claim history, and renewal options.</p>
+                    <button type="button" class="btn btn-primary btn-sm" data-action="open-login" style="padding: 8px 20px; font-weight: 700;">
+                        <i class="fa-solid fa-arrow-right-to-bracket"></i> Login Now
+                    </button>
+                </div>
+            `;
             return;
         }
 
         try {
-            const data = await apiGet("/api/user/insurance-policies");
-            if (data && data.success) {
-                if (data.policies && data.policies.length > 0) {
-                    userPoliciesContainer.innerHTML = data.policies.map(p => `
-                        <div class="policyCard" style="padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; margin-bottom: 8px;">
-                            <strong>${escapeHtml(p.plan_name || 'Insurance Plan')}</strong>
-                            <div style="font-size:12px; color:#64748b;">Coverage: ${formatMoney(p.coverage_amount)} | Status: <span style="color:#10b981; font-weight:600;">Active</span></div>
-                        </div>
-                    `).join("");
-                } else {
-                    userPoliciesContainer.innerHTML = '<div class="emptyState">No active insurance policies found.</div>';
-                }
+            container.innerHTML = `
+                <div style="padding: 24px; text-align: center; color: #64748b;">
+                    <i class="fa-solid fa-spinner fa-spin" style="font-size: 24px; margin-bottom: 8px; display: block; color: #3b82f6;"></i>
+                    Loading your policies and claims...
+                </div>
+            `;
 
-                if (data.claims && data.claims.length > 0) {
-                    userClaimsContainer.innerHTML = data.claims.map(c => `
-                        <div class="claimCard" style="padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; margin-bottom: 8px;">
-                            <strong>Claim #${c.id}</strong> - ${escapeHtml(c.policy_name)}
-                            <div style="font-size:12px; color:#64748b;">Amount: ${formatMoney(c.claim_amount)} | Status: <b>${escapeHtml(c.status)}</b></div>
-                        </div>
-                    `).join("");
-                } else {
-                    userClaimsContainer.innerHTML = '<div class="emptyState">No claims submitted yet.</div>';
-                }
-            } else {
-                userPoliciesContainer.innerHTML = '<div class="emptyState">No active insurance policies found.</div>';
-                userClaimsContainer.innerHTML = '<div class="emptyState">No claims submitted yet.</div>';
+            const userIdParam = currentUser && currentUser.id ? `?user_id=${currentUser.id}` : "";
+            const [policiesData, claimsData] = await Promise.all([
+                apiGet(`/api/user/insurance-policies${userIdParam}`),
+                apiGet(`/api/user/insurance-claims${userIdParam}`)
+            ]);
+
+            const policies = (policiesData && policiesData.success && Array.isArray(policiesData.policies)) ? policiesData.policies : [];
+            const claims = (claimsData && claimsData.success && Array.isArray(claimsData.claims)) ? claimsData.claims : [];
+
+            if (!policies.length) {
+                container.innerHTML = `
+                    <div style="background: #ffffff; border: 1px dashed #cbd5e1; border-radius: 12px; padding: 32px 20px; text-align: center;">
+                        <i class="fa-solid fa-folder-open" style="font-size: 36px; color: #94a3b8; margin-bottom: 12px; display: block;"></i>
+                        <h4 style="font-size: 16px; font-weight: 700; color: #1e293b; margin-bottom: 6px;">No Active Policies Yet</h4>
+                        <p style="font-size: 13px; color: #64748b; margin-bottom: 0;">You have not purchased any health insurance policy yet. Choose a plan above to get started with instant coverage!</p>
+                    </div>
+                `;
+                return;
             }
+
+            container.innerHTML = policies.map((policy, idx) => {
+                const status = String(policy.insurance_status || "active").toLowerCase();
+                const isActive = status === "active";
+                const policyName = policy.plan_name || policy.comp_name || "Health Insurance Policy";
+                const premium = parseMoney(policy.ins_price) || parseMoney(policy.premium_amount);
+                const coverage = parseMoney(policy.coverage_amount || policy.claim_price);
+
+                // Match claims specifically for this policy:
+                const policyClaims = claims.filter(c => 
+                    (c.insurance_purchase_id && Number(c.insurance_purchase_id) === Number(policy.id)) ||
+                    (c.policy_number && policy.policy_number && String(c.policy_number).trim() === String(policy.policy_number).trim())
+                );
+
+                // Store policy data globally for modal
+                window._userPoliciesData = window._userPoliciesData || [];
+                window._userPoliciesData[idx] = { policy, policyClaims, policyName, premium, coverage, status, isActive };
+
+                return `
+                    <article class="purchasedPolicyCard" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 18px 22px; box-shadow: 0 2px 10px rgba(15, 23, 42, 0.04); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;">
+                        <div style="flex:1;min-width:0;">
+                            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 4px;">
+                                <h3 style="margin: 0; font-size: 1.05rem; font-weight: 800; color: #0f172a;">${escapeHtml(policyName)}</h3>
+                                <span class="statusPill ${escapeAttr(status)}" style="padding: 2px 10px; border-radius: 999px; font-size: 11px; font-weight: 800; text-transform: uppercase;">
+                                    <i class="fa-solid ${isActive ? 'fa-circle-check' : 'fa-circle-exclamation'}"></i> ${escapeHtml(status)}
+                                </span>
+                            </div>
+                            <div style="font-size: 12px; color: #64748b; display: flex; align-items: center; gap: 14px; flex-wrap: wrap;">
+                                <span><i class="fa-solid fa-building-shield" style="color: #3b82f6;"></i> ${escapeHtml(policy.comp_name || "HospiKare Health")}</span>
+                                <span><i class="fa-solid fa-hashtag" style="color: #3b82f6;"></i> ${escapeHtml(policy.policy_number || "POL-" + policy.id)}</span>
+                                <span><i class="fa-solid fa-receipt" style="color: #f59e0b;"></i> ${policyClaims.length} Claims</span>
+                            </div>
+                        </div>
+                        <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap; flex-shrink:0;">
+                            <button type="button" onclick="window._openPolicyDetailModal(${idx})" style="display: inline-flex; align-items: center; gap: 6px; font-weight: 700; border-radius: 8px; padding: 8px 16px; font-size: 13px; background: #2563eb; color: #fff; border: none; cursor: pointer;">
+                                <i class="fa-solid fa-eye"></i> View Details
+                            </button>
+                            <button class="btn btn-primary btn-sm" type="button" data-action="claim-insurance" data-purchase-id="${escapeAttr(policy.id)}" data-policy="${escapeAttr(policyName)}" data-coverage="${escapeAttr(coverage)}" ${isActive ? "" : "disabled"} style="display: inline-flex; align-items: center; gap: 6px; font-weight: 700; border-radius: 8px; padding: 8px 14px; font-size: 13px;">
+                                <i class="fa-solid fa-file-medical"></i> File Claim
+                            </button>
+                            <button class="btn btn-outline-blue btn-sm" type="button" data-action="renew-insurance" data-purchase-id="${escapeAttr(policy.id)}" data-policy="${escapeAttr(policyName)}" data-premium="${escapeAttr(premium)}" style="display: inline-flex; align-items: center; gap: 6px; font-weight: 700; border-radius: 8px; padding: 8px 14px; font-size: 13px;">
+                                <i class="fa-solid fa-arrows-rotate"></i> Renew
+                            </button>
+                        </div>
+                    </article>
+                `;
+            }).join("");
+
         } catch (err) {
             console.error("Insurance dashboard error:", err);
-            userPoliciesContainer.innerHTML = '<div class="emptyState">No active insurance policies found.</div>';
-            userClaimsContainer.innerHTML = '<div class="emptyState">No claims submitted yet.</div>';
+            container.innerHTML = `
+                <div style="background: #ffffff; border: 1px solid #fecaca; border-radius: 12px; padding: 20px; text-align: center; color: #ef4444; font-size: 13px;">
+                    <i class="fa-solid fa-triangle-exclamation" style="font-size: 24px; margin-bottom: 8px; display: block;"></i>
+                    Failed to load insurance policies. Please try refreshing.
+                </div>
+            `;
         }
     }
+
+    // ======= CATALOG POLICY MODAL =======
+    window._openCatalogPolicyModal = function(policyId) {
+        var data = window._catalogPoliciesData && window._catalogPoliciesData[policyId];
+        if (!data) return;
+        var policy = data.policy, policyClaims = data.policyClaims, policyName = data.policyName;
+        var premium = data.premium, coverage = data.coverage, status = data.status, isActive = data.isActive;
+
+        document.getElementById('policyDetailTitle').textContent = policyName;
+        document.getElementById('policyDetailSub').innerHTML = '<i class="fa-solid fa-building-shield" style="color:#3b82f6;"></i> ' + escapeHtml(policy.comp_name || 'HospiKare Health') + ' &nbsp;|&nbsp; <i class="fa-solid fa-hashtag" style="color:#3b82f6;"></i> ' + escapeHtml(policy.policy_number || 'POL-' + policy.id);
+
+        var claimsHtml = '';
+        if (policyClaims.length > 0) {
+            claimsHtml = '<div style="display:flex;flex-direction:column;gap:10px;">';
+            for (var i = 0; i < policyClaims.length; i++) {
+                var c = policyClaims[i];
+                var cs = String(c.claim_status || 'pending').toLowerCase();
+                var sc = '#f59e0b', sb = '#fffbeb', sbd = '#fef3c7', si = 'fa-clock';
+                if (cs === 'approved' || cs === 'settled') { sc = '#10b981'; sb = '#ecfdf5'; sbd = '#a7f3d0'; si = 'fa-circle-check'; }
+                else if (cs === 'rejected') { sc = '#ef4444'; sb = '#fef2f2'; sbd = '#fecaca'; si = 'fa-circle-xmark'; }
+                claimsHtml += '<div style="background:#fff;border:1px solid #e2e8f0;border-left:4px solid ' + sc + ';border-radius:10px;padding:14px 18px;display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px;">';
+                claimsHtml += '<div style="flex:1;min-width:0;">';
+                claimsHtml += '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:5px;"><strong style="font-size:14px;color:#0f172a;">Claim #' + c.id + '</strong>';
+                claimsHtml += '<span style="display:inline-flex;align-items:center;gap:4px;background:' + sb + ';color:' + sc + ';border:1px solid ' + sbd + ';padding:2px 10px;border-radius:999px;font-size:11px;font-weight:800;text-transform:uppercase;"><i class="fa-solid ' + si + '"></i> ' + escapeHtml(c.claim_status || 'Pending') + '</span></div>';
+                if (c.hospital_name) claimsHtml += '<div style="font-size:13px;color:#334155;font-weight:600;margin-bottom:3px;"><i class="fa-solid fa-hospital" style="color:#3b82f6;margin-right:5px;font-size:11px;"></i>' + escapeHtml(c.hospital_name) + '</div>';
+                if (c.treatment_type) claimsHtml += '<div style="font-size:12px;color:#64748b;margin-bottom:3px;"><i class="fa-solid fa-stethoscope" style="margin-right:5px;font-size:11px;"></i>' + escapeHtml(c.treatment_type) + '</div>';
+                claimsHtml += '<div style="font-size:12px;color:#64748b;margin-top:3px;">Submitted ' + formatDate(c.created_at) + (c.claim_reason ? ' &bull; ' + escapeHtml(c.claim_reason) : '') + '</div>';
+                if (c.admin_remarks) claimsHtml += '<div style="font-size:12px;color:#7c3aed;margin-top:5px;font-style:italic;"><i class="fa-solid fa-comment" style="margin-right:5px;font-size:11px;"></i>' + escapeHtml(c.admin_remarks) + '</div>';
+                claimsHtml += '</div>';
+                claimsHtml += '<div style="text-align:right;flex-shrink:0;"><span style="font-size:10px;color:#64748b;text-transform:uppercase;font-weight:700;letter-spacing:0.5px;">Claim Amount</span>';
+                claimsHtml += '<div style="font-size:16px;font-weight:800;color:#0f172a;">' + formatMoney(c.claim_amount) + '</div>';
+                if (c.approved_amount) claimsHtml += '<div style="font-size:12px;color:#10b981;font-weight:700;margin-top:3px;">✅ Approved: ' + formatMoney(c.approved_amount) + '</div>';
+                claimsHtml += '</div></div>';
+            }
+            claimsHtml += '</div>';
+        } else {
+            claimsHtml = '<div style="background:#f8fafc;border:1px dashed #cbd5e1;border-radius:10px;padding:18px 20px;display:flex;align-items:center;gap:12px;color:#64748b;font-size:13px;"><i class="fa-regular fa-folder-open" style="font-size:18px;color:#94a3b8;"></i><span>No claims filed under this policy yet.</span></div>';
+        }
+
+        var bodyHtml = '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:14px;margin-bottom:20px;background:#f8fafc;padding:16px 20px;border-radius:12px;border:1px solid #edf2f7;">';
+        bodyHtml += '<div><span style="font-size:11px;text-transform:uppercase;color:#64748b;font-weight:700;letter-spacing:0.5px;">Coverage Amount</span><div style="font-size:16px;font-weight:800;color:#0f172a;margin-top:3px;">' + formatMoney(coverage) + '</div></div>';
+        bodyHtml += '<div><span style="font-size:11px;text-transform:uppercase;color:#64748b;font-weight:700;letter-spacing:0.5px;">Premium Paid</span><div style="font-size:16px;font-weight:800;color:#0f172a;margin-top:3px;">' + formatMoney(premium) + '</div></div>';
+        bodyHtml += '<div><span style="font-size:11px;text-transform:uppercase;color:#64748b;font-weight:700;letter-spacing:0.5px;">Valid Until</span><div style="font-size:15px;font-weight:700;color:#0f172a;margin-top:3px;">' + formatDate(policy.expiry_date) + '</div></div>';
+        bodyHtml += '<div><span style="font-size:11px;text-transform:uppercase;color:#64748b;font-weight:700;letter-spacing:0.5px;">Status</span><div style="font-size:14px;font-weight:800;color:' + (isActive ? '#10b981' : '#ef4444') + ';margin-top:3px;text-transform:uppercase;">' + escapeHtml(status) + '</div></div>';
+        bodyHtml += '<div><span style="font-size:11px;text-transform:uppercase;color:#64748b;font-weight:700;letter-spacing:0.5px;">Claims Filed</span><div style="font-size:15px;font-weight:800;color:#3b82f6;margin-top:3px;">' + policyClaims.length + ' Claims</div></div>';
+        bodyHtml += '</div>';
+        bodyHtml += '<div style="margin-top:6px;"><div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;"><i class="fa-solid fa-receipt" style="color:#3b82f6;font-size:14px;"></i><h4 style="margin:0;font-size:14px;font-weight:800;color:#334155;text-transform:uppercase;letter-spacing:0.5px;">Claims Under This Policy (' + policyClaims.length + ')</h4></div>';
+        bodyHtml += claimsHtml + '</div>';
+
+        document.getElementById('policyDetailBody').innerHTML = bodyHtml;
+        document.getElementById('policyDetailModal').style.display = 'flex';
+    };
+
+    // ======= POLICY DETAIL MODAL =======
+    window._openPolicyDetailModal = function(idx) {
+        var data = window._userPoliciesData && window._userPoliciesData[idx];
+        if (!data) return;
+        var policy = data.policy, policyClaims = data.policyClaims, policyName = data.policyName;
+        var premium = data.premium, coverage = data.coverage, status = data.status, isActive = data.isActive;
+
+        document.getElementById('policyDetailTitle').textContent = policyName;
+        document.getElementById('policyDetailSub').innerHTML = '<i class="fa-solid fa-building-shield" style="color:#3b82f6;"></i> ' + escapeHtml(policy.comp_name || 'HospiKare Health') + ' &nbsp;|&nbsp; <i class="fa-solid fa-hashtag" style="color:#3b82f6;"></i> ' + escapeHtml(policy.policy_number || 'POL-' + policy.id);
+
+        var claimsHtml = '';
+        if (policyClaims.length > 0) {
+            claimsHtml = '<div style="display:flex;flex-direction:column;gap:10px;">';
+            for (var i = 0; i < policyClaims.length; i++) {
+                var c = policyClaims[i];
+                var cs = String(c.claim_status || 'pending').toLowerCase();
+                var sc = '#f59e0b', sb = '#fffbeb', sbd = '#fef3c7', si = 'fa-clock';
+                if (cs === 'approved' || cs === 'settled') { sc = '#10b981'; sb = '#ecfdf5'; sbd = '#a7f3d0'; si = 'fa-circle-check'; }
+                else if (cs === 'rejected') { sc = '#ef4444'; sb = '#fef2f2'; sbd = '#fecaca'; si = 'fa-circle-xmark'; }
+                claimsHtml += '<div style="background:#fff;border:1px solid #e2e8f0;border-left:4px solid ' + sc + ';border-radius:10px;padding:14px 18px;display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px;">';
+                claimsHtml += '<div style="flex:1;min-width:0;">';
+                claimsHtml += '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:5px;"><strong style="font-size:14px;color:#0f172a;">Claim #' + c.id + '</strong>';
+                claimsHtml += '<span style="display:inline-flex;align-items:center;gap:4px;background:' + sb + ';color:' + sc + ';border:1px solid ' + sbd + ';padding:2px 10px;border-radius:999px;font-size:11px;font-weight:800;text-transform:uppercase;"><i class="fa-solid ' + si + '"></i> ' + escapeHtml(c.claim_status || 'Pending') + '</span></div>';
+                if (c.hospital_name) claimsHtml += '<div style="font-size:13px;color:#334155;font-weight:600;margin-bottom:3px;"><i class="fa-solid fa-hospital" style="color:#3b82f6;margin-right:5px;font-size:11px;"></i>' + escapeHtml(c.hospital_name) + '</div>';
+                if (c.treatment_type) claimsHtml += '<div style="font-size:12px;color:#64748b;margin-bottom:3px;"><i class="fa-solid fa-stethoscope" style="margin-right:5px;font-size:11px;"></i>' + escapeHtml(c.treatment_type) + '</div>';
+                claimsHtml += '<div style="font-size:12px;color:#64748b;margin-top:3px;">Submitted ' + formatDate(c.created_at) + (c.claim_reason ? ' &bull; ' + escapeHtml(c.claim_reason) : '') + '</div>';
+                if (c.admin_remarks) claimsHtml += '<div style="font-size:12px;color:#7c3aed;margin-top:5px;font-style:italic;"><i class="fa-solid fa-comment" style="margin-right:5px;font-size:11px;"></i>' + escapeHtml(c.admin_remarks) + '</div>';
+                claimsHtml += '</div>';
+                claimsHtml += '<div style="text-align:right;flex-shrink:0;"><span style="font-size:10px;color:#64748b;text-transform:uppercase;font-weight:700;letter-spacing:0.5px;">Claim Amount</span>';
+                claimsHtml += '<div style="font-size:16px;font-weight:800;color:#0f172a;">' + formatMoney(c.claim_amount) + '</div>';
+                if (c.approved_amount) claimsHtml += '<div style="font-size:12px;color:#10b981;font-weight:700;margin-top:3px;">✅ Approved: ' + formatMoney(c.approved_amount) + '</div>';
+                claimsHtml += '</div></div>';
+            }
+            claimsHtml += '</div>';
+        } else {
+            claimsHtml = '<div style="background:#f8fafc;border:1px dashed #cbd5e1;border-radius:10px;padding:18px 20px;display:flex;align-items:center;gap:12px;color:#64748b;font-size:13px;"><i class="fa-regular fa-folder-open" style="font-size:18px;color:#94a3b8;"></i><span>No claims filed under this policy yet.</span></div>';
+        }
+
+        var bodyHtml = '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:14px;margin-bottom:20px;background:#f8fafc;padding:16px 20px;border-radius:12px;border:1px solid #edf2f7;">';
+        bodyHtml += '<div><span style="font-size:11px;text-transform:uppercase;color:#64748b;font-weight:700;letter-spacing:0.5px;">Coverage Amount</span><div style="font-size:16px;font-weight:800;color:#0f172a;margin-top:3px;">' + formatMoney(coverage) + '</div></div>';
+        bodyHtml += '<div><span style="font-size:11px;text-transform:uppercase;color:#64748b;font-weight:700;letter-spacing:0.5px;">Premium Paid</span><div style="font-size:16px;font-weight:800;color:#0f172a;margin-top:3px;">' + formatMoney(premium) + '</div></div>';
+        bodyHtml += '<div><span style="font-size:11px;text-transform:uppercase;color:#64748b;font-weight:700;letter-spacing:0.5px;">Valid Until</span><div style="font-size:15px;font-weight:700;color:#0f172a;margin-top:3px;">' + formatDate(policy.expiry_date) + '</div></div>';
+        bodyHtml += '<div><span style="font-size:11px;text-transform:uppercase;color:#64748b;font-weight:700;letter-spacing:0.5px;">Status</span><div style="font-size:14px;font-weight:800;color:' + (isActive ? '#10b981' : '#ef4444') + ';margin-top:3px;text-transform:uppercase;">' + escapeHtml(status) + '</div></div>';
+        bodyHtml += '<div><span style="font-size:11px;text-transform:uppercase;color:#64748b;font-weight:700;letter-spacing:0.5px;">Claims Filed</span><div style="font-size:15px;font-weight:800;color:#3b82f6;margin-top:3px;">' + policyClaims.length + ' Claims</div></div>';
+        bodyHtml += '</div>';
+        bodyHtml += '<div style="margin-top:6px;"><div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;"><i class="fa-solid fa-receipt" style="color:#3b82f6;font-size:14px;"></i><h4 style="margin:0;font-size:14px;font-weight:800;color:#334155;text-transform:uppercase;letter-spacing:0.5px;">Claims Under This Policy (' + policyClaims.length + ')</h4></div>';
+        bodyHtml += claimsHtml + '</div>';
+
+        document.getElementById('policyDetailBody').innerHTML = bodyHtml;
+        document.getElementById('policyDetailModal').style.display = 'flex';
+    };
 
     async function init() {
         // Sync session state with backend if available
@@ -776,7 +956,10 @@
         $("#closeInsuranceRenewalModal")?.addEventListener("click", () => closeModal("insuranceRenewalModal"));
         $("#closeProductModal")?.addEventListener("click", () => closeModal("productBuyModal"));
         $("#closeCartModal")?.addEventListener("click", () => closeModal("cartModal"));
-        $("#refreshInsuranceClaimsBtn")?.addEventListener("click", loadUserInsuranceDashboard);
+        $("#refreshInsuranceClaimsBtn")?.addEventListener("click", () => {
+            loadUserInsuranceDashboard();
+            loadInsurances();
+        });
         $("#renew_duration")?.addEventListener("change", updateRenewalTotal);
 
         $$(".modal").forEach(modal => {
@@ -1293,59 +1476,6 @@
         }
     }
 
-    async function loadInsurances() {
-        const container = $("#insuranceContainer");
-        renderLoading(container, "Loading insurance plans...");
-
-        try {
-            const data = await apiGet("/api/all-insurances");
-            if (!data.success || !Array.isArray(data.insurances) || data.insurances.length === 0) {
-                renderEmpty(container, "No insurance plans available right now.");
-                return;
-            }
-
-            container.innerHTML = data.insurances.map((insurance, index) => `
-                <article class="insuranceCard ${index === 1 ? "popularPlan" : ""}" style="display: flex; flex-direction: column; padding: 24px; background: #ffffff; border-radius: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.03); border: 1px solid #e2e8f0; position: relative; color: #0f172a; overflow: hidden; transition: transform 0.3s ease, box-shadow 0.3s ease;">
-    ${index === 1 ? `<div style="position: absolute; top: 0; right: 0; background: linear-gradient(135deg, #ef4444, #e8174a); color: white; font-size: 11px; font-weight: 800; padding: 6px 16px; border-radius: 0 20px 0 16px; text-transform: uppercase; letter-spacing: 1px;">Most Popular</div>` : ""}
-    <div style="position: absolute; top: -50px; right: -50px; width: 150px; height: 150px; background: rgba(37,99,235,0.04); border-radius: 50%;"></div>
-    
-    <div style="font-size: 12px; color: #3b82f6; font-weight: 800; text-transform: uppercase; margin-bottom: 4px;">${escapeHtml(insurance.comp_type || "Health Cover")}</div>
-    <h3 style="font-size: 20px; font-weight: 800; color: #0f172a; margin: 0 0 16px 0; line-height: 1.2;">${escapeHtml(insurance.comp_name || "Insurance Plan")}</h3>
-    
-    <div class="insurancePrice" style="font-size: 28px; font-weight: 900; color: #1e293b; margin-bottom: 16px; letter-spacing: -0.5px;">${formatMoney(insurance.claim_price || insurance.ins_price)}</div>
-    
-    <p style="font-size: 13px; color: #475569; line-height: 1.5; margin-bottom: 20px;">${escapeHtml(insurance.description || "Coverage details available with the provider.")}</p>
-    
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 24px; background: #f8fafc; padding: 12px; border-radius: 12px; border: 1px solid #f1f5f9; margin-top: auto;">
-        <div style="display: flex; flex-direction: column; gap: 4px;">
-            <span style="font-size: 11px; color: #64748b; text-transform: uppercase; font-weight: 700;">Claim Type</span>
-            <span style="font-size: 13px; font-weight: 700; color: #0f172a;">${escapeHtml(insurance.claim_type || "N/A")}</span>
-        </div>
-        <div style="display: flex; flex-direction: column; gap: 4px;">
-            <span style="font-size: 11px; color: #64748b; text-transform: uppercase; font-weight: 700;">Claim Time</span>
-            <span style="font-size: 13px; font-weight: 700; color: #0f172a;">${escapeHtml(insurance.claim_time || "N/A")}</span>
-        </div>
-        <div style="display: flex; flex-direction: column; gap: 4px;">
-            <span style="font-size: 11px; color: #64748b; text-transform: uppercase; font-weight: 700;">IRDAI</span>
-            <span style="font-size: 13px; font-weight: 700; color: #0f172a;">${escapeHtml(insurance.irdai || "N/A")}</span>
-        </div>
-        <div style="display: flex; flex-direction: column; gap: 4px;">
-            <span style="font-size: 11px; color: #64748b; text-transform: uppercase; font-weight: 700;">Support</span>
-            <span style="font-size: 13px; font-weight: 700; color: #0f172a;">${escapeHtml(insurance.cust_sup_num || "N/A")}</span>
-        </div>
-    </div>
-    
-    <button class="buyPlanBtn" type="button" data-action="buy-insurance" data-id="${escapeAttr(insurance.id)}" data-name="${escapeAttr(insurance.comp_name || "Insurance Plan")}" data-claim="${escapeAttr(parseMoney(insurance.claim_price))}" data-price="${escapeAttr(parseMoney(insurance.ins_price))}" style="width: 100%; border-radius: 12px; height: 48px; min-height: 48px; max-height: 48px; font-size: 15px; font-weight: 800; border: none; cursor: pointer; flex: none; display: flex; align-items: center; justify-content: center;">
-        Buy Plan
-    </button>
-</article>
-            `).join("");
-        } catch (error) {
-            console.error(error);
-            renderEmpty(container, "Insurance plans could not be loaded.");
-        }
-    }
-
     async function loadMedicines() {
         const container = $("#medicineContainer");
         renderLoading(container, "Loading medicines...");
@@ -1722,6 +1852,8 @@
             state.user = data.user;
             localStorage.setItem(USER_KEY, JSON.stringify(data.user));
             localStorage.setItem("hk_user", JSON.stringify(data.user));
+            state.cart = getCart();
+            updateCartUI();
             closeModal("authOverlay");
             updateUserUI();
             loadUserInsuranceDashboard();
@@ -1753,8 +1885,11 @@
         }
         localStorage.removeItem(USER_KEY);
         localStorage.removeItem("hk_user");
+        localStorage.removeItem(CART_KEY);
         sessionStorage.clear();
         state.user = null;
+        state.cart = [];
+        updateCartUI();
         updateUserUI();
         loadUserInsuranceDashboard();
         closeModal("userProfileModal");
@@ -2055,6 +2190,7 @@ async function handleAmbulanceBooking(event) {
                 toast("Insurance purchased successfully");
                 closeModal("insuranceModal");
                 loadUserInsuranceDashboard();
+                loadInsurances();
             }
         });
     }
@@ -2065,6 +2201,11 @@ async function handleAmbulanceBooking(event) {
 
             if (actionButton) {
                 const action = actionButton.dataset.action;
+
+                if (action === "open-login") {
+                    showAuthModal();
+                    return;
+                }
 
                 if (action === "open-hospital") {
                     window.location.href = '/hosp_data.html?id=' + actionButton.dataset.id;
@@ -2274,51 +2415,140 @@ async function handleAmbulanceBooking(event) {
 
     async function loadInsurances() {
         const container = $("#insuranceContainer");
+        if (!container) return;
         renderLoading(container, "Loading insurance plans...");
 
         try {
+            const currentUser = getSavedUser();
+            let userPolicies = [];
+            let userClaims = [];
+
+            if (currentUser) {
+                try {
+                    const userIdParam = currentUser && currentUser.id ? `?user_id=${currentUser.id}` : "";
+                    const [policiesRes, claimsRes] = await Promise.all([
+                        apiGet(`/api/user/insurance-policies${userIdParam}`),
+                        apiGet(`/api/user/insurance-claims${userIdParam}`)
+                    ]);
+                    if (policiesRes && policiesRes.success && Array.isArray(policiesRes.policies)) {
+                        userPolicies = policiesRes.policies;
+                    }
+                    if (claimsRes && claimsRes.success && Array.isArray(claimsRes.claims)) {
+                        userClaims = claimsRes.claims;
+                    }
+                } catch (e) {
+                    console.error("Could not fetch user policies/claims for insurance cards:", e);
+                }
+            }
+
             const data = await apiGet("/api/all-insurances");
             if (!data.success || !Array.isArray(data.insurances) || data.insurances.length === 0) {
                 renderEmpty(container, "No insurance plans available right now.");
                 return;
             }
 
-            container.innerHTML = data.insurances.map((insurance, index) => `
-                <article class="insuranceCard ${index === 1 ? "popularPlan" : ""}" style="display: flex; flex-direction: column; padding: 24px; background: #ffffff; border-radius: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.03); border: 1px solid #e2e8f0; position: relative; color: #0f172a; overflow: hidden; transition: transform 0.3s ease, box-shadow 0.3s ease;">
-    ${index === 1 ? `<div style="position: absolute; top: 0; right: 0; background: linear-gradient(135deg, #ef4444, #e8174a); color: white; font-size: 11px; font-weight: 800; padding: 6px 16px; border-radius: 0 20px 0 16px; text-transform: uppercase; letter-spacing: 1px;">Most Popular</div>` : ""}
-    <div style="position: absolute; top: -50px; right: -50px; width: 150px; height: 150px; background: rgba(37,99,235,0.04); border-radius: 50%;"></div>
-    
-    <div style="font-size: 12px; color: #3b82f6; font-weight: 800; text-transform: uppercase; margin-bottom: 4px;">${escapeHtml(insurance.comp_type || "Health Cover")}</div>
-    <h3 style="font-size: 20px; font-weight: 800; color: #0f172a; margin: 0 0 16px 0; line-height: 1.2;">${escapeHtml(insurance.comp_name || "Insurance Plan")}</h3>
-    
-    <div class="insurancePrice" style="font-size: 28px; font-weight: 900; color: #1e293b; margin-bottom: 16px; letter-spacing: -0.5px;">${formatMoney(insurance.claim_price || insurance.ins_price)}</div>
-    
-    <p style="font-size: 13px; color: #475569; line-height: 1.5; margin-bottom: 20px;">${escapeHtml(insurance.description || "Coverage details available with the provider.")}</p>
-    
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 24px; background: #f8fafc; padding: 12px; border-radius: 12px; border: 1px solid #f1f5f9; margin-top: auto;">
-        <div style="display: flex; flex-direction: column; gap: 4px;">
-            <span style="font-size: 11px; color: #64748b; text-transform: uppercase; font-weight: 700;">Claim Type</span>
-            <span style="font-size: 13px; font-weight: 700; color: #0f172a;">${escapeHtml(insurance.claim_type || "N/A")}</span>
-        </div>
-        <div style="display: flex; flex-direction: column; gap: 4px;">
-            <span style="font-size: 11px; color: #64748b; text-transform: uppercase; font-weight: 700;">Claim Time</span>
-            <span style="font-size: 13px; font-weight: 700; color: #0f172a;">${escapeHtml(insurance.claim_time || "N/A")}</span>
-        </div>
-        <div style="display: flex; flex-direction: column; gap: 4px;">
-            <span style="font-size: 11px; color: #64748b; text-transform: uppercase; font-weight: 700;">IRDAI</span>
-            <span style="font-size: 13px; font-weight: 700; color: #0f172a;">${escapeHtml(insurance.irdai || "N/A")}</span>
-        </div>
-        <div style="display: flex; flex-direction: column; gap: 4px;">
-            <span style="font-size: 11px; color: #64748b; text-transform: uppercase; font-weight: 700;">Support</span>
-            <span style="font-size: 13px; font-weight: 700; color: #0f172a;">${escapeHtml(insurance.cust_sup_num || "N/A")}</span>
-        </div>
-    </div>
-    
-    <button class="buyPlanBtn" type="button" data-action="buy-insurance" data-id="${escapeAttr(insurance.id)}" data-name="${escapeAttr(insurance.comp_name || "Insurance Plan")}" data-claim="${escapeAttr(parseMoney(insurance.claim_price))}" data-price="${escapeAttr(parseMoney(insurance.ins_price))}" style="width: 100%; border-radius: 12px; height: 48px; min-height: 48px; max-height: 48px; font-size: 15px; font-weight: 800; border: none; cursor: pointer; flex: none; display: flex; align-items: center; justify-content: center;">
-        Buy Plan
-    </button>
-</article>
-            `).join("");
+            container.innerHTML = data.insurances.map((insurance, index) => {
+                // Check if user already purchased this plan
+                const purchasedPolicy = userPolicies.find(p => 
+                    (p.insurance_vendor_id && Number(p.insurance_vendor_id) === Number(insurance.id)) ||
+                    (p.plan_name && insurance.comp_name && p.plan_name.toLowerCase().trim() === insurance.comp_name.toLowerCase().trim())
+                );
+
+                const isPurchased = !!purchasedPolicy && String(purchasedPolicy.insurance_status || "active").toLowerCase() === "active";
+
+                // If purchased, filter its claims
+                const cardClaims = isPurchased ? userClaims.filter(c => 
+                    (c.insurance_purchase_id && Number(c.insurance_purchase_id) === Number(purchasedPolicy.id)) ||
+                    (c.policy_number && purchasedPolicy.policy_number && String(c.policy_number).trim() === String(purchasedPolicy.policy_number).trim())
+                ) : [];
+
+                return `
+                    <article class="insuranceCard ${index === 1 && !isPurchased ? "popularPlan" : ""}" style="display: flex; flex-direction: column; padding: 24px; background: #ffffff; border-radius: 20px; box-shadow: ${isPurchased ? "0 8px 24px rgba(16, 185, 129, 0.12)" : "0 4px 12px rgba(0,0,0,0.03)"}; border: ${isPurchased ? "2px solid #10b981" : "1px solid #e2e8f0"}; position: relative; color: #0f172a; overflow: hidden; transition: transform 0.3s ease, box-shadow 0.3s ease;">
+                        ${isPurchased 
+                            ? `<div style="position: absolute; top: 0; left: 0; background: linear-gradient(135deg, #10b981, #059669); color: white; font-size: 11px; font-weight: 800; padding: 6px 14px; border-radius: 0 0 16px 0; text-transform: uppercase; letter-spacing: 0.5px; z-index: 2; display: flex; align-items: center; gap: 5px;">
+                                <i class="fa-solid fa-circle-check"></i> Active Policy &bull; ${escapeHtml(purchasedPolicy.policy_number || 'POL-' + purchasedPolicy.id)}
+                               </div>` 
+                            : (index === 1 ? `<div style="position: absolute; top: 0; right: 0; background: linear-gradient(135deg, #ef4444, #e8174a); color: white; font-size: 11px; font-weight: 800; padding: 6px 16px; border-radius: 0 20px 0 16px; text-transform: uppercase; letter-spacing: 1px;">Most Popular</div>` : "")
+                        }
+                        <div style="position: absolute; top: -50px; right: -50px; width: 150px; height: 150px; background: rgba(37,99,235,0.04); border-radius: 50%;"></div>
+                        
+                        <div style="font-size: 12px; color: #3b82f6; font-weight: 800; text-transform: uppercase; margin-bottom: 4px; ${isPurchased ? "margin-top: 14px;" : ""}">${escapeHtml(insurance.comp_type || "Health Cover")}</div>
+                        <h3 style="font-size: 20px; font-weight: 800; color: #0f172a; margin: 0 0 12px 0; line-height: 1.2;">${escapeHtml(insurance.comp_name || "Insurance Plan")}</h3>
+                        
+                        <div class="insurancePrice" style="font-size: 26px; font-weight: 900; color: #1e293b; margin-bottom: 12px; letter-spacing: -0.5px;">${formatMoney(insurance.claim_price || insurance.ins_price)}</div>
+                        
+                        <p style="font-size: 13px; color: #475569; line-height: 1.5; margin-bottom: 16px;">${escapeHtml(insurance.description || "Coverage details available with the provider.")}</p>
+                        
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; background: #f8fafc; padding: 12px; border-radius: 12px; border: 1px solid #f1f5f9;">
+                            <div style="display: flex; flex-direction: column; gap: 2px;">
+                                <span style="font-size: 10px; color: #64748b; text-transform: uppercase; font-weight: 700;">Claim Type</span>
+                                <span style="font-size: 12px; font-weight: 700; color: #0f172a;">${escapeHtml(insurance.claim_type || "N/A")}</span>
+                            </div>
+                            <div style="display: flex; flex-direction: column; gap: 2px;">
+                                <span style="font-size: 10px; color: #64748b; text-transform: uppercase; font-weight: 700;">Claim Time</span>
+                                <span style="font-size: 12px; font-weight: 700; color: #0f172a;">${escapeHtml(insurance.claim_time || "N/A")}</span>
+                            </div>
+                            <div style="display: flex; flex-direction: column; gap: 2px;">
+                                <span style="font-size: 10px; color: #64748b; text-transform: uppercase; font-weight: 700;">IRDAI</span>
+                                <span style="font-size: 12px; font-weight: 700; color: #0f172a;">${escapeHtml(insurance.irdai || "N/A")}</span>
+                            </div>
+                            <div style="display: flex; flex-direction: column; gap: 2px;">
+                                <span style="font-size: 10px; color: #64748b; text-transform: uppercase; font-weight: 700;">Support</span>
+                                <span style="font-size: 12px; font-weight: 700; color: #0f172a;">${escapeHtml(insurance.cust_sup_num || "N/A")}</span>
+                            </div>
+                        </div>
+
+                        ${isPurchased ? `
+                            <!-- Active Policy Badge & Quick Info -->
+                            <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px; padding: 8px 12px; margin-bottom: 12px; font-size: 12px; display: flex; justify-content: space-between; align-items: center;">
+                                <div>
+                                    <span style="color: #166534; font-weight: 700; font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px;">Valid Until</span>
+                                    <div style="font-weight: 800; color: #14532d;">${formatDate(purchasedPolicy.expiry_date)}</div>
+                                </div>
+                                <div style="text-align: right;">
+                                    <span style="color: #166534; font-weight: 700; font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px;">Claims</span>
+                                    <div style="font-weight: 800; color: #16a34a;">${cardClaims.length} Filed</div>
+                                </div>
+                            </div>
+
+                            <!-- Store data for catalog policy modal -->
+                            ${(() => {
+                                window._catalogPoliciesData = window._catalogPoliciesData || {};
+                                window._catalogPoliciesData[purchasedPolicy.id] = {
+                                    policy: purchasedPolicy,
+                                    policyClaims: cardClaims,
+                                    policyName: purchasedPolicy.plan_name || insurance.comp_name || "Health Insurance Policy",
+                                    premium: parseMoney(purchasedPolicy.premium_amount || insurance.ins_price),
+                                    coverage: parseMoney(purchasedPolicy.coverage_amount || insurance.claim_price),
+                                    status: String(purchasedPolicy.insurance_status || "active").toLowerCase(),
+                                    isActive: true
+                                };
+                                return '';
+                            })()}
+
+                            <!-- Action Buttons for Purchased Policy -->
+                            <div style="display: flex; flex-direction: column; gap: 8px; width: 100%; margin-top: auto;">
+                                <button type="button" onclick="window._openCatalogPolicyModal(${purchasedPolicy.id})" style="width: 100%; height: 38px; border-radius: 8px; font-size: 13px; font-weight: 700; background: #2563eb; color: #fff; border: none; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px;">
+                                    <i class="fa-solid fa-eye"></i> View Claims & Details
+                                </button>
+                                <div style="display: flex; gap: 8px; width: 100%;">
+                                    <button class="btn btn-primary" type="button" data-action="claim-insurance" data-purchase-id="${escapeAttr(purchasedPolicy.id)}" data-policy="${escapeAttr(purchasedPolicy.plan_name || insurance.comp_name)}" data-coverage="${escapeAttr(purchasedPolicy.coverage_amount || insurance.claim_price)}" style="flex: 1; height: 36px; border-radius: 8px; font-size: 12px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; gap: 6px;">
+                                        <i class="fa-solid fa-file-medical"></i> File Claim
+                                    </button>
+                                    <button class="btn btn-outline-blue" type="button" data-action="renew-insurance" data-purchase-id="${escapeAttr(purchasedPolicy.id)}" data-policy="${escapeAttr(purchasedPolicy.plan_name || insurance.comp_name)}" data-premium="${escapeAttr(purchasedPolicy.premium_amount || insurance.ins_price)}" style="height: 36px; padding: 0 12px; border-radius: 8px; font-size: 12px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; gap: 6px;">
+                                        <i class="fa-solid fa-arrows-rotate"></i> Renew
+                                    </button>
+                                </div>
+                            </div>
+                        ` : `
+                            <!-- Buy Plan Button for Unpurchased Policy -->
+                            <button class="buyPlanBtn" type="button" data-action="buy-insurance" data-id="${escapeAttr(insurance.id)}" data-name="${escapeAttr(insurance.comp_name || "Insurance Plan")}" data-claim="${escapeAttr(parseMoney(insurance.claim_price))}" data-price="${escapeAttr(parseMoney(insurance.ins_price))}" style="width: 100%; border-radius: 12px; height: 48px; min-height: 48px; max-height: 48px; font-size: 15px; font-weight: 800; border: none; cursor: pointer; flex: none; display: flex; align-items: center; justify-content: center; margin-top: auto;">
+                                Buy Plan
+                            </button>
+                        `}
+                    </article>
+                `;
+            }).join("");
         } catch (error) {
             console.error(error);
             renderEmpty(container, "Insurance plans could not be loaded.");
@@ -2639,6 +2869,8 @@ async function handleAmbulanceBooking(event) {
             state.user = data.user;
             localStorage.setItem(USER_KEY, JSON.stringify(data.user));
             localStorage.setItem("hk_user", JSON.stringify(data.user));
+            state.cart = getCart();
+            updateCartUI();
             closeModal("authOverlay");
             updateUserUI();
             loadUserInsuranceDashboard();
@@ -2670,8 +2902,11 @@ async function handleAmbulanceBooking(event) {
         }
         localStorage.removeItem(USER_KEY);
         localStorage.removeItem("hk_user");
+        localStorage.removeItem(CART_KEY);
         sessionStorage.clear();
         state.user = null;
+        state.cart = [];
+        updateCartUI();
         updateUserUI();
         loadUserInsuranceDashboard();
         closeModal("userProfileModal");
@@ -3029,6 +3264,8 @@ async function handleAmbulanceBooking(event) {
             state.user = data.user;
             localStorage.setItem(USER_KEY, JSON.stringify(data.user));
             localStorage.setItem("hk_user", JSON.stringify(data.user));
+            state.cart = getCart();
+            updateCartUI();
             closeModal("authOverlay");
             updateUserUI();
             loadUserInsuranceDashboard();
@@ -3060,8 +3297,11 @@ async function handleAmbulanceBooking(event) {
         }
         localStorage.removeItem(USER_KEY);
         localStorage.removeItem("hk_user");
+        localStorage.removeItem(CART_KEY);
         sessionStorage.clear();
         state.user = null;
+        state.cart = [];
+        updateCartUI();
         updateUserUI();
         loadUserInsuranceDashboard();
         closeModal("userProfileModal");
@@ -3485,6 +3725,8 @@ async function loadMedicines() {
             state.user = data.user;
             localStorage.setItem(USER_KEY, JSON.stringify(data.user));
             localStorage.setItem("hk_user", JSON.stringify(data.user));
+            state.cart = getCart();
+            updateCartUI();
             closeModal("authOverlay");
             updateUserUI();
             loadUserInsuranceDashboard();
@@ -3516,8 +3758,11 @@ async function loadMedicines() {
         }
         localStorage.removeItem(USER_KEY);
         localStorage.removeItem("hk_user");
+        localStorage.removeItem(CART_KEY);
         sessionStorage.clear();
         state.user = null;
+        state.cart = [];
+        updateCartUI();
         updateUserUI();
         loadUserInsuranceDashboard();
         closeModal("userProfileModal");
@@ -3875,6 +4120,8 @@ async function loadMedicines() {
             state.user = data.user;
             localStorage.setItem(USER_KEY, JSON.stringify(data.user));
             localStorage.setItem("hk_user", JSON.stringify(data.user));
+            state.cart = getCart();
+            updateCartUI();
             closeModal("authOverlay");
             updateUserUI();
             loadUserInsuranceDashboard();
@@ -3906,8 +4153,11 @@ async function loadMedicines() {
         }
         localStorage.removeItem(USER_KEY);
         localStorage.removeItem("hk_user");
+        localStorage.removeItem(CART_KEY);
         sessionStorage.clear();
         state.user = null;
+        state.cart = [];
+        updateCartUI();
         updateUserUI();
         loadUserInsuranceDashboard();
         closeModal("userProfileModal");
@@ -3948,6 +4198,8 @@ async function loadMedicines() {
         $$(".myOrdersLink, #navMyOrders, #sidebarMyOrders, #mobileBottomMyOrders").forEach(el => {
             el.style.display = user ? "" : "none";
         });
+
+        loadInsurances();
     }
 
     
@@ -4017,83 +4269,6 @@ async function loadMedicines() {
         container.innerHTML = `<div class="error-msg">Failed to load ambulances.</div>`;
     }
 }
-
-    function renderUserPolicies(policies) {
-        const container = $("#userPoliciesContainer");
-        if (!container) {
-            return;
-        }
-
-        if (!policies.length) {
-            renderEmpty(container, "No insurance policies yet. Buy a plan to manage claims and renewals.");
-            return;
-        }
-
-        container.innerHTML = policies.map(policy => {
-            const status = String(policy.insurance_status || "active").toLowerCase();
-            const isActive = status === "active";
-            const policyName = policy.plan_name || policy.comp_name || "Insurance Policy";
-            const premium = parseMoney(policy.ins_price) || parseMoney(policy.premium_amount);
-            const coverage = parseMoney(policy.coverage_amount || policy.claim_price);
-
-            return `
-                <article class="policyItem">
-                    <div class="policyItemHeader">
-                        <h4>${escapeHtml(policyName)}</h4>
-                        <span class="statusPill ${escapeAttr(status)}">${escapeHtml(status)}</span>
-                    </div>
-                    <div class="policyMeta">
-                        <span>Policy No.<strong>${escapeHtml(policy.policy_number || "N/A")}</strong></span>
-                        <span>Coverage<strong>${formatMoney(coverage)}</strong></span>
-                        <span>Premium<strong>${formatMoney(premium)}</strong></span>
-                        <span>Expires<strong>${formatDate(policy.expiry_date)}</strong></span>
-                        <span>Provider<strong>${escapeHtml(policy.comp_name || "N/A")}</strong></span>
-                        <span>Claims<strong>${escapeHtml(policy.claim_count || 0)}</strong></span>
-                    </div>
-                    <div class="policyActions">
-                        <button class="btn btn-primary btn-sm" type="button" data-action="claim-insurance" data-purchase-id="${escapeAttr(policy.id)}" data-policy="${escapeAttr(policyName)}" data-coverage="${escapeAttr(coverage)}" ${isActive ? "" : "disabled"}>
-                            <i class="fa-solid fa-file-medical"></i> Claim
-                        </button>
-                        <button class="btn btn-outline-blue btn-sm" type="button" data-action="renew-insurance" data-purchase-id="${escapeAttr(policy.id)}" data-policy="${escapeAttr(policyName)}" data-premium="${escapeAttr(premium)}">
-                            <i class="fa-solid fa-arrows-rotate"></i> Renew
-                        </button>
-                    </div>
-                </article>
-            `;
-        }).join("");
-    }
-
-    function renderUserClaims(claims) {
-        const container = $("#userClaimsContainer");
-        if (!container) {
-            return;
-        }
-
-        if (!claims.length) {
-            renderEmpty(container, "No claims submitted yet.");
-            return;
-        }
-
-        container.innerHTML = claims.map(claim => {
-            const status = String(claim.claim_status || "pending").toLowerCase();
-
-            return `
-                <article class="claimItem">
-                    <div class="policyItemHeader">
-                        <h4>${escapeHtml(claim.plan_name || claim.comp_name || "Insurance Claim")}</h4>
-                        <span class="statusPill ${escapeAttr(status)}">${escapeHtml(status)}</span>
-                    </div>
-                    <div class="claimMeta">
-                        <span>Policy No.<strong>${escapeHtml(claim.policy_number || "N/A")}</strong></span>
-                        <span>Claim Amount<strong>${formatMoney(claim.claim_amount)}</strong></span>
-                        <span>Coverage<strong>${formatMoney(claim.coverage_amount)}</strong></span>
-                        <span>Submitted<strong>${formatDate(claim.created_at)}</strong></span>
-                    </div>
-                    <p class="claimReason">${escapeHtml(claim.claim_reason || "No reason added.")}</p>
-                </article>
-            `;
-        }).join("");
-    }
 
     function openInsuranceClaim(purchaseId, policyName, coverage) {
         if (!requireUser()) {

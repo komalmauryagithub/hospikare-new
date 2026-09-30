@@ -237,11 +237,11 @@ window.setProfileMode = function(mode) {
     const saveBtn = document.getElementById('saveProfileBtn');
 
     if (mode === 'view') {
-        // inputs.forEach(input => input.disabled = true);
+        inputs.forEach(input => input.disabled = true);
         if(closeBtn) closeBtn.style.display = 'block';
         if(editBtn) editBtn.style.display = 'block';
         if(cancelBtn) cancelBtn.style.display = 'none';
-        // if(saveBtn) saveBtn.style.display = 'none';
+        if(saveBtn) saveBtn.style.display = 'none';
     } else {
         inputs.forEach(input => input.disabled = false);
         if(closeBtn) closeBtn.style.display = 'none';
@@ -252,15 +252,58 @@ window.setProfileMode = function(mode) {
 };
 
 document.addEventListener('DOMContentLoaded', () => {
-    document.body.addEventListener('click', (e) => {
-        if (e.target.closest('#enableProfileEditBtn')) {
-            window.setProfileMode('edit');
+    document.body.addEventListener('click', async (e) => {
+        const btn = e.target.closest('#enableProfileEditBtn');
+        if (btn) {
+            btn.disabled = true;
+            const origHtml = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Sending Request...';
+            try {
+                // Fetch user info to get user id
+                const userRes = await fetch('/api/user/profile', { credentials: 'include' });
+                const userData = await userRes.json();
+                const userId = userData.user?.id;
+                
+                if (!userId) {
+                    alert('Could not verify user session. Please re-login.');
+                    btn.disabled = false;
+                    btn.innerHTML = origHtml;
+                    return;
+                }
+
+                const res = await fetch('/api/vendor/request-profile-edit/user/' + userId, { method: 'POST', credentials: 'include' });
+                const data = await res.json();
+                if (data.success) {
+                    alert('Edit request sent to Admin successfully!\nOnce Admin approves your request, you will be able to update your profile details.');
+                    btn.innerHTML = '<i class="fa-solid fa-clock"></i> Edit Request Pending Admin Approval';
+                    btn.style.background = '#94a3b8';
+                    btn.style.boxShadow = 'none';
+                    btn.style.cursor = 'not-allowed';
+
+                    const bannerContainer = document.getElementById('profileStatusBannerContainer');
+                    if (bannerContainer) {
+                        bannerContainer.innerHTML = `
+                            <div style="padding:12px 16px; background:#fef3c7; border:1px solid #fcd34d; border-radius:10px; font-size:13px; color:#78350f; font-weight:500; display:flex; align-items:center; gap:10px; margin-bottom:12px;">
+                                <i class="fa-solid fa-hourglass-half" style="color:#d97706; font-size:18px;"></i>
+                                <div style="flex:1;">
+                                    <strong>Edit Request Pending Admin Approval.</strong> You have requested permission to update your vendor profile. Once Admin approves the request, the fields will become editable.
+                                </div>
+                            </div>
+                        `;
+                    }
+                } else {
+                    alert(data.message || 'Failed to send edit request.');
+                    btn.disabled = false;
+                    btn.innerHTML = origHtml;
+                }
+            } catch (err) {
+                console.error('Request edit error:', err);
+                alert('Network error while sending edit request to Admin.');
+                btn.disabled = false;
+                btn.innerHTML = origHtml;
+            }
         }
         if (e.target.closest('#cancelProfileEdit')) {
-            // Revert to view mode. The data will still be what it was unless they refresh,
-            // but we can just close the modal or revert mode.
-            // Wait, clicking cancel already closes the modal via the native event listener in amb.js.
-            // But next time they open, it should be view mode.
             const triggerText = document.getElementById('profileTriggerText');
             if (triggerText && triggerText.innerText === 'My Profile') {
                 window.setProfileMode('view');

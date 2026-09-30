@@ -123,8 +123,28 @@ async function loadUserProfile(){
                 triggerIcon.className = isComplete ? 'fa-solid fa-id-card' : 'fa-solid fa-user-pen';
                 triggerIcon.style.color = isComplete ? '#10b981' : '#3b82f6';
             }
-            if(window.setProfileMode) {
-                window.setProfileMode(isComplete ? 'view' : 'edit');
+            const isEditRequested = Number(result.user?.edit_requested) === 1;
+            const isEditAllowed = Number(result.user?.edit_allowed) === 1;
+            if (window.setProfileMode) {
+                if (!isComplete || isEditAllowed) {
+                    window.setProfileMode('edit');
+                } else {
+                    window.setProfileMode('view');
+                    if (isEditRequested) {
+                        const reqBtn = document.getElementById('enableProfileEditBtn');
+                        const bannerContainer = document.getElementById('profileStatusBannerContainer');
+                        if (reqBtn) {
+                            reqBtn.disabled = true;
+                            reqBtn.innerHTML = '<i class="fa-solid fa-clock"></i> Edit Request Pending Admin Approval';
+                            reqBtn.style.background = '#94a3b8';
+                            reqBtn.style.boxShadow = 'none';
+                            reqBtn.style.cursor = 'not-allowed';
+                        }
+                        if (bannerContainer) {
+                            bannerContainer.innerHTML = '<div style="padding:12px 16px; background:#fef3c7; border:1px solid #fcd34d; border-radius:10px; font-size:13px; color:#78350f; font-weight:500; display:flex; align-items:center; gap:10px; margin-bottom:12px;"><i class="fa-solid fa-hourglass-half" style="color:#d97706; font-size:18px;"></i><div style="flex:1;"><strong>Edit Request Pending Admin Approval.</strong> You have requested permission to update your vendor profile. Once Admin approves the request, the fields will become editable.</div></div>';
+                        }
+                    }
+                }
             }
         }
         else{
@@ -267,12 +287,14 @@ navItems.forEach(item => {
             loadInsurances();
         } else if(id === "companiesBtn"){
             loadCompanies();
-        } else if(id === "bookingsBtn"){
+        } else if(id === "bookingsBtn" || id === "policiesBtn"){
             loadBookings();
         } else if(id === "customersBtn"){
             loadCustomers();
         } else if(id === "claimsBtn"){
             loadClaims();
+        } else if(id === "renewalsBtn"){
+            loadRenewals();
         } else if(id === "paymentsBtn"){
             loadPayments();
         } else if(id === "dashboardBtn"){
@@ -280,6 +302,7 @@ navItems.forEach(item => {
         }
     });
 });
+
 
 async function loadInsurances(){
     try{
@@ -831,20 +854,21 @@ function renderClaimsTable(claims){
         const status = statusValue(claim.claim_status);
         const documentName = String(claim.medical_documents || "").replace(/^\/?uploads\//, "");
         const documentLink = documentName
-            ? `<a class="claimDocLink" href="/uploads/${encodeURIComponent(documentName)}" target="_blank" rel="noopener">View</a>`
+            ? `<a class="claimDocLink" href="/uploads/${encodeURIComponent(documentName)}" target="_blank" rel="noopener"><i class="fa-solid fa-file-medical"></i> View</a>`
             : "N/A";
 
         return `
             <tr>
-                <td>${escapeHtml(claim.id)}</td>
+                <td><strong>#${escapeHtml(claim.id)}</strong></td>
                 <td>
                     <strong>${escapeHtml(claim.full_name || "User")}</strong>
                     <div class="claimMuted">${escapeHtml(claim.phone || claim.email || "N/A")}</div>
                 </td>
-                <td>${escapeHtml(claim.policy_number || "N/A")}</td>
+                <td><code>${escapeHtml(claim.policy_number || "N/A")}</code></td>
                 <td>${escapeHtml(claim.plan_name || claim.comp_name || "N/A")}</td>
                 <td>
                     <strong>${formatMoney(claim.claim_amount)}</strong>
+                    ${claim.approved_amount ? `<div style="font-size:11px;color:#10b981;font-weight:700;">Approved: ${formatMoney(claim.approved_amount)}</div>` : ''}
                     <div class="claimMuted">${escapeHtml(claim.claim_reason || "No reason")}</div>
                 </td>
                 <td>${formatMoney(claim.coverage_amount)}</td>
@@ -852,24 +876,16 @@ function renderClaimsTable(claims){
                 <td>${documentLink}</td>
                 <td>${formatDate(claim.created_at)}</td>
                 <td>
-                    <div class="claimActionGroup">
-                        <button type="button" class="claimActionBtn approve" data-claim-id="${escapeHtml(claim.id)}" data-status="approved" ${status === "approved" ? "disabled" : ""}>Approve</button>
-                        <button type="button" class="claimActionBtn reject" data-claim-id="${escapeHtml(claim.id)}" data-status="rejected" ${status === "rejected" ? "disabled" : ""}>Reject</button>
-                        <button type="button" class="claimActionBtn pending" data-claim-id="${escapeHtml(claim.id)}" data-status="pending" ${status === "pending" ? "disabled" : ""}>Pending</button>
-                    </div>
+                    <button type="button" onclick="openVendorClaimModal(${claim.id},'${escapeHtml(claim.full_name||'User')}','${escapeHtml(claim.policy_number||'N/A')}','${escapeHtml(claim.claim_status||'pending')}',${parseFloat(claim.approved_amount)||0},'${escapeHtml(claim.admin_remarks||'')}')"
+                        style="background:#2563eb; color:#fff; border:none; border-radius:6px; padding:6px 12px; font-size:12px; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:4px; white-space:nowrap;">
+                        <i class="fa-solid fa-pen-to-square"></i> Process / Action
+                    </button>
                 </td>
             </tr>
         `;
     }).join("");
-
-    tbody.querySelectorAll(".claimActionBtn").forEach(button => {
-        button.addEventListener("click", () => updateClaimStatus(
-            button.dataset.claimId,
-            button.dataset.status,
-            button
-        ));
-    });
 }
+
 
 async function updateClaimStatus(claimId, status, button){
     try{
@@ -1072,14 +1088,17 @@ async function loadDashboard(){
         const totalCustomers = customers.length;
         const totalClaims = claims.length;
         const pendingClaims = claims.filter(claim => statusValue(claim.claim_status) === "pending").length;
+        const approvedClaims = claims.filter(claim => statusValue(claim.claim_status) === "approved" || statusValue(claim.claim_status) === "settled").length;
         const activePolicies = customers.filter(customer => statusValue(customer.insurance_status, "active") === "active").length;
         const expiredPolicies = customers.filter(customer => statusValue(customer.insurance_status) === "expired").length;
         const cancelledPolicies = customers.filter(customer => statusValue(customer.insurance_status) === "cancelled").length;
         const otherPolicies = Math.max(totalCustomers - activePolicies - expiredPolicies - cancelledPolicies, 0);
+        const renewalDue = customers.filter(c => statusValue(c.insurance_status) === "expired" || (c.expiry_date && new Date(c.expiry_date) <= new Date())).length;
         const totalPayments = payments.reduce(
             (sum, payment) => sum + parseMoney(payment.amount),
             0
         );
+
 
         const emptyRow = (columns, message) => `
             <tr>
@@ -1102,68 +1121,54 @@ async function loadDashboard(){
                 </div>
             </div>
 
-            <!-- BENTO KPI METRIC GRID -->
-            <div id="dashboardCards" class="grid-container" style="margin-bottom: 24px;">
-                <div class="dashCard featured-card" data-dashboard-target="paymentsBtn">
-                    <div class="card-icon icon-green"><i class="fa-solid fa-indian-rupee-sign"></i></div>
+            <!-- BENTO KPI METRIC GRID (5 Specs: Total Policies, Active Policies, Pending Claims, Approved Claims, Renewal Due) -->
+            <div id="dashboardCards" class="grid-container" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px;">
+                <div class="dashCard" data-dashboard-target="policiesBtn" style="cursor:pointer;">
+                    <div class="card-icon icon-blue"><i class="fa-solid fa-shield"></i></div>
                     <div class="card-content">
-                        <div class="card-meta-row">
-                            <h3>Total Revenue</h3>
-                            <span class="trend positive"><i class="fa-solid fa-arrow-trend-up"></i> +17.8%</span>
-                        </div>
-                        <h1>${formatMoney(totalPayments)}</h1>
-                        <div class="card-progress-wrap">
-                            <div class="card-progress-bar"><div class="card-progress-fill green" style="width: 88%;"></div></div>
-                            <div class="card-progress-info"><span>Annual Target: ₹10,00,000</span><span class="target-val">88% Reached</span></div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="dashCard" data-dashboard-target="plansBtn">
-                    <div class="card-icon icon-blue"><i class="fa-solid fa-shield-heart"></i></div>
-                    <div class="card-content">
-                        <div class="card-meta-row">
-                            <h3>Active Plans</h3>
-                            <span class="trend positive">Listed</span>
-                        </div>
-                        <h1>${totalPlans}</h1>
-                        <div class="card-progress-wrap">
-                            <div class="card-progress-bar"><div class="card-progress-fill" style="width: 95%;"></div></div>
-                            <div class="card-progress-info"><span>Policy Portfolio</span><span class="target-val">Active</span></div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="dashCard" data-dashboard-target="customersBtn">
-                    <div class="card-icon icon-purple"><i class="fa-solid fa-users"></i></div>
-                    <div class="card-content">
-                        <div class="card-meta-row">
-                            <h3>Total Customers</h3>
-                            <span class="trend positive"><i class="fa-solid fa-check"></i> ${activePolicies} Active</span>
-                        </div>
+                        <h3>Total Policies</h3>
                         <h1>${totalCustomers}</h1>
-                        <div class="card-progress-wrap">
-                            <div class="card-progress-bar"><div class="card-progress-fill purple" style="width: 76%;"></div></div>
-                            <div class="card-progress-info"><span>Subscriber Target</span><span class="target-val">76% Target</span></div>
-                        </div>
+                        <span class="trend positive">All Time</span>
                     </div>
                 </div>
 
-                <div class="dashCard" data-dashboard-target="claimsBtn">
-                    <div class="card-icon icon-orange"><i class="fa-solid fa-file-medical"></i></div>
+                <div class="dashCard" data-dashboard-target="policiesBtn" style="cursor:pointer;">
+                    <div class="card-icon icon-green"><i class="fa-solid fa-circle-check"></i></div>
                     <div class="card-content">
-                        <div class="card-meta-row">
-                            <h3>Pending Claims</h3>
-                            <span class="trend ${pendingClaims > 0 ? 'warning' : 'positive'}">Review</span>
-                        </div>
+                        <h3>Active Policies</h3>
+                        <h1>${activePolicies}</h1>
+                        <span class="trend positive">Currently Active</span>
+                    </div>
+                </div>
+
+                <div class="dashCard" data-dashboard-target="claimsBtn" style="cursor:pointer;">
+                    <div class="card-icon icon-orange"><i class="fa-solid fa-clock"></i></div>
+                    <div class="card-content">
+                        <h3>Pending Claims</h3>
                         <h1>${pendingClaims}</h1>
-                        <div class="card-progress-wrap">
-                            <div class="card-progress-bar"><div class="card-progress-fill orange" style="width: 60%;"></div></div>
-                            <div class="card-progress-info"><span>Resolution Rate</span><span class="target-val">94% Fast-Track</span></div>
-                        </div>
+                        <span class="trend warning">Needs Action</span>
+                    </div>
+                </div>
+
+                <div class="dashCard" data-dashboard-target="claimsBtn" style="cursor:pointer;">
+                    <div class="card-icon icon-green"><i class="fa-solid fa-file-circle-check"></i></div>
+                    <div class="card-content">
+                        <h3>Approved Claims</h3>
+                        <h1>${approvedClaims}</h1>
+                        <span class="trend positive">Settled / Approved</span>
+                    </div>
+                </div>
+
+                <div class="dashCard" data-dashboard-target="renewalsBtn" style="cursor:pointer;">
+                    <div class="card-icon icon-purple"><i class="fa-solid fa-arrows-rotate"></i></div>
+                    <div class="card-content">
+                        <h3>Renewal Due</h3>
+                        <h1>${renewalDue}</h1>
+                        <span class="trend ${renewalDue > 0 ? 'warning' : 'positive'}">Expired / Due</span>
                     </div>
                 </div>
             </div>
+
 
             <!-- CHARTS SECTION -->
             <div id="chartsGrid">
@@ -1480,103 +1485,7 @@ window.addEventListener("hk-theme-change", () => {
 });
 
 
-// ====== NEW PROFILE FLOW LOGIC ======
-function openProfileModal() {
-    const modal = document.getElementById("profileModalBox") || document.getElementById("profileModal");
-    if (modal) modal.style.display = "flex";
-    
-    // Fetch entities to populate the dropdown
-    const entityType = document.getElementById('profileEntityType')?.value;
-    if (entityType) {
-        fetch('/api/vendor/my-entities/' + entityType)
-            .then(res => res.json())
-            .then(data => {
-                if (data.success && data.data) {
-                    const select = document.getElementById('entitySelect');
-                    if (select) {
-                        select.innerHTML = '<option value="">Select Insurance Company...</option>';
-                        data.data.forEach(ent => {
-                            if (!ent.profile_completed) {
-                                select.innerHTML += '<option value="' + ent.id + '">' + ent.name + '</option>';
-                            }
-                        });
-                        
-                          if (select.options.length === 1) {
-                              select.innerHTML = '<option value="">All profiles completed or no entities added.</option>';
-                          }
-                          
-                          // Auto-fill form when entity is selected
-                          select.addEventListener('change', async (e) => {
-                              const entityId = e.target.value;
-                              if (!entityId) return;
-                              try {
-                                  const res = await fetch('/api/vendor/entity-details/' + entityType + '/' + entityId);
-                                  const result = await res.json();
-                                  if (result.success && result.data) {
-                                      const form = document.getElementById('vendorProfileForm');
-                                      for (const key in result.data) {
-                                          const input = form.querySelector('[name="' + key + '"]');
-                                          if (input && result.data[key]) {
-                                              input.value = result.data[key];
-                                          }
-                                      }
-                                  }
-                              } catch(err) { console.error(err); }
-                          });
 
-                    }
-                }
-            });
-    }
-}
-
-function closeProfileModal() {
-    const modal = document.getElementById("profileModalBox") || document.getElementById("profileModal");
-    if (modal) modal.style.display = "none";
-}
-
-document.getElementById('vendorProfileForm')?.addEventListener('submit', async (event) => {
-    event.preventDefault();
-    const form = event.target;
-    const entityId = document.getElementById('entitySelect')?.value;
-    const entityType = document.getElementById('profileEntityType')?.value;
-    
-    if (!entityId) {
-        alert('Please select an entity first.');
-        return;
-    }
-    
-    const formData = new FormData(form);
-    
-    const submitBtn = document.getElementById('saveProfileBtn');
-    if (submitBtn) {
-        submitBtn.disabled = true;
-        submitBtn.innerText = 'Saving...';
-    }
-
-    try {
-        const response = await fetch('/api/vendor/complete-profile/' + entityType + '/' + entityId, { 
-            method: 'POST', 
-            body: formData 
-        });
-        const result = await response.json();
-        if (result.success) {
-            alert('Profile completed successfully!');
-            closeProfileModal();
-            form.reset();
-        } else {
-            alert(result.message || 'Profile completion failed');
-        }
-    } catch (e) {
-        alert('An error occurred.');
-    } finally {
-        if (submitBtn) {
-            submitBtn.disabled = false;
-            submitBtn.innerText = 'Save Profile';
-        }
-    }
-});
-// ===================================
 
 
 window.openAddCompanyModal = function() {
@@ -1805,3 +1714,140 @@ window.deleteInsurancePlan = async function(id) {
         console.error(e);
     }
 };
+
+// ==================== VENDOR RENEWALS & CLAIM ACTION HANDLERS ====================
+
+async function loadRenewals() {
+    try {
+        const response = await fetch('/api/insurance/customers');
+        const result = await response.json();
+        const policies = result.success ? safeArray(result.customers) : [];
+
+        document.getElementById("mainContainer").innerHTML = `
+        <div id="renewalsSection">
+            <div class="vendor-section-header">
+                <div>
+                    <h2>Policy Renewals</h2>
+                    <p>Track policy expiry dates, renewal amounts, and statuses</p>
+                </div>
+            </div>
+            <div class="table-container">
+                <table class="adminTable">
+                    <thead>
+                        <tr>
+                            <th>Policy Number</th>
+                            <th>Customer Name</th>
+                            <th>Expiry Date</th>
+                            <th>Renewal Amount</th>
+                            <th>Renewal Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${policies.length ? policies.map(p => {
+                            const isExpired = p.expiry_date && new Date(p.expiry_date) < new Date();
+                            const renewalStatus = isExpired ? 'Renewal Due' : (p.insurance_status || 'Active');
+                            const badgeColor = isExpired ? '#ef4444' : '#10b981';
+                            const badgeBg = isExpired ? '#fef2f2' : '#ecfdf5';
+                            return `
+                                <tr>
+                                    <td><code>${escapeHtml(p.policy_number || 'N/A')}</code></td>
+                                    <td>
+                                        <strong>${escapeHtml(p.full_name || 'User')}</strong>
+                                        <div class="claimMuted">${escapeHtml(p.email || p.phone || '')}</div>
+                                    </td>
+                                    <td><strong>${formatDate(p.expiry_date)}</strong></td>
+                                    <td><strong>${formatMoney(p.premium_amount)}</strong></td>
+                                    <td>
+                                        <span style="background:${badgeBg}; color:${badgeColor}; border:1px solid ${badgeColor}; padding:3px 10px; border-radius:999px; font-size:11px; font-weight:800; text-transform:uppercase;">
+                                            ${escapeHtml(renewalStatus)}
+                                        </span>
+                                    </td>
+                                </tr>
+                            `;
+                        }).join("") : `
+                            <tr>
+                                <td colspan="5" style="text-align: center; padding: 20px;">No Policy Renewals Found</td>
+                            </tr>
+                        `}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        `;
+    } catch(e) {
+        console.error('loadRenewals error:', e);
+    }
+}
+
+window.openVendorClaimModal = function(claimId, patientName, policyNum, currentStatus, approvedAmt, remarks) {
+    document.getElementById('vendorClaimModalId').value = claimId;
+    document.getElementById('vendorClaimModalInfo').innerHTML =
+        `Claim #${claimId} &bull; <strong>${escapeHtml(patientName)}</strong> &bull; Policy: <code>${escapeHtml(policyNum)}</code>`;
+    document.getElementById('vendorClaimStatusSelect').value = currentStatus || 'pending';
+    document.getElementById('vendorClaimApprovedAmount').value = approvedAmt > 0 ? approvedAmt : '';
+    document.getElementById('vendorClaimRemarks').value = remarks || '';
+    document.getElementById('vendorClaimModalError').style.display = 'none';
+    document.getElementById('vendorClaimActionModal').style.display = 'flex';
+};
+
+window.submitVendorClaimUpdate = async function() {
+    const claimId = document.getElementById('vendorClaimModalId').value;
+    const status = document.getElementById('vendorClaimStatusSelect').value;
+    const approvedAmount = document.getElementById('vendorClaimApprovedAmount').value;
+    const adminRemarks = document.getElementById('vendorClaimRemarks').value;
+    const errEl = document.getElementById('vendorClaimModalError');
+    errEl.style.display = 'none';
+
+    try {
+        const res = await fetch('/api/insurance/claims/status', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                claim_id: claimId,
+                status: status,
+                approved_amount: approvedAmount || null,
+                admin_remarks: adminRemarks || null
+            })
+        });
+        const data = await res.json();
+        if (data.success) {
+            document.getElementById('vendorClaimActionModal').style.display = 'none';
+            loadClaims();
+        } else {
+            errEl.textContent = data.message || 'Failed to update claim.';
+            errEl.style.display = 'block';
+        }
+    } catch(e) {
+        console.error(e);
+        errEl.textContent = 'Server error occurred.';
+        errEl.style.display = 'block';
+    }
+};
+
+
+
+function openProfileModal() { const modal = document.getElementById('profileModal'); if (modal) modal.style.display = 'flex'; }
+function closeProfileModal() { const modal = document.getElementById('profileModal'); if (modal) modal.style.display = 'none'; }
+
+document.getElementById('vendorProfileForm')?.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const form = event.target;
+    const formData = new FormData(form);
+    const submitBtn = document.getElementById('saveProfileBtn');
+    if (submitBtn) { submitBtn.disabled = true; submitBtn.innerHTML = 'Saving...'; }
+    try {
+        const response = await fetch('/api/user/profile', { method: 'PUT', body: formData });
+        const result = await response.json();
+        if (result.success) {
+            alert('Profile updated successfully!');
+            closeProfileModal();
+            if (typeof loadUserProfile === 'function') loadUserProfile();
+        } else {
+            alert(result.message || 'Profile update failed');
+        }
+    } catch (e) {
+        alert('An error occurred.');
+    } finally {
+        if (submitBtn) { submitBtn.disabled = false; submitBtn.innerHTML = 'Save Profile'; }
+    }
+});

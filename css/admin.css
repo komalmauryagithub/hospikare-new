@@ -4098,3 +4098,79 @@ tr:hover td { background-color: #f8fafc; }
 /* Forced Table Fixes */
 .adminTable th, .adminTable td { white-space: nowrap !important; }
 .adminTable td[style*='white-space: normal'], .adminTable td.wrap-text { white-space: normal !important; }
+
+/* Code / Policy Badge Dark Mode Fix */
+code, .policy-code-badge {
+    font-size: 12px !important;
+    font-weight: 700 !important;
+    font-family: 'Consolas', 'Courier New', monospace !important;
+    background: rgba(37, 99, 235, 0.14) !important;
+    color: #2563eb !important;
+    border: 1px solid rgba(37, 99, 235, 0.3) !important;
+    padding: 3px 8px !important;
+    border-radius: 6px !important;
+    display: inline-block !important;
+    letter-spacing: 0.5px !important;
+}
+
+[data-theme="dark"] code,
+[data-theme="dark"] .policy-code-badge {
+    background: rgba(59, 130, 246, 0.22) !important;
+    color: #60a5fa !important;
+    border-color: rgba(96, 165, 250, 0.4) !important;
+}
+
+/* Insurance Sub Tabs Bar Styling */
+.ins-subtabs-bar {
+    display: flex;
+    gap: 6px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    padding: 5px;
+    border-radius: 12px;
+    margin-bottom: 24px;
+    width: fit-content;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="dark"] .ins-subtabs-bar {
+    background: #0d1b30 !important;
+    border-color: rgba(148, 163, 184, 0.2) !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+}
+
+.ins-subtab-btn {
+    padding: 9px 20px;
+    border: none;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    background: transparent;
+    color: #64748b;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+}
+
+.ins-subtab-btn:hover {
+    color: #1e293b;
+    background: rgba(255, 255, 255, 0.6);
+}
+
+[data-theme="dark"] .ins-subtab-btn {
+    color: #94a3b8 !important;
+}
+
+[data-theme="dark"] .ins-subtab-btn:hover {
+    color: #f8fafc !important;
+    background: rgba(255, 255, 255, 0.08) !important;
+}
+
+.ins-subtab-btn.active {
+    background: linear-gradient(135deg, #2563eb, #1d4ed8) !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.35) !important;
+}
+

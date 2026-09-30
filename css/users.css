@@ -2043,3 +2043,24 @@ section[id] {
     transform: scale(1.05) !important;
     box-shadow: none !important;
 }
+
+/* Purchased Policies & Nested Claims Styles */
+.purchasedPolicyCard {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+    padding: 24px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.purchasedPolicyCard:hover {
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+}
+
+@media (max-width: 768px) {
+    .purchasedPolicyCard {
+        padding: 16px;
+    }
+}
+

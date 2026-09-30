@@ -220,17 +220,33 @@ async function ensureInsuranceClaimTables() {
             user_id INT DEFAULT NULL,
             insurance_purchase_id INT DEFAULT NULL,
             hospital_id INT DEFAULT NULL,
+            hospital_name VARCHAR(255) DEFAULT NULL,
+            treatment_type VARCHAR(255) DEFAULT NULL,
             claim_amount DECIMAL(10,2) DEFAULT NULL,
+            approved_amount DECIMAL(10,2) DEFAULT NULL,
             claim_reason TEXT,
             medical_documents VARCHAR(255) DEFAULT NULL,
-            claim_status ENUM('pending','approved','rejected') DEFAULT 'pending',
+            claim_status ENUM('pending','approved','rejected','settled') DEFAULT 'pending',
+            admin_remarks TEXT DEFAULT NULL,
             created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
             PRIMARY KEY (id),
             KEY user_id (user_id),
             KEY insurance_purchase_id (insurance_purchase_id)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
     `);
+  // Safely add new columns if they don't exist (idempotent migrations)
+  const alterCols = [
+    `ALTER TABLE user_insurance_claims ADD COLUMN IF NOT EXISTS hospital_name VARCHAR(255) DEFAULT NULL`,
+    `ALTER TABLE user_insurance_claims ADD COLUMN IF NOT EXISTS treatment_type VARCHAR(255) DEFAULT NULL`,
+    `ALTER TABLE user_insurance_claims ADD COLUMN IF NOT EXISTS approved_amount DECIMAL(10,2) DEFAULT NULL`,
+    `ALTER TABLE user_insurance_claims ADD COLUMN IF NOT EXISTS admin_remarks TEXT DEFAULT NULL`,
+    `ALTER TABLE user_insurance_claims MODIFY COLUMN claim_status ENUM('pending','approved','rejected','settled') DEFAULT 'pending'`,
+  ];
+  for (const sql of alterCols) {
+    try { await pool.query(sql); } catch(e) { /* column may already exist */ }
+  }
 }
+
 
 //1
 app.post(
@@ -2520,8 +2536,100 @@ app.put(
         error: error.message,
       });
     }
-  },
+  }
 );
+
+// ====== VENDOR PROFILE EDIT REQUEST & APPROVAL ENDPOINTS ======
+app.post('/api/vendor/request-profile-edit/:entityType/:id', async (req, res) => {
+    try {
+        const { entityType, id } = req.params;
+        if (entityType === 'user') {
+            await pool.query('UPDATE users SET edit_requested = 1 WHERE id = ?', [id]);
+        } else {
+            const tableMap = {
+                'hospital': 'hospitals',
+                'lab': 'labs',
+                'vendor_ambulance': 'ambulances',
+                'ambulance': 'ambulances',
+                'insurance': 'insurances',
+                'medicine': 'medicines',
+                'pharmacy': 'pharmacies'
+            };
+            const tableName = tableMap[entityType] || 'users';
+            if (tableName === 'users') {
+                await pool.query('UPDATE users SET edit_requested = 1 WHERE id = ?', [id]);
+            } else {
+                await pool.query(`UPDATE \`${tableName}\` SET edit_requested = 1 WHERE id = ?`, [id]);
+                // Also set edit_requested on user if users_id exists
+                await pool.query(`UPDATE users u JOIN \`${tableName}\` t ON u.id = t.users_id SET u.edit_requested = 1 WHERE t.id = ?`, [id]);
+            }
+        }
+        res.json({ success: true, message: 'Edit request submitted to Admin successfully' });
+    } catch (err) {
+        console.error('Request profile edit error:', err);
+        res.status(500).json({ success: false, message: 'Failed to submit edit request' });
+    }
+});
+
+app.post('/api/admin/approve-profile-edit/:entityType/:id', async (req, res) => {
+    try {
+        const { entityType, id } = req.params;
+        if (entityType === 'user') {
+            await pool.query('UPDATE users SET edit_allowed = 1, edit_requested = 0 WHERE id = ?', [id]);
+        } else {
+            const tableMap = {
+                'hospital': 'hospitals',
+                'lab': 'labs',
+                'vendor_ambulance': 'ambulances',
+                'ambulance': 'ambulances',
+                'insurance': 'insurances',
+                'medicine': 'medicines',
+                'pharmacy': 'pharmacies'
+            };
+            const tableName = tableMap[entityType] || 'users';
+            if (tableName === 'users') {
+                await pool.query('UPDATE users SET edit_allowed = 1, edit_requested = 0 WHERE id = ?', [id]);
+            } else {
+                await pool.query(`UPDATE \`${tableName}\` SET edit_allowed = 1, edit_requested = 0 WHERE id = ?`, [id]);
+                await pool.query(`UPDATE users u JOIN \`${tableName}\` t ON u.id = t.users_id SET u.edit_allowed = 1, u.edit_requested = 0 WHERE t.id = ?`, [id]);
+            }
+        }
+        res.json({ success: true, message: 'Edit permission granted successfully' });
+    } catch (err) {
+        console.error('Approve profile edit error:', err);
+        res.status(500).json({ success: false, message: 'Failed to approve edit permission' });
+    }
+});
+
+app.post('/api/admin/reject-profile-edit/:entityType/:id', async (req, res) => {
+    try {
+        const { entityType, id } = req.params;
+        if (entityType === 'user') {
+            await pool.query('UPDATE users SET edit_allowed = 0, edit_requested = 0 WHERE id = ?', [id]);
+        } else {
+            const tableMap = {
+                'hospital': 'hospitals',
+                'lab': 'labs',
+                'vendor_ambulance': 'ambulances',
+                'ambulance': 'ambulances',
+                'insurance': 'insurances',
+                'medicine': 'medicines',
+                'pharmacy': 'pharmacies'
+            };
+            const tableName = tableMap[entityType] || 'users';
+            if (tableName === 'users') {
+                await pool.query('UPDATE users SET edit_allowed = 0, edit_requested = 0 WHERE id = ?', [id]);
+            } else {
+                await pool.query(`UPDATE \`${tableName}\` SET edit_allowed = 0, edit_requested = 0 WHERE id = ?`, [id]);
+                await pool.query(`UPDATE users u JOIN \`${tableName}\` t ON u.id = t.users_id SET u.edit_allowed = 0, u.edit_requested = 0 WHERE t.id = ?`, [id]);
+            }
+        }
+        res.json({ success: true, message: 'Edit request rejected' });
+    } catch (err) {
+        console.error('Reject profile edit error:', err);
+        res.status(500).json({ success: false, message: 'Failed to reject edit request' });
+    }
+});
 
 app.post("/api/user/logout", (req, res) => {
   if (req.session) {
@@ -5477,14 +5585,13 @@ app.post("/api/buy-insurance", async (req, res) => {
 
 app.get("/api/user/insurance-policies", async (req, res) => {
   try {
-    if (!req.session.productUser) {
+    const userId = req.session.productUser ? req.session.productUser.id : (req.query.user_id ? Number(req.query.user_id) : null);
+    if (!userId) {
       return res.json({
         success: false,
         message: "Unauthorized",
       });
     }
-
-    const userId = req.session.productUser.id;
 
     await pool.query(
       `
@@ -5538,14 +5645,13 @@ app.get("/api/user/insurance-policies", async (req, res) => {
 
 app.get("/api/user/insurance-claims", async (req, res) => {
   try {
-    if (!req.session.productUser) {
+    const userId = req.session.productUser ? req.session.productUser.id : (req.query.user_id ? Number(req.query.user_id) : null);
+    if (!userId) {
       return res.json({
         success: false,
         message: "Unauthorized",
       });
     }
-
-    const userId = req.session.productUser.id;
 
     const [claims] = await pool.query(
       `
@@ -5585,15 +5691,15 @@ app.post(
   upload.single("claim_documents"),
   async (req, res) => {
     try {
-      if (!req.session.productUser) {
+      const userId = req.session.productUser ? req.session.productUser.id : (req.body.user_id ? Number(req.body.user_id) : null);
+      if (!userId) {
         return res.json({
           success: false,
           message: "Unauthorized",
         });
       }
 
-      const userId = req.session.productUser.id;
-      const { insurance_purchase_id, claim_amount, claim_reason } = req.body;
+      const { insurance_purchase_id, claim_amount, claim_reason, hospital_name, treatment_type } = req.body;
 
       const claimAmount = parseAmount(claim_amount);
 
@@ -5648,16 +5754,20 @@ app.post(
                 (
                     user_id,
                     insurance_purchase_id,
+                    hospital_name,
+                    treatment_type,
                     claim_amount,
                     claim_reason,
                     medical_documents,
                     claim_status
                 )
-                VALUES (?, ?, ?, ?, ?, 'pending')
+                VALUES (?, ?, ?, ?, ?, ?, ?, 'pending')
                 `,
         [
           userId,
           insurance_purchase_id,
+          safeString(hospital_name) || null,
+          safeString(treatment_type) || null,
           claimAmount,
           safeString(claim_reason),
           req.file?.filename || null,
@@ -6830,8 +6940,8 @@ app.post("/api/insurance/claims/status", async (req, res) => {
     }
 
     const vendorUserId = req.session.user.id;
-    const { claim_id, status } = req.body;
-    const allowedStatuses = new Set(["pending", "approved", "rejected"]);
+    const { claim_id, status, approved_amount, admin_remarks } = req.body;
+    const allowedStatuses = new Set(["pending", "approved", "rejected", "settled"]);
     const nextStatus = String(status || "").toLowerCase();
 
     if (!claim_id || !allowedStatuses.has(nextStatus)) {
@@ -6865,10 +6975,12 @@ app.post("/api/insurance/claims/status", async (req, res) => {
     await pool.query(
       `
             UPDATE user_insurance_claims
-            SET claim_status = ?
+            SET claim_status = ?,
+                approved_amount = ?,
+                admin_remarks = ?
             WHERE id = ?
             `,
-      [nextStatus, claim_id],
+      [nextStatus, approved_amount ? parseFloat(approved_amount) : null, admin_remarks || null, claim_id],
     );
 
     res.json({
@@ -6883,6 +6995,105 @@ app.post("/api/insurance/claims/status", async (req, res) => {
     });
   }
 });
+
+// ==================== ADMIN INSURANCE APIs ====================
+// Admin: Get ALL insurance purchases (all vendors, all users)
+app.get("/api/admin/insurance-policies", async (req, res) => {
+  try {
+    if (!req.session.admin) {
+      return res.json({ success: false, message: "Unauthorized" });
+    }
+    const [policies] = await pool.query(`
+      SELECT
+        p.*,
+        pu.full_name AS patient_name, pu.email AS patient_email, pu.phone AS patient_phone,
+        i.comp_name AS insurance_company, i.comp_type, i.claim_type, i.cust_sup_num
+      FROM user_insurance_purchases p
+      LEFT JOIN product_users pu ON p.user_id = pu.id
+      LEFT JOIN insurances i ON p.insurance_vendor_id = i.id
+      ORDER BY p.id DESC
+    `);
+    res.json({ success: true, policies });
+  } catch (e) {
+    console.error(e);
+    res.json({ success: false, message: "Server Error" });
+  }
+});
+
+// Admin: Get ALL insurance claims (all vendors, all users)
+app.get("/api/admin/insurance-claims", async (req, res) => {
+  try {
+    if (!req.session.admin) {
+      return res.json({ success: false, message: "Unauthorized" });
+    }
+    const [claims] = await pool.query(`
+      SELECT
+        c.*,
+        p.policy_number, p.plan_name, p.coverage_amount, p.insurance_status,
+        pu.full_name AS patient_name, pu.email AS patient_email, pu.phone AS patient_phone,
+        i.comp_name AS insurance_company, i.claim_type
+      FROM user_insurance_claims c
+      LEFT JOIN user_insurance_purchases p ON c.insurance_purchase_id = p.id
+      LEFT JOIN product_users pu ON c.user_id = pu.id
+      LEFT JOIN insurances i ON p.insurance_vendor_id = i.id
+      ORDER BY FIELD(c.claim_status,'pending','approved','settled','rejected'), c.id DESC
+    `);
+    res.json({ success: true, claims });
+  } catch (e) {
+    console.error(e);
+    res.json({ success: false, message: "Server Error" });
+  }
+});
+
+// Admin: Update claim status + approved_amount
+app.post("/api/admin/insurance-claims/status", async (req, res) => {
+  try {
+    if (!req.session.admin) {
+      return res.json({ success: false, message: "Unauthorized" });
+    }
+    const { claim_id, status, approved_amount, admin_remarks } = req.body;
+    const allowedStatuses = new Set(["pending", "approved", "rejected", "settled"]);
+    const nextStatus = String(status || "").toLowerCase();
+    if (!claim_id || !allowedStatuses.has(nextStatus)) {
+      return res.json({ success: false, message: "Invalid claim status" });
+    }
+    await pool.query(
+      `UPDATE user_insurance_claims SET claim_status=?, approved_amount=?, admin_remarks=? WHERE id=?`,
+      [nextStatus, approved_amount ? parseFloat(approved_amount) : null, admin_remarks || null, claim_id]
+    );
+    res.json({ success: true, message: "Claim updated" });
+  } catch (e) {
+    console.error(e);
+    res.json({ success: false, message: "Server Error" });
+  }
+});
+
+// Admin: Get ALL renewals (all policy renewals tracked via start/expiry changes)
+app.get("/api/admin/insurance-renewals", async (req, res) => {
+  try {
+    if (!req.session.admin) {
+      return res.json({ success: false, message: "Unauthorized" });
+    }
+    const [renewals] = await pool.query(`
+      SELECT
+        p.id, p.policy_number, p.plan_name, p.start_date, p.expiry_date,
+        p.premium_amount, p.payment_status, p.insurance_status,
+        pu.full_name AS patient_name, pu.email AS patient_email, pu.phone AS patient_phone,
+        i.comp_name AS insurance_company
+      FROM user_insurance_purchases p
+      LEFT JOIN product_users pu ON p.user_id = pu.id
+      LEFT JOIN insurances i ON p.insurance_vendor_id = i.id
+      ORDER BY p.id DESC
+    `);
+    res.json({ success: true, renewals });
+  } catch (e) {
+    console.error(e);
+    res.json({ success: false, message: "Server Error" });
+  }
+});
+// ==================== END ADMIN INSURANCE APIs ====================
+
+
 
 //53
 // ==================== UPDATED VENDOR ORDERS ====================

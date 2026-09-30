@@ -19,7 +19,7 @@
     <link rel="stylesheet" href="/css/base.css?v=1790673061">
     <link rel="stylesheet" href="/css/layout.css?v=1790673061">
     <link rel="stylesheet" href="/css/components.css?v=1790673061">
-    <link rel="stylesheet" href="/css/users.css?v=1790745000">
+    <link rel="stylesheet" href="/css/users.css?v=1790747000">
     <link rel="stylesheet" href="/css/mobile-ui.css?v=1790673061">
 </head>
 <body>
@@ -209,39 +209,13 @@
         </div>
     </section>
 
-    <section class="section container animate-on-scroll" id="insuranceSection" style="background: var(--hk-off-white); padding-top: var(--space-12); border-top: 1px solid var(--hk-grey-200);">
+    <section class="section container animate-on-scroll" id="insuranceSection" style="background: var(--hk-off-white); padding-top: var(--space-12); padding-bottom: var(--space-12); border-top: 1px solid var(--hk-grey-200);">
         <div style="margin-bottom: var(--space-8); text-align: center;">
             <h2>Health Insurance Plans</h2>
             <p>Compare plans and find the right coverage for you</p>
         </div>
         <div class="grid grid-cols-3 insuranceContainer" id="insuranceContainer">
             <!-- Dynamic content from users.js -->
-        </div>
-    </section>
-
-    <section class="section container animate-on-scroll" id="insuranceClaimsSection">
-        <div class="claimSectionHeader">
-            <div>
-                <h2>Insurance Claims & Renewals</h2>
-                <p>Manage your active policies, claims and renewals</p>
-            </div>
-            <button class="btn btn-outline-blue btn-sm" id="refreshInsuranceClaimsBtn" type="button">
-                <i class="fa-solid fa-rotate"></i> Refresh
-            </button>
-        </div>
-        <div class="insuranceClaimsGrid">
-            <div class="claimPanel">
-                <h3>Your Policies & Renewals</h3>
-                <div id="userPoliciesContainer" class="policyList">
-                    <div class="emptyState">Login to view your insurance policies.</div>
-                </div>
-            </div>
-            <div class="claimPanel">
-                <h3>Claim History</h3>
-                <div id="userClaimsContainer" class="claimList">
-                    <div class="emptyState">No claims loaded yet.</div>
-                </div>
-            </div>
         </div>
     </section>
 
@@ -403,7 +377,10 @@
                                 <option value="other">Other</option>
                             </select>
                         </div>
-                        <div class="input-group"><input type="date" id="regDob" class="hk-input" required></div>
+                        <div class="input-group" style="position: relative;">
+                            <label style="position: absolute; top: -8px; left: 10px; background: white; padding: 0 5px; font-size: 11px; color: #64748b; font-weight: 600;">Date of Birth (DOB)</label>
+                            <input type="date" id="regDob" class="hk-input" style="padding-top: 12px;" required>
+                        </div>
                         <div class="input-group">
                             <select id="regBloodGroup" class="hk-input">
                                 <option value="">Blood Group</option>
@@ -579,12 +556,20 @@
                         <input type="text" id="claim_policy_name" class="hk-input" readonly>
                     </div>
                     <div class="input-group">
-                        <label>Claim Amount</label>
+                        <label>Hospital / Clinic Name</label>
+                        <input type="text" id="claim_hospital_name" class="hk-input" placeholder="e.g. Apollo Hospital, Mumbai">
+                    </div>
+                    <div class="input-group">
+                        <label>Treatment Type</label>
+                        <input type="text" id="claim_treatment_type" class="hk-input" placeholder="e.g. Surgery, Hospitalization, OPD">
+                    </div>
+                    <div class="input-group">
+                        <label>Claim Amount (₹)</label>
                         <input type="number" id="claim_amount" class="hk-input" min="1" required>
                     </div>
                     <div class="input-group">
-                        <label>Reason</label>
-                        <textarea id="claim_reason" class="hk-input" rows="4" required></textarea>
+                        <label>Reason / Description</label>
+                        <textarea id="claim_reason" class="hk-input" rows="3" required></textarea>
                     </div>
                     <div class="input-group">
                         <label>Medical Documents</label>
@@ -595,6 +580,7 @@
             </div>
         </div>
     </div>
+
 
     <div class="modal" id="insuranceRenewalModal">
         <div class="modal-content" style="max-width: 500px;">
@@ -805,7 +791,7 @@
             modal.style.display = 'none';
         }
     </script>
-    <script src="/js/users.js?v=1790745000"></script>
+    <script src="/js/users.js?v=1790754300"></script>
     <script src="/js/main.js"></script>
     <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
     <!-- Floating Emergency Button -->
@@ -813,6 +799,20 @@
         <i class="fa-solid fa-phone"></i>
         <span>108</span>
     </a>
+    <!-- POLICY DETAIL MODAL -->
+    <div id="policyDetailModal" style="display:none; position:fixed; inset:0; background:rgba(7,26,61,0.7); backdrop-filter:blur(6px); z-index:99999; align-items:center; justify-content:center; padding:20px; overflow-y:auto;">
+        <div style="width:min(720px, 100%); max-height:90vh; background:#fff; border-radius:18px; box-shadow:0 24px 60px rgba(7,26,61,0.25); overflow:hidden; display:flex; flex-direction:column; border:1px solid #e2e8f0;">
+            <div style="display:flex; justify-content:space-between; align-items:center; padding:20px 24px; border-bottom:1px solid #e2e8f0; background:#f8fafc; flex-shrink:0;">
+                <div>
+                    <h3 id="policyDetailTitle" style="margin:0; font-size:18px; font-weight:800; color:#0f172a;">Policy Details</h3>
+                    <p id="policyDetailSub" style="margin:2px 0 0; font-size:12px; color:#64748b;"></p>
+                </div>
+                <button type="button" onclick="document.getElementById('policyDetailModal').style.display='none'" style="border:none; background:transparent; font-size:22px; cursor:pointer; color:#64748b; line-height:1;">×</button>
+            </div>
+            <div id="policyDetailBody" style="padding:20px 24px; overflow-y:auto; max-height:calc(90vh - 80px);"></div>
+        </div>
+    </div>
+
 </body>
 </html>
 
