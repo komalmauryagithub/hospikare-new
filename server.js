@@ -9611,24 +9611,59 @@ app.delete("/api/vendor/pharmacist/:id", async (req, res) => {
 });
 
 
-// Edit Routes
-app.put("/api/update/medicine/:id", async (req, res) => {
+// Edit Routes - Medicine Update
+const handleMedicineUpdate = async (req, res) => {
     try {
         if (!req.session.user) return res.json({ success: false, message: 'Unauthorized' });
         const medicineId = req.params.id;
-        const vendorId = req.session.user.id;
-        const data = req.body;
+        const userId = req.session.user.id;
+        const body = req.body || {};
         
-        await pool.query(
-            "UPDATE med_lists SET medicine_name=?, generic_name=?, brand_name=?, medicine_type=?, category=?, manufacturer=?, composition=?, mrp=?, selling_price=?, gst_percentage=?, discount_percentage=?, stock_quantity=?, minimum_stock_alert=?, batch_number=?, manufacturing_date=?, expiry_date=?, prescription_required=?, schedule_type=?, uses_info=?, dosage_instructions=?, side_effects=?, warnings=?, storage_instructions=?, delivery_available=?, delivery_charge=?, barcode_number=?, medicine_status=?, featured_medicine=? WHERE medicine_id=? AND vendor_id=?",
-            [data.medicine_name, data.generic_name, data.brand_name, data.medicine_type, data.category, data.manufacturer, data.composition, data.mrp, data.selling_price, data.gst_percentage, data.discount_percentage, data.stock_quantity, data.minimum_stock_alert, data.batch_number, data.manufacturing_date, data.expiry_date, data.prescription_required, data.schedule_type, data.uses_info, data.dosage_instructions, data.side_effects, data.warnings, data.storage_instructions, data.delivery_available, data.delivery_charge, data.barcode_number, data.medicine_status, data.featured_medicine, medicineId, vendorId]
-        );
+        let newImage = null;
+        if (req.files && req.files['medicine_image'] && req.files['medicine_image'][0]) {
+            newImage = req.files['medicine_image'][0].filename;
+        } else if (req.file) {
+            newImage = req.file.filename;
+        }
+
+        const parseDate = (d) => {
+            if (!d || String(d).trim() === "" || d === "null" || d === "undefined") return null;
+            let str = String(d).trim();
+            if (str.includes("T")) str = str.split("T")[0];
+            return str.match(/^\d{4}-\d{2}-\d{2}$/) ? str : null;
+        };
+
+        const mrp = parseFloat(body.mrp) || 0;
+        const selling_price = parseFloat(body.selling_price) || 0;
+        const gst_percentage = parseFloat(body.gst_percentage) || 0;
+        const discount_percentage = parseFloat(body.discount_percentage) || 0;
+        const stock_quantity = parseInt(body.stock_quantity) || 0;
+        const minimum_stock_alert = parseInt(body.minimum_stock_alert) || 10;
+        const delivery_charge = parseFloat(body.delivery_charge) || 0;
+        const mfgDate = parseDate(body.manufacturing_date);
+        const expDate = parseDate(body.expiry_date);
+
+        if (newImage) {
+            await pool.query(
+                "UPDATE med_lists SET medicine_name=?, generic_name=?, brand_name=?, medicine_type=?, category=?, manufacturer=?, composition=?, mrp=?, selling_price=?, gst_percentage=?, discount_percentage=?, stock_quantity=?, minimum_stock_alert=?, batch_number=?, manufacturing_date=?, expiry_date=?, prescription_required=?, schedule_type=?, uses_info=?, dosage_instructions=?, side_effects=?, warnings=?, storage_instructions=?, delivery_available=?, delivery_charge=?, medicine_image=?, barcode_number=?, medicine_status=?, featured_medicine=? WHERE medicine_id=? AND (vendor_id=? OR user_id=?)",
+                [body.medicine_name, body.generic_name || null, body.brand_name || null, body.medicine_type || "Tablet", body.category || null, body.manufacturer || null, body.composition || null, mrp, selling_price, gst_percentage, discount_percentage, stock_quantity, minimum_stock_alert, body.batch_number || null, mfgDate, expDate, body.prescription_required || "No", body.schedule_type || "OTC", body.uses_info || null, body.dosage_instructions || null, body.side_effects || null, body.warnings || null, body.storage_instructions || null, body.delivery_available || "Yes", delivery_charge, newImage, body.barcode_number || null, body.medicine_status || "Active", body.featured_medicine || "No", medicineId, userId, userId]
+            );
+        } else {
+            await pool.query(
+                "UPDATE med_lists SET medicine_name=?, generic_name=?, brand_name=?, medicine_type=?, category=?, manufacturer=?, composition=?, mrp=?, selling_price=?, gst_percentage=?, discount_percentage=?, stock_quantity=?, minimum_stock_alert=?, batch_number=?, manufacturing_date=?, expiry_date=?, prescription_required=?, schedule_type=?, uses_info=?, dosage_instructions=?, side_effects=?, warnings=?, storage_instructions=?, delivery_available=?, delivery_charge=?, barcode_number=?, medicine_status=?, featured_medicine=? WHERE medicine_id=? AND (vendor_id=? OR user_id=?)",
+                [body.medicine_name, body.generic_name || null, body.brand_name || null, body.medicine_type || "Tablet", body.category || null, body.manufacturer || null, body.composition || null, mrp, selling_price, gst_percentage, discount_percentage, stock_quantity, minimum_stock_alert, body.batch_number || null, mfgDate, expDate, body.prescription_required || "No", body.schedule_type || "OTC", body.uses_info || null, body.dosage_instructions || null, body.side_effects || null, body.warnings || null, body.storage_instructions || null, body.delivery_available || "Yes", delivery_charge, body.barcode_number || null, body.medicine_status || "Active", body.featured_medicine || "No", medicineId, userId, userId]
+            );
+        }
+
         res.json({ success: true, message: 'Medicine updated successfully' });
     } catch (e) {
-        console.error(e);
-        res.json({ success: false, message: 'Server error while updating medicine' });
+        console.error("Medicine Update Error:", e);
+        res.json({ success: false, message: 'Server error while updating medicine: ' + e.message });
     }
-});
+};
+
+app.put("/api/update/medicine/:id", upload.fields([{ name: "medicine_image", maxCount: 1 }]), handleMedicineUpdate);
+app.post("/api/update/medicine/:id", upload.fields([{ name: "medicine_image", maxCount: 1 }]), handleMedicineUpdate);
 
 app.put("/api/update/vendor/pharmacy/:id", async (req, res) => {
     try {

@@ -2586,7 +2586,19 @@ async function handleAmbulanceBooking(event) {
         }
 
         container.innerHTML = medicines.map(medicine => {
-            const image = medicine.medicine_image ? `/uploads/${medicine.medicine_image}` : FALLBACK_IMAGE;
+            let image = FALLBACK_IMAGE;
+            if (medicine.medicine_image && typeof medicine.medicine_image === 'string') {
+                const imgStr = medicine.medicine_image.trim();
+                if (imgStr && !imgStr.includes('fakepath') && !imgStr.includes('[object')) {
+                    if (imgStr.startsWith('http://') || imgStr.startsWith('https://')) {
+                        image = imgStr;
+                    } else if (imgStr.startsWith('/')) {
+                        image = imgStr;
+                    } else {
+                        image = '/uploads/' + imgStr.replace(/^uploads[\\\/]/, '');
+                    }
+                }
+            }
             const name = medicine.medicine_name || "Medicine";
             const brand = medicine.brand_name || "No Brand";
             const price = Number(medicine.selling_price) || 0;
@@ -2594,7 +2606,7 @@ async function handleAmbulanceBooking(event) {
             return `
                 <article class="medicineCard" style="display: flex; flex-direction: column; background: #ffffff; border-radius: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.03); border: 1px solid #e2e8f0; transition: transform 0.3s ease, box-shadow 0.3s ease; overflow: hidden; position: relative;">
     <div class="medicineImage" style="width: 100%; aspect-ratio: 4/3; background: #f8fafc; position: relative; padding: 16px; display: flex; align-items: center; justify-content: center;">
-        <img src="${escapeAttr(image).includes('fakepath') ? FALLBACK_IMAGE : (escapeAttr(image).startsWith('/') || escapeAttr(image).startsWith('http') ? escapeAttr(image) : '/uploads/' + escapeAttr(image))}" alt="${escapeAttr(name)}" onerror="this.src='${FALLBACK_IMAGE}'" style="width: 100%; height: 100%; object-fit: contain; transition: transform 0.4s ease;">
+        <img src="${escapeAttr(image)}" alt="${escapeAttr(name)}" onerror="this.src='${FALLBACK_IMAGE}'" style="width: 100%; height: 100%; object-fit: contain; transition: transform 0.4s ease;">
         <div style="position: absolute; top: 12px; left: 12px; font-size: 10px; color: #1d4ed8; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; background: #eff6ff; padding: 4px 8px; border-radius: 6px;">${escapeHtml(medicine.category || medicine.medicine_type || "Medicine")}</div>
     </div>
     <div class="medicineContent" style="padding: 16px; display: flex; flex-direction: column; flex: 1;">

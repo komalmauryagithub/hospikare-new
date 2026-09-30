@@ -232,64 +232,49 @@ document.getElementById("closeMedicineModal").addEventListener("click",()=>{
 
 document.getElementById("medicineForm").addEventListener("submit",async(e)=>{
     e.preventDefault();
-    const formData=new FormData();
-    const medicineName=document.getElementById("medicine_name").value.trim();
-    formData.append("medicine_name",medicineName);
-    formData.append("generic_name",document.getElementById("generic_name").value);
-    formData.append("brand_name",document.getElementById("brand_name").value);
-    formData.append("medicine_type",document.getElementById("medicine_type").value);
-    formData.append("category",document.getElementById("category").value);
-    formData.append("manufacturer",document.getElementById("manufacturer").value);
-    formData.append("composition",document.getElementById("composition").value);
-    formData.append("mrp",document.getElementById("mrp").value);
-    formData.append("selling_price",document.getElementById("selling_price").value);
-    formData.append("gst_percentage",document.getElementById("gst_percentage").value);
-    formData.append("discount_percentage",document.getElementById("discount_percentage").value);
-    formData.append("stock_quantity",document.getElementById("stock_quantity").value);
-    formData.append("minimum_stock_alert",document.getElementById("minimum_stock_alert").value);
-    formData.append("batch_number",document.getElementById("batch_number").value);
-    formData.append("manufacturing_date",document.getElementById("manufacturing_date").value);
-    formData.append("expiry_date",document.getElementById("expiry_date").value);
-    formData.append("prescription_required",document.getElementById("prescription_required").value);
-    formData.append("schedule_type",document.getElementById("schedule_type").value);
-    formData.append("uses_info",document.getElementById("uses_info").value);
-    formData.append("dosage_instructions",document.getElementById("dosage_instructions").value);
-    formData.append("side_effects",document.getElementById("side_effects").value);
-    formData.append("warnings",document.getElementById("warnings").value);
-    formData.append("storage_instructions",document.getElementById("storage_instructions").value);
-    formData.append("delivery_available",document.getElementById("delivery_available").value);
-    formData.append("delivery_charge",document.getElementById("delivery_charge").value);
-    formData.append("barcode_number",document.getElementById("barcode_number").value);
-    formData.append("medicine_status",document.getElementById("medicine_status").value);
-    formData.append("featured_medicine",document.getElementById("featured_medicine").value);
-    if(medicineName===""){
+    const formData = new FormData();
+    const fields = [
+        'medicine_name', 'generic_name', 'brand_name', 'medicine_type', 'category',
+        'manufacturer', 'composition', 'mrp', 'selling_price', 'gst_percentage',
+        'discount_percentage', 'stock_quantity', 'minimum_stock_alert', 'batch_number',
+        'manufacturing_date', 'expiry_date', 'prescription_required', 'schedule_type',
+        'uses_info', 'dosage_instructions', 'side_effects', 'warnings',
+        'storage_instructions', 'delivery_available', 'delivery_charge',
+        'barcode_number', 'medicine_status', 'featured_medicine'
+    ];
+
+    fields.forEach(field => {
+        const el = document.getElementById(field);
+        if (el) {
+            formData.append(field, el.value !== undefined && el.value !== null ? el.value : '');
+        }
+    });
+
+    const medicineName = (document.getElementById("medicine_name")?.value || "").trim();
+    if (medicineName === "") {
         alert("Medicine Name Required");
         return;
     }
 
     const editId = document.getElementById("edit_medicine_id") ? document.getElementById("edit_medicine_id").value : "";
 
-    try{
+    const imageFile = document.getElementById("medicine_image") ? document.getElementById("medicine_image").files[0] : null;
+    if (imageFile) {
+        formData.append("medicine_image", imageFile);
+    }
+    const excelFile = document.getElementById("medicine_excel_file") ? document.getElementById("medicine_excel_file").files[0] : null;
+    if (excelFile) {
+        formData.append("medicine_excel_file", excelFile);
+    }
+
+    try {
         let response;
         if (editId) {
-            // UPDATE existing medicine via PUT with JSON
-            const jsonBody = {};
-            for (let [key, value] of formData.entries()) {
-                jsonBody[key] = value;
-            }
             response = await fetch("/api/update/medicine/" + editId, {
                 method: "PUT",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(jsonBody)
+                body: formData
             });
         } else {
-            // ADD new medicine via POST with FormData
-            if(document.getElementById("medicine_image").files[0]){
-                formData.append("medicine_image", document.getElementById("medicine_image").files[0]);
-            }
-            if(document.getElementById("medicine_excel_file").files[0]){
-                formData.append("medicine_excel_file", document.getElementById("medicine_excel_file").files[0]);
-            }
             response = await fetch("/api/add/medicine", {
                 method: "POST",
                 body: formData
