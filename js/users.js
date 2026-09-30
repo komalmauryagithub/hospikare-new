@@ -205,6 +205,11 @@
     }
 
     function addToCart(item) {
+        if (!requireUser()) {
+            state.pendingCartItem = item;
+            return;
+        }
+
         const key = `${item.type}:${item.id}`;
         const existing = state.cart.find(cartItem => cartItem.key === key);
 
@@ -228,6 +233,9 @@
     }
 
     function openCartModal() {
+        if (!requireUser()) {
+            return;
+        }
         renderCart();
         openModal("cartModal");
     }
@@ -353,10 +361,9 @@
 
     function getSavedUser() {
         try {
-            const rawUser = localStorage.getItem(USER_KEY);
+            const rawUser = localStorage.getItem(USER_KEY) || localStorage.getItem("hk_user");
             return rawUser ? JSON.parse(rawUser) : null;
         } catch (error) {
-            localStorage.removeItem(USER_KEY);
             return null;
         }
     }
@@ -619,6 +626,13 @@
     const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector));
 
     document.addEventListener("DOMContentLoaded", init);
+    window.addEventListener("pageshow", () => {
+        state.user = getSavedUser();
+        updateUserUI();
+        if (state.user) {
+            closeModal("authOverlay");
+        }
+    });
 
     async function loadUserInsuranceDashboard() {
         const userPoliciesContainer = $("#userPoliciesContainer");
@@ -668,13 +682,12 @@
     }
 
     async function init() {
-        // Sync session state with backend
+        // Sync session state with backend if available
         try {
             const res = await apiGet('/api/product-user/profile');
             if (res && res.success && res.user) {
                 localStorage.setItem(USER_KEY, JSON.stringify(res.user));
-            } else {
-                localStorage.removeItem(USER_KEY);
+                localStorage.setItem("hk_user", JSON.stringify(res.user));
             }
         } catch(e) {}
 
@@ -690,9 +703,7 @@
         updateUserUI();
         updateCartUI();
 
-        if (!state.user) {
-            showAuthModal();
-        }
+        closeModal("authOverlay");
 
         loadFeaturedHospitals();
         loadAmbulances();
@@ -999,6 +1010,11 @@
     }
 
     window.openInsuranceModal = function(id, name, claim, price) {
+        if (!requireUser()) {
+            state.pendingInsurancePlan = { id, name, claim, price };
+            return;
+        }
+
         state.selectedInsuranceId = id;
         state.selectedInsurancePlan = name || "Insurance Plan";
         state.selectedInsuranceBasePrice = parseMoney(price);
@@ -1300,7 +1316,7 @@
     
     <p style="font-size: 13px; color: #475569; line-height: 1.5; margin-bottom: 20px;">${escapeHtml(insurance.description || "Coverage details available with the provider.")}</p>
     
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 24px; background: #f8fafc; padding: 12px; border-radius: 12px; border: 1px solid #f1f5f9;">
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 24px; background: #f8fafc; padding: 12px; border-radius: 12px; border: 1px solid #f1f5f9; margin-top: auto;">
         <div style="display: flex; flex-direction: column; gap: 4px;">
             <span style="font-size: 11px; color: #64748b; text-transform: uppercase; font-weight: 700;">Claim Type</span>
             <span style="font-size: 13px; font-weight: 700; color: #0f172a;">${escapeHtml(insurance.claim_type || "N/A")}</span>
@@ -1319,7 +1335,7 @@
         </div>
     </div>
     
-    <button class="buyPlanBtn" type="button" data-action="buy-insurance" data-id="${escapeAttr(insurance.id)}" data-name="${escapeAttr(insurance.comp_name || "Insurance Plan")}" data-claim="${escapeAttr(parseMoney(insurance.claim_price))}" data-price="${escapeAttr(parseMoney(insurance.ins_price))}" style="width: 100%; border-radius: 12px; padding: 14px; font-size: 15px; font-weight: 800; border: none; cursor: pointer; margin-top: auto;">
+    <button class="buyPlanBtn" type="button" data-action="buy-insurance" data-id="${escapeAttr(insurance.id)}" data-name="${escapeAttr(insurance.comp_name || "Insurance Plan")}" data-claim="${escapeAttr(parseMoney(insurance.claim_price))}" data-price="${escapeAttr(parseMoney(insurance.ins_price))}" style="width: 100%; border-radius: 12px; height: 48px; min-height: 48px; max-height: 48px; font-size: 15px; font-weight: 800; border: none; cursor: pointer; flex: none; display: flex; align-items: center; justify-content: center;">
         Buy Plan
     </button>
 </article>
@@ -1705,10 +1721,21 @@
 
             state.user = data.user;
             localStorage.setItem(USER_KEY, JSON.stringify(data.user));
+            localStorage.setItem("hk_user", JSON.stringify(data.user));
             closeModal("authOverlay");
             updateUserUI();
             loadUserInsuranceDashboard();
             toast("Login successful");
+            if (state.pendingCartItem) {
+                const item = state.pendingCartItem;
+                state.pendingCartItem = null;
+                addToCart(item);
+            }
+            if (state.pendingInsurancePlan) {
+                const plan = state.pendingInsurancePlan;
+                state.pendingInsurancePlan = null;
+                openInsuranceModal(plan.id, plan.name, plan.claim, plan.price);
+            }
         } catch (error) {
             console.error(error);
             toast("Login failed. Try again.");
@@ -1720,15 +1747,20 @@
     async function logoutUser() {
         try {
             await fetch('/api/user/logout', { method: 'POST', credentials: 'include' });
+            await fetch('/api/product-logout', { method: 'POST', credentials: 'include' });
         } catch(e) {
             console.error('Logout API failed:', e);
         }
         localStorage.removeItem(USER_KEY);
+        localStorage.removeItem("hk_user");
+        sessionStorage.clear();
         state.user = null;
         updateUserUI();
         loadUserInsuranceDashboard();
-        toast('Logged out');
-        window.location.href = '/rg.html';
+        closeModal("userProfileModal");
+        closeModal("authOverlay");
+        toast('Logged out successfully');
+        window.location.href = '/users.html';
     }
 
     function updateUserUI() {
@@ -1746,7 +1778,9 @@
 authOpenBtn.style.padding = "0";
 authOpenBtn.style.setProperty("background", "transparent", "important");
         } else {
-            authOpenBtn.textContent = "Login / Portal";
+            authOpenBtn.innerHTML = "Login / Portal";
+            authOpenBtn.style.padding = "";
+            authOpenBtn.style.removeProperty("background");
         }
     }
     
@@ -1758,6 +1792,11 @@ authOpenBtn.style.setProperty("background", "transparent", "important");
     if (sidebarLogoutBtn) {
         sidebarLogoutBtn.hidden = !user;
     }
+
+    // Only show My Orders / Activity when logged in
+    $$(".myOrdersLink, #navMyOrders, #sidebarMyOrders, #mobileBottomMyOrders").forEach(el => {
+        el.style.display = user ? "" : "none";
+    });
 }
 
 async function handleAmbulanceBooking(event) {
@@ -1950,6 +1989,11 @@ async function handleAmbulanceBooking(event) {
     }
 
     window.openInsuranceModal = function(id, name, claim, price) {
+        if (!requireUser()) {
+            state.pendingInsurancePlan = { id, name, claim, price };
+            return;
+        }
+
         state.selectedInsuranceId = id;
         state.selectedInsurancePlan = name || "Insurance Plan";
         state.selectedInsuranceBasePrice = parseMoney(price);
@@ -2251,7 +2295,7 @@ async function handleAmbulanceBooking(event) {
     
     <p style="font-size: 13px; color: #475569; line-height: 1.5; margin-bottom: 20px;">${escapeHtml(insurance.description || "Coverage details available with the provider.")}</p>
     
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 24px; background: #f8fafc; padding: 12px; border-radius: 12px; border: 1px solid #f1f5f9;">
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 24px; background: #f8fafc; padding: 12px; border-radius: 12px; border: 1px solid #f1f5f9; margin-top: auto;">
         <div style="display: flex; flex-direction: column; gap: 4px;">
             <span style="font-size: 11px; color: #64748b; text-transform: uppercase; font-weight: 700;">Claim Type</span>
             <span style="font-size: 13px; font-weight: 700; color: #0f172a;">${escapeHtml(insurance.claim_type || "N/A")}</span>
@@ -2270,7 +2314,7 @@ async function handleAmbulanceBooking(event) {
         </div>
     </div>
     
-    <button class="buyPlanBtn" type="button" data-action="buy-insurance" data-id="${escapeAttr(insurance.id)}" data-name="${escapeAttr(insurance.comp_name || "Insurance Plan")}" data-claim="${escapeAttr(parseMoney(insurance.claim_price))}" data-price="${escapeAttr(parseMoney(insurance.ins_price))}" style="width: 100%; border-radius: 12px; padding: 14px; font-size: 15px; font-weight: 800; border: none; cursor: pointer; margin-top: auto;">
+    <button class="buyPlanBtn" type="button" data-action="buy-insurance" data-id="${escapeAttr(insurance.id)}" data-name="${escapeAttr(insurance.comp_name || "Insurance Plan")}" data-claim="${escapeAttr(parseMoney(insurance.claim_price))}" data-price="${escapeAttr(parseMoney(insurance.ins_price))}" style="width: 100%; border-radius: 12px; height: 48px; min-height: 48px; max-height: 48px; font-size: 15px; font-weight: 800; border: none; cursor: pointer; flex: none; display: flex; align-items: center; justify-content: center;">
         Buy Plan
     </button>
 </article>
@@ -2594,10 +2638,21 @@ async function handleAmbulanceBooking(event) {
 
             state.user = data.user;
             localStorage.setItem(USER_KEY, JSON.stringify(data.user));
+            localStorage.setItem("hk_user", JSON.stringify(data.user));
             closeModal("authOverlay");
             updateUserUI();
             loadUserInsuranceDashboard();
             toast("Login successful");
+            if (state.pendingCartItem) {
+                const item = state.pendingCartItem;
+                state.pendingCartItem = null;
+                addToCart(item);
+            }
+            if (state.pendingInsurancePlan) {
+                const plan = state.pendingInsurancePlan;
+                state.pendingInsurancePlan = null;
+                openInsuranceModal(plan.id, plan.name, plan.claim, plan.price);
+            }
         } catch (error) {
             console.error(error);
             toast("Login failed. Try again.");
@@ -2609,15 +2664,20 @@ async function handleAmbulanceBooking(event) {
     async function logoutUser() {
         try {
             await fetch('/api/user/logout', { method: 'POST', credentials: 'include' });
+            await fetch('/api/product-logout', { method: 'POST', credentials: 'include' });
         } catch(e) {
             console.error('Logout API failed:', e);
         }
         localStorage.removeItem(USER_KEY);
+        localStorage.removeItem("hk_user");
+        sessionStorage.clear();
         state.user = null;
         updateUserUI();
         loadUserInsuranceDashboard();
-        toast('Logged out');
-        window.location.href = '/rg.html';
+        closeModal("userProfileModal");
+        closeModal("authOverlay");
+        toast('Logged out successfully');
+        window.location.href = '/users.html';
     }
 
     function updateUserUI() {
@@ -2628,24 +2688,30 @@ async function handleAmbulanceBooking(event) {
         state.user = user;
 
         if (authOpenBtn) {
-            
-if (user) {
-    const fName = firstName(user.full_name || user.name || "User");
-    
-    const photoUrl = user.profile_photo ? `/uploads/${escapeAttr(user.profile_photo)}` : 'https://ui-avatars.com/api/?name=' + encodeURIComponent(fName) + '&background=e0e7ff&color=1e40af&bold=true';
-    authOpenBtn.innerHTML = `<img src="${photoUrl}" alt="Profile" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid #e2e8f0; box-shadow: 0 2px 8px rgba(0,0,0,0.05); cursor: pointer; transition: transform 0.2s;">`;
-authOpenBtn.style.padding = "0";
-authOpenBtn.style.setProperty("background", "transparent", "important");
-
-
+            if (user) {
+                const fName = firstName(user.full_name || user.name || "User");
+                const photoUrl = user.profile_photo ? `/uploads/${escapeAttr(user.profile_photo)}` : 'https://ui-avatars.com/api/?name=' + encodeURIComponent(fName) + '&background=e0e7ff&color=1e40af&bold=true';
+                authOpenBtn.innerHTML = `<img src="${photoUrl}" alt="Profile" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid #e2e8f0; box-shadow: 0 2px 8px rgba(0,0,0,0.05); cursor: pointer; transition: transform 0.2s;">`;
+                authOpenBtn.style.padding = "0";
+                authOpenBtn.style.setProperty("background", "transparent", "important");
+            } else {
+                authOpenBtn.innerHTML = "Login / Portal";
+                authOpenBtn.style.padding = "";
+                authOpenBtn.style.removeProperty("background");
+            }
         }
         if (logoutBtn) {
-    logoutBtn.hidden = !user;
-    if (user) logoutBtn.innerHTML = '<i class="fa-solid fa-arrow-right-from-bracket"></i> Logout';
-}
+            logoutBtn.hidden = !user;
+            if (user) logoutBtn.innerHTML = '<i class="fa-solid fa-arrow-right-from-bracket"></i> Logout';
+        }
         if (sidebarLogoutBtn) {
             sidebarLogoutBtn.hidden = !user;
         }
+
+        // Only show My Orders / Activity when logged in
+        $$(".myOrdersLink, #navMyOrders, #sidebarMyOrders, #mobileBottomMyOrders").forEach(el => {
+            el.style.display = user ? "" : "none";
+        });
     }
 
     
@@ -2962,10 +3028,21 @@ authOpenBtn.style.setProperty("background", "transparent", "important");
 
             state.user = data.user;
             localStorage.setItem(USER_KEY, JSON.stringify(data.user));
+            localStorage.setItem("hk_user", JSON.stringify(data.user));
             closeModal("authOverlay");
             updateUserUI();
             loadUserInsuranceDashboard();
             toast("Login successful");
+            if (state.pendingCartItem) {
+                const item = state.pendingCartItem;
+                state.pendingCartItem = null;
+                addToCart(item);
+            }
+            if (state.pendingInsurancePlan) {
+                const plan = state.pendingInsurancePlan;
+                state.pendingInsurancePlan = null;
+                openInsuranceModal(plan.id, plan.name, plan.claim, plan.price);
+            }
         } catch (error) {
             console.error(error);
             toast("Login failed. Try again.");
@@ -2977,15 +3054,20 @@ authOpenBtn.style.setProperty("background", "transparent", "important");
     async function logoutUser() {
         try {
             await fetch('/api/user/logout', { method: 'POST', credentials: 'include' });
+            await fetch('/api/product-logout', { method: 'POST', credentials: 'include' });
         } catch(e) {
             console.error('Logout API failed:', e);
         }
         localStorage.removeItem(USER_KEY);
+        localStorage.removeItem("hk_user");
+        sessionStorage.clear();
         state.user = null;
         updateUserUI();
         loadUserInsuranceDashboard();
-        toast('Logged out');
-        window.location.href = '/rg.html';
+        closeModal("userProfileModal");
+        closeModal("authOverlay");
+        toast('Logged out successfully');
+        window.location.href = '/users.html';
     }
 
     function updateUserUI() {
@@ -2996,24 +3078,30 @@ authOpenBtn.style.setProperty("background", "transparent", "important");
         state.user = user;
 
         if (authOpenBtn) {
-            
-if (user) {
-    const fName = firstName(user.full_name || user.name || "User");
-    
-    const photoUrl = user.profile_photo ? `/uploads/${escapeAttr(user.profile_photo)}` : 'https://ui-avatars.com/api/?name=' + encodeURIComponent(fName) + '&background=e0e7ff&color=1e40af&bold=true';
-    authOpenBtn.innerHTML = `<img src="${photoUrl}" alt="Profile" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid #e2e8f0; box-shadow: 0 2px 8px rgba(0,0,0,0.05); cursor: pointer; transition: transform 0.2s;">`;
-authOpenBtn.style.padding = "0";
-authOpenBtn.style.setProperty("background", "transparent", "important");
-
-
+            if (user) {
+                const fName = firstName(user.full_name || user.name || "User");
+                const photoUrl = user.profile_photo ? `/uploads/${escapeAttr(user.profile_photo)}` : 'https://ui-avatars.com/api/?name=' + encodeURIComponent(fName) + '&background=e0e7ff&color=1e40af&bold=true';
+                authOpenBtn.innerHTML = `<img src="${photoUrl}" alt="Profile" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid #e2e8f0; box-shadow: 0 2px 8px rgba(0,0,0,0.05); cursor: pointer; transition: transform 0.2s;">`;
+                authOpenBtn.style.padding = "0";
+                authOpenBtn.style.setProperty("background", "transparent", "important");
+            } else {
+                authOpenBtn.innerHTML = "Login / Portal";
+                authOpenBtn.style.padding = "";
+                authOpenBtn.style.removeProperty("background");
+            }
         }
         if (logoutBtn) {
-    logoutBtn.hidden = !user;
-    if (user) logoutBtn.innerHTML = '<i class="fa-solid fa-arrow-right-from-bracket"></i> Logout';
-}
+            logoutBtn.hidden = !user;
+            if (user) logoutBtn.innerHTML = '<i class="fa-solid fa-arrow-right-from-bracket"></i> Logout';
+        }
         if (sidebarLogoutBtn) {
             sidebarLogoutBtn.hidden = !user;
         }
+
+        // Only show My Orders / Activity when logged in
+        $$(".myOrdersLink, #navMyOrders, #sidebarMyOrders, #mobileBottomMyOrders").forEach(el => {
+            el.style.display = user ? "" : "none";
+        });
     }
 
     
@@ -3396,10 +3484,21 @@ async function loadMedicines() {
 
             state.user = data.user;
             localStorage.setItem(USER_KEY, JSON.stringify(data.user));
+            localStorage.setItem("hk_user", JSON.stringify(data.user));
             closeModal("authOverlay");
             updateUserUI();
             loadUserInsuranceDashboard();
             toast("Login successful");
+            if (state.pendingCartItem) {
+                const item = state.pendingCartItem;
+                state.pendingCartItem = null;
+                addToCart(item);
+            }
+            if (state.pendingInsurancePlan) {
+                const plan = state.pendingInsurancePlan;
+                state.pendingInsurancePlan = null;
+                openInsuranceModal(plan.id, plan.name, plan.claim, plan.price);
+            }
         } catch (error) {
             console.error(error);
             toast("Login failed. Try again.");
@@ -3411,15 +3510,20 @@ async function loadMedicines() {
     async function logoutUser() {
         try {
             await fetch('/api/user/logout', { method: 'POST', credentials: 'include' });
+            await fetch('/api/product-logout', { method: 'POST', credentials: 'include' });
         } catch(e) {
             console.error('Logout API failed:', e);
         }
         localStorage.removeItem(USER_KEY);
+        localStorage.removeItem("hk_user");
+        sessionStorage.clear();
         state.user = null;
         updateUserUI();
         loadUserInsuranceDashboard();
-        toast('Logged out');
-        window.location.href = '/rg.html';
+        closeModal("userProfileModal");
+        closeModal("authOverlay");
+        toast('Logged out successfully');
+        window.location.href = '/users.html';
     }
 
     function updateUserUI() {
@@ -3430,24 +3534,30 @@ async function loadMedicines() {
         state.user = user;
 
         if (authOpenBtn) {
-            
-if (user) {
-    const fName = firstName(user.full_name || user.name || "User");
-    
-    const photoUrl = user.profile_photo ? `/uploads/${escapeAttr(user.profile_photo)}` : 'https://ui-avatars.com/api/?name=' + encodeURIComponent(fName) + '&background=e0e7ff&color=1e40af&bold=true';
-    authOpenBtn.innerHTML = `<img src="${photoUrl}" alt="Profile" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid #e2e8f0; box-shadow: 0 2px 8px rgba(0,0,0,0.05); cursor: pointer; transition: transform 0.2s;">`;
-authOpenBtn.style.padding = "0";
-authOpenBtn.style.setProperty("background", "transparent", "important");
-
-
+            if (user) {
+                const fName = firstName(user.full_name || user.name || "User");
+                const photoUrl = user.profile_photo ? `/uploads/${escapeAttr(user.profile_photo)}` : 'https://ui-avatars.com/api/?name=' + encodeURIComponent(fName) + '&background=e0e7ff&color=1e40af&bold=true';
+                authOpenBtn.innerHTML = `<img src="${photoUrl}" alt="Profile" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid #e2e8f0; box-shadow: 0 2px 8px rgba(0,0,0,0.05); cursor: pointer; transition: transform 0.2s;">`;
+                authOpenBtn.style.padding = "0";
+                authOpenBtn.style.setProperty("background", "transparent", "important");
+            } else {
+                authOpenBtn.innerHTML = "Login / Portal";
+                authOpenBtn.style.padding = "";
+                authOpenBtn.style.removeProperty("background");
+            }
         }
         if (logoutBtn) {
-    logoutBtn.hidden = !user;
-    if (user) logoutBtn.innerHTML = '<i class="fa-solid fa-arrow-right-from-bracket"></i> Logout';
-}
+            logoutBtn.hidden = !user;
+            if (user) logoutBtn.innerHTML = '<i class="fa-solid fa-arrow-right-from-bracket"></i> Logout';
+        }
         if (sidebarLogoutBtn) {
             sidebarLogoutBtn.hidden = !user;
         }
+
+        // Only show My Orders / Activity when logged in
+        $$(".myOrdersLink, #navMyOrders, #sidebarMyOrders, #mobileBottomMyOrders").forEach(el => {
+            el.style.display = user ? "" : "none";
+        });
     }
 
     
@@ -3764,10 +3874,21 @@ authOpenBtn.style.setProperty("background", "transparent", "important");
 
             state.user = data.user;
             localStorage.setItem(USER_KEY, JSON.stringify(data.user));
+            localStorage.setItem("hk_user", JSON.stringify(data.user));
             closeModal("authOverlay");
             updateUserUI();
             loadUserInsuranceDashboard();
             toast("Login successful");
+            if (state.pendingCartItem) {
+                const item = state.pendingCartItem;
+                state.pendingCartItem = null;
+                addToCart(item);
+            }
+            if (state.pendingInsurancePlan) {
+                const plan = state.pendingInsurancePlan;
+                state.pendingInsurancePlan = null;
+                openInsuranceModal(plan.id, plan.name, plan.claim, plan.price);
+            }
         } catch (error) {
             console.error(error);
             toast("Login failed. Try again.");
@@ -3779,15 +3900,20 @@ authOpenBtn.style.setProperty("background", "transparent", "important");
     async function logoutUser() {
         try {
             await fetch('/api/user/logout', { method: 'POST', credentials: 'include' });
+            await fetch('/api/product-logout', { method: 'POST', credentials: 'include' });
         } catch(e) {
             console.error('Logout API failed:', e);
         }
         localStorage.removeItem(USER_KEY);
+        localStorage.removeItem("hk_user");
+        sessionStorage.clear();
         state.user = null;
         updateUserUI();
         loadUserInsuranceDashboard();
-        toast('Logged out');
-        window.location.href = '/rg.html';
+        closeModal("userProfileModal");
+        closeModal("authOverlay");
+        toast('Logged out successfully');
+        window.location.href = '/users.html';
     }
 
     function updateUserUI() {
@@ -3798,24 +3924,30 @@ authOpenBtn.style.setProperty("background", "transparent", "important");
         state.user = user;
 
         if (authOpenBtn) {
-            
-if (user) {
-    const fName = firstName(user.full_name || user.name || "User");
-    
-    const photoUrl = user.profile_photo ? `/uploads/${escapeAttr(user.profile_photo)}` : 'https://ui-avatars.com/api/?name=' + encodeURIComponent(fName) + '&background=e0e7ff&color=1e40af&bold=true';
-    authOpenBtn.innerHTML = `<img src="${photoUrl}" alt="Profile" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid #e2e8f0; box-shadow: 0 2px 8px rgba(0,0,0,0.05); cursor: pointer; transition: transform 0.2s;">`;
-authOpenBtn.style.padding = "0";
-authOpenBtn.style.setProperty("background", "transparent", "important");
-
-
+            if (user) {
+                const fName = firstName(user.full_name || user.name || "User");
+                const photoUrl = user.profile_photo ? `/uploads/${escapeAttr(user.profile_photo)}` : 'https://ui-avatars.com/api/?name=' + encodeURIComponent(fName) + '&background=e0e7ff&color=1e40af&bold=true';
+                authOpenBtn.innerHTML = `<img src="${photoUrl}" alt="Profile" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid #e2e8f0; box-shadow: 0 2px 8px rgba(0,0,0,0.05); cursor: pointer; transition: transform 0.2s;">`;
+                authOpenBtn.style.padding = "0";
+                authOpenBtn.style.setProperty("background", "transparent", "important");
+            } else {
+                authOpenBtn.innerHTML = "Login / Portal";
+                authOpenBtn.style.padding = "";
+                authOpenBtn.style.removeProperty("background");
+            }
         }
         if (logoutBtn) {
-    logoutBtn.hidden = !user;
-    if (user) logoutBtn.innerHTML = '<i class="fa-solid fa-arrow-right-from-bracket"></i> Logout';
-}
+            logoutBtn.hidden = !user;
+            if (user) logoutBtn.innerHTML = '<i class="fa-solid fa-arrow-right-from-bracket"></i> Logout';
+        }
         if (sidebarLogoutBtn) {
             sidebarLogoutBtn.hidden = !user;
         }
+
+        // Only show My Orders / Activity when logged in
+        $$(".myOrdersLink, #navMyOrders, #sidebarMyOrders, #mobileBottomMyOrders").forEach(el => {
+            el.style.display = user ? "" : "none";
+        });
     }
 
     
@@ -3885,52 +4017,6 @@ authOpenBtn.style.setProperty("background", "transparent", "important");
         container.innerHTML = `<div class="error-msg">Failed to load ambulances.</div>`;
     }
 }
-async function loadAmbulances() { 
-        const container = $("#ambulanceContainer");
-        if (!container) return;
-        renderLoading(container, "Loading ambulances...");
-        try {
-            const data = await apiGet('/api/all-ambulances');
-            let ambulances = [];
-            if (data && data.success && Array.isArray(data.ambulances) && data.ambulances.length > 0) {
-                ambulances = data.ambulances;
-            } else {
-                ambulances = [
-                    { id: 1, ambulance_type: "Basic Life Support (BLS)", area: "City Center", status: "Available", eta: "10 mins", base_chrge: 1500 },
-                    { id: 2, ambulance_type: "Advanced Life Support (ALS)", area: "North Zone", status: "Available", eta: "15 mins", base_chrge: 3000 },
-                    { id: 3, ambulance_type: "Patient Transport", area: "South Zone", status: "Available", eta: "20 mins", base_chrge: 1000 },
-                    { id: 4, ambulance_type: "ICU Ambulance", area: "West Zone", status: "Available", eta: "25 mins", base_chrge: 5000 }
-                ];
-            }
-            
-            container.innerHTML = ambulances.map(item => `
-                <article class="featuredHospitalCard" tabindex="0">
-                    <div class="featuredHospitalImage" style="display: flex; background: linear-gradient(135deg, #f0f9ff, #e0f2fe); align-items: center; justify-content: center; border-bottom: 1px solid rgba(226,232,240,0.6);">
-                        <i class="fa-solid fa-truck-medical" style="font-size: 56px; color: #38bdf8; filter: drop-shadow(0 4px 6px rgba(56,189,248,0.2)); padding: 40px;"></i>
-                    </div>
-                    <div class="featuredHospitalContent">
-                        <h3 style="margin-bottom: 4px;">${escapeHtml(item.ambulance_type || "Ambulance")}</h3>
-                        <div class="hospitalLocation">
-                            <i class="fa-solid fa-location-dot"></i>
-                            <span>${escapeHtml(item.area || "Nearby")}</span>
-                        </div>
-                        <div class="hospitalTypes" style="margin-bottom: 8px; font-size: 12px; color: var(--hk-text-main, #334155); display: flex; gap: 8px; flex-wrap: wrap;">
-                            <span style="background: #e0f2fe; color: #0284c7; padding: 2px 6px; border-radius: 4px;">ETA: ${escapeHtml(item.eta || 'N/A')}</span>
-                        </div>
-                        <div class="hospitalBottom">
-                            <div class="hospitalBeds" style="font-weight: 800; font-size: 16px; color: #0f172a;">
-                                ${item.base_chrge ? formatMoney(item.base_chrge) : 'Rates Vary'}
-                            </div>
-                            <button class="btn btn-primary" type="button" data-action="book-ambulance" data-type="${escapeAttr(item.ambulance_type)}" data-amount="${escapeAttr(item.base_chrge || 1500)}" data-condition="Non-Emergency">Book Now</button>
-                        </div>
-                    </div>
-                </article>
-            `).join("");
-        } catch(e) {
-            console.error("Failed to load ambulances", e);
-            renderEmpty(container, "Ambulances could not be loaded.");
-        }
-    }
 
     function renderUserPolicies(policies) {
         const container = $("#userPoliciesContainer");
@@ -4026,8 +4112,4 @@ async function loadAmbulances() {
         openModal("insuranceClaimModal");
     }
 
-    }
-    }
-    }
-    }
 })();

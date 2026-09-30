@@ -2524,11 +2524,31 @@ app.put(
 );
 
 app.post("/api/user/logout", (req, res) => {
-  req.session.destroy(() => {
-    res.json({
-      success: true,
+  if (req.session) {
+    delete req.session.user;
+    delete req.session.productUser;
+    req.session.destroy((err) => {
+      res.clearCookie("connect.sid");
+      res.json({ success: true });
     });
-  });
+  } else {
+    res.clearCookie("connect.sid");
+    res.json({ success: true });
+  }
+});
+
+app.post("/api/product-logout", (req, res) => {
+  if (req.session) {
+    delete req.session.productUser;
+    delete req.session.user;
+    req.session.destroy((err) => {
+      res.clearCookie("connect.sid");
+      res.json({ success: true });
+    });
+  } else {
+    res.clearCookie("connect.sid");
+    res.json({ success: true });
+  }
 });
 
 //11

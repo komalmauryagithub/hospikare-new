@@ -691,13 +691,25 @@ section[id] {
 .viewBtn,
 .bookAmbulanceBtn,
 .bookLabBtn,
-.buyPlanBtn,
 .medicineBuyBtn,
 .equipmentBuyBtn,
 .addMedicineBtn,
 .addEquipmentBtn {
     flex: 1;
     padding: 0 1rem;
+}
+
+.buyPlanBtn {
+    flex: none !important;
+    height: 48px !important;
+    min-height: 48px !important;
+    max-height: 48px !important;
+    width: 100% !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    margin-top: auto !important;
+    padding: 0 1rem !important;
 }
 .equipmentBuyBtn,
 .addequipmentBtn {

@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -19,7 +19,7 @@
     <link rel="stylesheet" href="/css/base.css?v=1790673061">
     <link rel="stylesheet" href="/css/layout.css?v=1790673061">
     <link rel="stylesheet" href="/css/components.css?v=1790673061">
-    <link rel="stylesheet" href="/css/users.css?v=1790673061">
+    <link rel="stylesheet" href="/css/users.css?v=1790745000">
     <link rel="stylesheet" href="/css/mobile-ui.css?v=1790673061">
 </head>
 <body>
@@ -34,10 +34,9 @@
             <a href="users.html#ambulanceSection">Ambulance</a>
             <a href="users.html#medicineSection">Pharmacy</a>
             <a href="users.html#insuranceSection">Insurance</a>
-            <a href="users.html#insuranceClaimsSection">Claims</a>
             <a href="users.html#labsSection">Lab Reports</a>
             <a href="users.html#equipmentSection">Medical Equipments</a>
-            <a href="act.html">My Orders</a>
+            <a href="act.html" id="navMyOrders" class="myOrdersLink" style="display: none;">My Orders</a>
         </div>
         <div class="navRight flex items-center gap-4">
             
@@ -62,11 +61,10 @@
             <a href="#ambulanceSection"><i class="fa-solid fa-truck-medical"></i> Ambulance</a>
             <a href="#medicineSection"><i class="fa-solid fa-capsules"></i> Medicines</a>
             <a href="#insuranceSection"><i class="fa-solid fa-file-shield"></i> Insurance</a>
-            <a href="#insuranceClaimsSection"><i class="fa-solid fa-file-medical"></i> Claims</a>
             
             <a href="#labsSection"><i class="fa-solid fa-stethoscope"></i> Lab Tests</a>
             <a href="#equipmentSection"><i class="fa-solid fa-laptop-medical"></i> Medical Equipments</a>
-            <a href="act.html"><i class="fa-solid fa-chart-line"></i> Activities</a>
+            <a href="act.html" id="sidebarMyOrders" class="myOrdersLink" style="display: none;"><i class="fa-solid fa-chart-line"></i> Activities</a>
             <a href="#" class="userLogoutBtn" id="sidebarLogoutBtn" hidden><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
         </div>
     </div>
@@ -719,7 +717,7 @@
             <i class="fa-solid fa-capsules"></i>
             <span>Pharmacy</span>
         </a>
-        <a href="act.html" class="mobile-nav-item">
+        <a href="act.html" class="mobile-nav-item myOrdersLink" id="mobileBottomMyOrders" style="display: none;">
             <i class="fa-solid fa-chart-line"></i>
             <span>Activity</span>
         </a>
@@ -807,7 +805,7 @@
             modal.style.display = 'none';
         }
     </script>
-    <script src="/js/users.js?v=1790673061"></script>
+    <script src="/js/users.js?v=1790745000"></script>
     <script src="/js/main.js"></script>
     <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
     <!-- Floating Emergency Button -->

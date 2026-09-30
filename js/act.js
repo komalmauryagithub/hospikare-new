@@ -1,4 +1,9 @@
-﻿const navItems = document.querySelectorAll(".navItem");
+const _rawUserCheck = localStorage.getItem("productUser") || localStorage.getItem("hk_user");
+if (!_rawUserCheck) {
+    window.location.replace("/users.html");
+}
+
+const navItems = document.querySelectorAll(".navItem");
 
 /* ================= NAVIGATION ================= */
 
@@ -337,34 +342,52 @@ window.viewCustomerInvoice = function(id, type, amount) {
 
 
 document.addEventListener('DOMContentLoaded', () => {
+    const rawUser = localStorage.getItem('productUser') || localStorage.getItem('hk_user');
+    if (!rawUser) {
+        window.location.replace("users.html");
+        return;
+    }
     const authBtn = document.getElementById('authOpenBtn');
     const logoutBtn = document.getElementById('logoutBtn');
     try {
-        const rawUser = localStorage.getItem('productUser');
-        const user = rawUser ? JSON.parse(rawUser) : null;
+        const user = JSON.parse(rawUser);
         if (user) {
             if (authBtn) {
                 const fName = String(user.full_name || user.name || "User").trim().split(/\s+/)[0] || "User";
                 const photoUrl = user.profile_photo ? `/uploads/${user.profile_photo}` : 'https://ui-avatars.com/api/?name=' + encodeURIComponent(fName) + '&background=e0e7ff&color=1e40af&bold=true';
                 authBtn.innerHTML = `<img src="${photoUrl}" alt="Profile" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid #e2e8f0; box-shadow: 0 2px 8px rgba(0,0,0,0.05); cursor: pointer;">`;
                 authBtn.onclick = () => {
-                    const fName = String(user.full_name || user.name || "User").trim().split(/\s+/)[0] || "User";
-                    const photoUrl = user.profile_photo ? `/uploads/${user.profile_photo}` : 'https://ui-avatars.com/api/?name=' + encodeURIComponent(fName) + '&background=e0e7ff&color=1e40af&bold=true';
-                    document.getElementById("profileModalImg").src = photoUrl;
-                    document.getElementById("profileModalName").textContent = user.full_name || "User";
-                    document.getElementById("profileModalEmail").textContent = user.email || user.phone || "";
-                    document.getElementById("userProfileModal").style.display = "flex";
-                    document.getElementById("userProfileModal").classList.add("active");
+                    const profileModalImg = document.getElementById("profileModalImg");
+                    const profileModalName = document.getElementById("profileModalName");
+                    const profileModalEmail = document.getElementById("profileModalEmail");
+                    const userProfileModal = document.getElementById("userProfileModal");
+                    if (profileModalImg) profileModalImg.src = photoUrl;
+                    if (profileModalName) profileModalName.textContent = user.full_name || "User";
+                    if (profileModalEmail) profileModalEmail.textContent = user.email || user.phone || "";
+                    if (userProfileModal) {
+                        userProfileModal.style.display = "flex";
+                        userProfileModal.classList.add("active");
+                    }
                 };
-                document.getElementById("closeProfileModal").onclick = () => {
-                    document.getElementById("userProfileModal").style.display = "none";
-                    document.getElementById("userProfileModal").classList.remove("active");
-                };
-                document.getElementById("modalLogoutBtn").onclick = async () => {
-                    try { await fetch('/api/user/logout', { method: 'POST', credentials: 'include' }); } catch(e) {}
-                    localStorage.removeItem("productUser");
-                    window.location.href = "users.html";
-                };
+                const closeBtn = document.getElementById("closeProfileModal");
+                if (closeBtn) {
+                    closeBtn.onclick = () => {
+                        const userProfileModal = document.getElementById("userProfileModal");
+                        if (userProfileModal) {
+                            userProfileModal.style.display = "none";
+                            userProfileModal.classList.remove("active");
+                        }
+                    };
+                }
+                const modalLogoutBtn = document.getElementById("modalLogoutBtn");
+                if (modalLogoutBtn) {
+                    modalLogoutBtn.onclick = async () => {
+                        try { await fetch('/api/user/logout', { method: 'POST', credentials: 'include' }); } catch(e) {}
+                        localStorage.removeItem("productUser");
+                        localStorage.removeItem("hk_user");
+                        window.location.href = "users.html";
+                    };
+                }
             }
             if (logoutBtn) {
                 logoutBtn.hidden = false;
@@ -372,28 +395,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 logoutBtn.onclick = async () => {
                     try { await fetch('/api/user/logout', { method: 'POST', credentials: 'include' }); } catch(e) {}
                     localStorage.removeItem('productUser');
+                    localStorage.removeItem('hk_user');
                     window.location.href = 'users.html';
                 };
             }
-        } else {
-            if (authBtn) authBtn.onclick = () => {
-                    const fName = String(user.full_name || user.name || "User").trim().split(/\s+/)[0] || "User";
-                    const photoUrl = user.profile_photo ? `/uploads/${user.profile_photo}` : 'https://ui-avatars.com/api/?name=' + encodeURIComponent(fName) + '&background=e0e7ff&color=1e40af&bold=true';
-                    document.getElementById("profileModalImg").src = photoUrl;
-                    document.getElementById("profileModalName").textContent = user.full_name || "User";
-                    document.getElementById("profileModalEmail").textContent = user.email || user.phone || "";
-                    document.getElementById("userProfileModal").style.display = "flex";
-                    document.getElementById("userProfileModal").classList.add("active");
-                };
-                document.getElementById("closeProfileModal").onclick = () => {
-                    document.getElementById("userProfileModal").style.display = "none";
-                    document.getElementById("userProfileModal").classList.remove("active");
-                };
-                document.getElementById("modalLogoutBtn").onclick = async () => {
-                    try { await fetch('/api/user/logout', { method: 'POST', credentials: 'include' }); } catch(e) {}
-                    localStorage.removeItem("productUser");
-                    window.location.href = "users.html";
-                };
         }
-    } catch(e) {}
+    } catch(e) {
+        console.error(e);
+    }
 });

@@ -267,7 +267,7 @@ body {
     border-radius: 4px;
 }
 
-.close-modal {
+#appointmentModal .close-modal {
     position: absolute;
     top: 20px;
     right: 24px;
@@ -353,3 +353,24 @@ body {
     background: white;
     color: #0f172a;
 }
+
+/* Exact same red login/register button as users.html */
+#authOverlay .btn-primary {
+    background: #e8174a !important;
+    background-color: #e8174a !important;
+    color: #ffffff !important;
+    border: none !important;
+    border-radius: 8px !important;
+    min-height: 50px !important;
+    font-weight: 700 !important;
+    box-shadow: 0 14px 28px rgba(232, 23, 74, 0.22) !important;
+    cursor: pointer;
+    transition: background 0.2s ease, transform 0.2s ease;
+}
+#authOverlay .btn-primary:hover {
+    background: #d1123f !important;
+    background-color: #d1123f !important;
+    transform: translateY(-1px);
+}
+
+

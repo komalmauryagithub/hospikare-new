@@ -94,7 +94,7 @@ async function loadHospitalDetails() {
         document.body.insertAdjacentHTML('afterbegin', `
             <div class="hero-section" style="background-image: url('${coverImage}')">
                 <div class="hero-overlay"></div>
-                <button onclick="window.history.length > 1 ? window.history.back() : window.location.href='/users.html'" class="back-btn-float">
+                <button onclick="window.location.href='/users.html'" class="back-btn-float">
                     <i class="fa-solid fa-arrow-left"></i> Back
                 </button>
                 <div class="hero-content">
@@ -237,15 +237,141 @@ async function loadHospitalDetails() {
             document.body.insertAdjacentHTML('beforeend', modalHTML);
         }
 
-
     } catch (e) {
         console.error(e);
         alert("Failed to load hospital details");
     }
 }
 
+function getAuthUser() {
+    try {
+        const raw = localStorage.getItem("productUser") || localStorage.getItem("hk_user");
+        return raw ? JSON.parse(raw) : null;
+    } catch(e) {
+        return null;
+    }
+}
+
+window.openAuthModal = function() {
+    const modal = document.getElementById("authOverlay");
+    if(modal) {
+        switchAuthTab('login');
+        modal.classList.add("active");
+        modal.style.display = "flex";
+    }
+};
+
+window.closeAuthModal = function() {
+    const modal = document.getElementById("authOverlay");
+    if(modal) {
+        modal.classList.remove("active");
+        modal.style.display = "none";
+    }
+};
+
+window.switchAuthTab = function(tab) {
+    const loginTab = document.getElementById("loginTab");
+    const registerTab = document.getElementById("registerTab");
+    const loginForm = document.getElementById("loginForm");
+    const registerForm = document.getElementById("registerForm");
+    const showRegister = tab === "register";
+
+    loginTab?.classList.toggle("activeTab", !showRegister);
+    registerTab?.classList.toggle("activeTab", showRegister);
+    loginForm?.classList.toggle("hiddenForm", showRegister);
+    registerForm?.classList.toggle("hiddenForm", !showRegister);
+
+    if (loginForm) {
+        loginForm.style.display = showRegister ? "none" : "grid";
+    }
+    if (registerForm) {
+        registerForm.style.display = showRegister ? "block" : "none";
+    }
+};
+
+window.handleAuthLogin = async function(event) {
+    event.preventDefault();
+    const email = document.getElementById("loginEmail").value.trim();
+    const password = document.getElementById("loginPassword").value;
+    
+    try {
+        const res = await fetch("/api/product-login", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            credentials: "same-origin",
+            body: JSON.stringify({ email, password })
+        });
+        const data = await res.json();
+        if (data.success && data.user) {
+            localStorage.setItem("productUser", JSON.stringify(data.user));
+            localStorage.setItem("hk_user", JSON.stringify(data.user));
+            closeAuthModal();
+            if (window.pendingBooking) {
+                const b = window.pendingBooking;
+                window.pendingBooking = null;
+                openAppointmentModal(b.serviceName, b.price, b.type);
+            }
+        } else {
+            alert(data.message || "Invalid Credentials");
+        }
+    } catch(err) {
+        console.error(err);
+        alert("Login failed. Please try again.");
+    }
+};
+
+window.handleAuthRegister = async function(event) {
+    event.preventDefault();
+    const formData = new FormData();
+    formData.append("full_name", document.getElementById("regName").value.trim());
+    formData.append("email", document.getElementById("regEmail").value.trim());
+    formData.append("phone", document.getElementById("regPhone").value.trim());
+    formData.append("password", document.getElementById("regPassword").value);
+    formData.append("gender", document.getElementById("regGender").value);
+    formData.append("dob", document.getElementById("regDob").value);
+    formData.append("blood_group", document.getElementById("regBloodGroup").value);
+    formData.append("address", document.getElementById("regAddress").value.trim());
+    formData.append("city", document.getElementById("regCity").value.trim());
+    formData.append("state", document.getElementById("regState").value.trim());
+    formData.append("pincode", document.getElementById("regPincode").value.trim());
+    
+    const photo = document.getElementById("regProfilePhoto");
+    if (photo?.files?.[0]) {
+        formData.append("profile_photo", photo.files[0]);
+    }
+    
+    try {
+        const res = await fetch("/api/product-register", {
+            method: "POST",
+            credentials: "same-origin",
+            body: formData
+        });
+        const data = await res.json();
+        if (data.success) {
+            alert("Registration successful! Please login.");
+            const registeredEmail = document.getElementById("regEmail")?.value?.trim();
+            document.getElementById("registerForm")?.reset();
+            if (registeredEmail && document.getElementById("loginEmail")) {
+                document.getElementById("loginEmail").value = registeredEmail;
+            }
+            switchAuthTab("login");
+        } else {
+            alert(data.message || "Registration failed");
+        }
+    } catch(err) {
+        console.error(err);
+        alert("Registration failed. Please try again.");
+    }
+};
 
 window.openAppointmentModal = function(serviceName = 'General Appointment', price = 500, type = 'consultation') {
+    const user = getAuthUser();
+    if (!user) {
+        window.pendingBooking = { serviceName, price, type };
+        openAuthModal();
+        return;
+    }
+
     const modal = document.getElementById("appointmentModal");
     if(modal) {
         document.getElementById("bookingBasePrice").value = price || 500;
@@ -258,6 +384,21 @@ window.openAppointmentModal = function(serviceName = 'General Appointment', pric
             document.getElementById("bookingService").value = "Room Booking";
             document.getElementById("roomTypeGroup").style.display = "block";
             document.getElementById("bookingRoomType").value = "";
+        }
+        
+        // Auto pre-fill user info for ultra smooth UX!
+        if (user.full_name) document.getElementById("bookingName").value = user.full_name;
+        if (user.phone) document.getElementById("bookingPhone").value = user.phone;
+        if (user.gender) {
+            const g = user.gender.charAt(0).toUpperCase() + user.gender.slice(1).toLowerCase();
+            document.getElementById("bookingGender").value = g;
+        }
+        if (user.dob) {
+            const birthYear = new Date(user.dob).getFullYear();
+            const currentYear = new Date().getFullYear();
+            if (birthYear && currentYear > birthYear) {
+                document.getElementById("bookingAge").value = currentYear - birthYear;
+            }
         }
         
         document.getElementById("bookingDate").valueAsDate = new Date();
@@ -310,13 +451,11 @@ window.submitAppointment = async function(event) {
     event.preventDefault();
     
     // Check user authentication
-    let userStr = localStorage.getItem("productUser") || localStorage.getItem("hk_user");
-    if(!userStr) {
-        alert("Please login first to book an appointment!");
-        if(typeof showAuthModal === "function") showAuthModal();
+    const user = getAuthUser();
+    if(!user) {
+        openAuthModal();
         return;
     }
-    const user = JSON.parse(userStr);
     
     // Gather form data
     const patient_name = document.getElementById("bookingName").value;
